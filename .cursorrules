@@ -1,0 +1,159 @@
+# Gnosis Traceability System — Cursor Rules
+
+You are implementing the Gnosis traceability system, a traceability-first verification engine.
+
+## Mission Statement (Memorize This)
+
+This system is NOT an oracle. It does NOT claim to know truth, understand meaning, or verify correctness in the abstract.
+
+This system IS a traceability-first verification engine. Its purpose is to:
+- Enforce end-to-end traceability from business requirements through implementation and tests
+- Constrain change through explicit envelopes, ledgers, and immutability rules
+- Issue only evidence-bounded judgments whose confidence is derived from measured alignment, not asserted understanding
+
+## Strict Implementation Rules
+
+### Rule 1: Spec Authority
+- Read the COMPLETE spec file before writing ANY code
+- Story specs are in `spec/track_a/stories/`
+- Track-level specs (ENTRY, EXIT, PROMPTS) are in `spec/track_a/`
+- SANITY suite is in `spec/00_pre_track_validation/`
+- The spec is the ONLY authority — do not infer, extend, or "improve"
+
+### Rule 2: Marker Requirements
+- ALL files must have: `// @implements STORY-X.Y`
+- ALL functions implementing ACs must have: `// @satisfies AC-X.Y.Z`
+- Missing markers = incomplete implementation
+
+### Rule 3: Database Access Boundary (G-API)
+```
+ALLOWED:
+- src/api/v1/*.ts may import from src/db/*
+- Tests access database ONLY through @gnosis/api/v1
+
+FORBIDDEN:
+- src/extraction/providers/* importing from src/db/*
+- Any file outside src/api/v1/ importing from src/db/*
+- Tests importing directly from src/db/*
+```
+Violation = HALT and fix immediately.
+
+### Rule 4: Shadow Ledger Logging
+- ALL entity creation → log to shadow ledger
+- ALL relationship creation → log to shadow ledger
+- ALL pipeline operations → log to shadow ledger
+- No silent mutations
+
+### Rule 5: Semantic Corpus
+- Capture signals during extraction validation
+- Signal types: CORRECT, INCORRECT, PARTIAL, ORPHAN_MARKER, AMBIGUOUS
+- Minimum 50 signals during Track A
+
+### Rule 6: No Inference
+```
+DO NOT:
+- Infer entity types not in Epic 64
+- Infer relationships not in UTG Schema
+- Treat examples as suggestions
+- Assume tests pass without running
+- Silently resolve ambiguity
+- Add "helpful" features not in ACs
+- Optimize or refactor beyond spec
+- Rename things for "clarity" if spec names them
+
+DO:
+- Implement EXACTLY as specified
+- HALT and ask if ambiguous
+- Reference exact AC numbers when claiming completion
+- Run verification tests before marking complete
+```
+
+### Rule 7: Human Gates
+At HGR-1 (end of Track A):
+- Output: "HALT: Awaiting HGR-1 approval"
+- Do NOT proceed on assumption
+- Do NOT interpret lack of rejection as approval
+
+## Canonical Documents (Read-Only Authority)
+
+These documents define truth. Do not contradict them.
+
+| Document | Location | Purpose |
+|----------|----------|---------|
+| BRD | `docs/BRD_V20_6_3_COMPLETE.md` | Requirements source |
+| UTG Schema | `docs/UNIFIED_TRACEABILITY_GRAPH_SCHEMA_V20_6_1.md` | Entity/relationship definitions |
+| Verification Spec | `docs/UNIFIED_VERIFICATION_SPECIFICATION_V20_6_4.md` | Gates and test requirements |
+| Roadmap | `docs/GNOSIS_TO_SOPHIA_MASTER_ROADMAP_V20_6_4.md` | Track sequencing |
+| Cursor Plan | `docs/CURSOR_IMPLEMENTATION_PLAN_V20_8_5.md` | Implementation constraints |
+| EP-D-002 | `docs/integrations/EP-D-002_RUNTIME_RECONCILIATION_V20_6_1.md` | Runtime (DORMANT until D.9) |
+
+## Track A Entities (16 total — no others allowed)
+
+E01 Epic, E02 Story, E03 AcceptanceCriterion, E04 Requirement,
+E06 ArchitecturalDecision, E08 Component,
+E11 SourceFile, E12 Function, E13 Class, E14 Interface, E15 Module,
+E27 TestFile, E28 TestSuite, E29 TestCase,
+E49 ReleaseVersion, E50 Commit
+
+## Track A Relationships (21 total — no others allowed)
+
+R01-R05 (Requirements), R10-R11 (Design), R21-R26 (Implementation),
+R40-R45 (Verification), R60-R61 (Provenance)
+
+## Forbidden References (DORMANT until Track D.9)
+
+- Entities E84, E85 (ExecutionTrace, RuntimeCall)
+- Relationships R113, R114 (TRACES_EXECUTION, RECONCILES_WITH)
+- Gate G-RUNTIME
+
+Referencing these = ERROR. Return `{ pass: true, skipped: true, reason: 'DORMANT' }` if tested.
+
+## Story Implementation Pattern
+
+For each story:
+
+1. **Read** — Open and read the COMPLETE story card
+2. **Check Entry** — Verify entry criteria are met
+3. **Implement** — Build exactly what the spec says
+4. **Mark** — Add @implements and @satisfies markers
+5. **Log** — Ensure shadow ledger captures operations
+6. **Test** — Run VERIFY-* tests from the story
+7. **Confirm** — Check Definition of Done
+
+## Verification Commands
+
+```bash
+npm run test:sanity          # Pre-track validation
+npm run test -- --grep "X"   # Story-specific tests
+npm run verify:gates         # Gate verification
+npm run verify:integrity     # Graph integrity
+npm run report:coverage      # Coverage report
+```
+
+## Error Recovery
+
+If you hallucinate an entity/relationship:
+→ STOP. Delete the code. Re-read the spec.
+
+If G-API violation detected:
+→ STOP. Remove direct DB import. Use @gnosis/api/v1.
+
+If test fails:
+→ Do NOT modify the test. Fix the implementation.
+
+If ambiguous:
+→ Do NOT guess. Output "AMBIGUITY: [description]" and HALT.
+
+## BRD Counts (Must Match Exactly)
+
+- Epics: 65
+- Stories: 351
+- Acceptance Criteria: 2,901
+
+Mismatch = extraction bug. Fix before proceeding.
+
+## Remember
+
+You are building infrastructure, not an oracle. Every claim must be evidence-bounded. Confidence ≠ truth. Alignment ≠ understanding.
+
+When in doubt: read the spec, follow the spec, verify against the spec.
