@@ -1,6 +1,6 @@
 # Track A Cursor Prompts
 
-**Version:** 1.0.0  
+**Version:** 1.1.0  
 **Purpose:** Verbatim prompts for Cursor execution  
 **Rule:** Use these prompts exactly as written. Do not paraphrase or summarize.
 
@@ -13,14 +13,19 @@
 **These rules apply to ALL Track A stories:**
 
 ```
+ARCHITECTURE LAYERS:
+  Providers → Services → API → DB
+  (data flows left-to-right; imports flow right-to-left)
+
 ALLOWED:
-- src/api/v1/*.ts may import from src/db/*
+- src/services/** may import from src/db/**
+- src/api/v1/** may import from src/services/**
 - Tests may access database ONLY through @gnosis/api/v1
 
 FORBIDDEN:
-- Providers (src/extraction/providers/*) importing from src/db/*
-- Any file outside src/api/v1/ importing from src/db/*
-- Tests importing directly from src/db/*
+- Providers (src/extraction/providers/*) importing from src/db/* or src/services/*
+- API (src/api/v1/*) importing directly from src/db/* (must use services)
+- Tests importing directly from src/db/* or src/services/*
 
 ENFORCEMENT:
 - G-API gate will fail if violated
@@ -272,21 +277,15 @@ Mark code with @implements STORY-64.1 and @satisfies AC-64.1.X markers.
 ### Verification Prompt
 
 ```
-Run the verification tests for Story A.1:
+Run verification for Story A.1:
 
-npm run test -- --grep "Entity Registry"
+1. npm run sanity
+2. npm test
 
-Expected results:
-- VERIFY-E01: Epic extraction passes (65 epics)
-- VERIFY-E02: Story extraction passes (351 stories)
-- VERIFY-E03: AC extraction passes (2,901 ACs)
-- VERIFY-E12: Function extraction passes
-- All entities have evidence anchors
-- Shadow ledger contains entries
-- VERIFY-CORPUS-01: Semantic corpus initialized
-- Semantic signal capture works
+If grep "Entity Registry" returns 0 tests, report it — do not invent tests.
+Run only tests that exist. Show output and summarize pass/fail.
 
-Show me the test output and confirm all tests pass.
+Check story card (spec/track_a/stories/A1_ENTITY_REGISTRY.md) for any additional verification requirements.
 ```
 
 ### Fix Issues Prompt
@@ -339,17 +338,13 @@ Mark code with @implements STORY-64.2 and @satisfies AC-64.2.X markers.
 ```
 Run the verification tests for Story A.2:
 
-npm run test -- --grep "Relationship Registry"
+1. npm run sanity
+2. npm test
 
-Expected results:
-- VERIFY-R01: 351 Epic→Story HAS_STORY relationships
-- VERIFY-R02: 2,901 Story→AC HAS_AC relationships
-- VERIFY-R21: File import relationships extracted
-- VERIFY-R22: Function call relationships extracted
-- All relationships have evidence anchors
-- Neo4j traversal works
+If grep "Relationship Registry" returns 0 tests, report it — do not invent tests.
+Run only tests that exist. Show output and summarize pass/fail.
 
-Show me the test output and confirm all tests pass.
+Check story card (spec/track_a/stories/A2_RELATIONSHIP_REGISTRY.md) for any additional verification requirements.
 ```
 
 ---
@@ -393,17 +388,13 @@ Mark all code with @implements STORY-64.3 and @satisfies AC-64.3.X markers.
 ```
 Run the verification tests for Story A.3:
 
-npm run test -- --grep "Marker Extraction"
+1. npm run sanity
+2. npm test
 
-Expected results:
-- VERIFY-MARKER-01: @implements markers extracted
-- VERIFY-MARKER-02: @satisfies markers extracted
-- VERIFY-MARKER-03: Markers linked to source entities
-- VERIFY-MARKER-04: Marker targets validated
-- VERIFY-MARKER-05: Orphan markers reported
-- VERIFY-MARKER-06: Multiline comments supported
+If grep "Marker Extraction" returns 0 tests, report it — do not invent tests.
+Run only tests that exist. Show output and summarize pass/fail.
 
-Show me the test output and confirm all tests pass.
+Check story card (spec/track_a/stories/A3_MARKER_EXTRACTION.md) for any additional verification requirements.
 ```
 
 ---
@@ -445,20 +436,15 @@ Mark all code with @implements STORY-64.4 and @satisfies AC-64.4.X markers.
 ### Verification Prompt
 
 ```
-Run the verification tests for Story A.4:
+Run verification for Story A.4:
 
-npm run test -- --grep "Structural Analysis Pipeline"
+1. npm run sanity
+2. npm test
 
-Expected results:
-- VERIFY-PIPELINE-01: All providers executed
-- VERIFY-PIPELINE-02: Dependency order correct
-- VERIFY-PIPELINE-03: Failures handled gracefully
-- VERIFY-PIPELINE-04: Statistics reported
-- VERIFY-PIPELINE-05: Integrity validated
-- VERIFY-PIPELINE-06: Incremental extraction works
-- VERIFY-PIPELINE-07: Snapshot created
+If grep "Structural Analysis" returns 0 tests, report it — do not invent tests.
+Run only tests that exist. Show output and summarize pass/fail.
 
-Show me the test output and confirm all tests pass.
+Check story card (spec/track_a/stories/A4_STRUCTURAL_ANALYSIS.md) for any additional verification requirements.
 ```
 
 ---
@@ -488,7 +474,7 @@ Constraints:
 - API must be exported at @gnosis/api/v1
 - All operations must log to shadow ledger (CREATE/UPDATE only, not NO-OP)
 - Must support pagination for large result sets
-- No direct database access outside src/db/
+- API must call services, services call db (API must NOT import src/db/* directly)
 - G-API gate must pass
 - Reference src/schema/track-a/ for entity and relationship types (schema is authoritative)
 - Use src/extraction/types.ts for ExtractedEntity, ExtractedRelationship
@@ -499,24 +485,16 @@ Mark all code with @implements STORY-64.5 and @satisfies AC-64.5.X markers.
 ### Verification Prompt
 
 ```
-Run the verification tests for Story A.5:
+Run verification for Story A.5:
 
-npm run test -- --grep "Graph API v1"
+1. npm run sanity
+2. npm test
+3. npm run verify:g-api (if script exists)
 
-Expected results:
-- VERIFY-API-01: Entity CRUD works
-- VERIFY-API-02: Relationship CRUD works
-- VERIFY-API-03: Type-safe queries work
-- VERIFY-API-04: Graph traversal works
-- VERIFY-API-05: Impact analysis works
-- VERIFY-API-06: Coverage queries work
-- VERIFY-API-07: API versioning correct
-- VERIFY-API-08: Pagination works
+If grep "Graph API" returns 0 tests, report it — do not invent tests.
+Run only tests that exist. Show output and summarize pass/fail.
 
-Also run G-API gate verification:
-npm run verify:g-api
-
-Show me the test output and confirm all tests pass.
+Check story card (spec/track_a/stories/A5_GRAPH_API_V1.md) for any additional verification requirements.
 ```
 
 ---
