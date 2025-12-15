@@ -1,65 +1,102 @@
 -- migrations/003_reset_schema_to_cursor_plan.sql
 -- @implements INFRASTRUCTURE
--- Purpose: Reset schema to match Cursor Plan canonical specification (lines 443-507)
--- Note: DEFERRABLE on relationship FKs is a canonical-compatible extension for ingestion ordering
+--
+-- Purpose: Align schema constraints with Cursor Plan V20.8.5
+-- This is a CONSTRAINT PATCH, not a full schema reset.
+-- Tables are created in 001/002; this migration enforces:
+--   - Composite uniqueness: (project_id, instance_id)
+--   - Removes any global-only instance_id uniqueness
+--
+-- Safe: Non-destructive, idempotent
 
--- Drop tables created by incorrect 001/002
-DROP TABLE IF EXISTS relationships CASCADE;
-DROP TABLE IF EXISTS entities CASCADE;
+-- ============================================================
+-- ENTITIES: Drop ALL global unique constraints on instance_id
+-- (loops to handle multiple constraints if they exist)
+-- ============================================================
+DO $$
+DECLARE
+  r record;
+BEGIN
+  FOR r IN
+    SELECT c.conname
+    FROM pg_constraint c
+    JOIN pg_class t ON t.oid = c.conrelid
+    WHERE t.relname = 'entities'
+      AND c.contype = 'u'
+      AND pg_get_constraintdef(c.oid) ILIKE '%(instance_id)%'
+      AND pg_get_constraintdef(c.oid) NOT ILIKE '%project_id%'
+  LOOP
+    EXECUTE format('ALTER TABLE entities DROP CONSTRAINT %I', r.conname);
+    RAISE NOTICE 'Dropped constraint: %', r.conname;
+  END LOOP;
+END $$;
 
--- Ensure pgcrypto for gen_random_uuid()
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
+-- ENTITIES: Add composite unique if not exists
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint c
+    JOIN pg_class t ON t.oid = c.conrelid
+    WHERE t.relname = 'entities'
+      AND c.contype = 'u'
+      AND (pg_get_constraintdef(c.oid) ILIKE '%(project_id, instance_id)%'
+           OR pg_get_constraintdef(c.oid) ILIKE '%(instance_id, project_id)%')
+  ) THEN
+    ALTER TABLE entities
+      ADD CONSTRAINT entities_project_instance_unique UNIQUE (project_id, instance_id);
+    RAISE NOTICE 'Added composite unique constraint on entities(project_id, instance_id)';
+  END IF;
+END $$;
 
--- =============================================================================
--- ENTITIES TABLE (per Cursor Plan lines 444-467)
--- =============================================================================
-CREATE TABLE entities (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  entity_type VARCHAR(10) NOT NULL,
-  instance_id VARCHAR(500) NOT NULL UNIQUE,
-  name VARCHAR(255) NOT NULL,
-  attributes JSONB DEFAULT '{}',
-  source_file VARCHAR(500),
-  line_start INTEGER,
-  line_end INTEGER,
-  content_hash VARCHAR(71),  -- Format: sha256:... (7 + 64 = 71 chars)
-  extracted_at TIMESTAMPTZ DEFAULT NOW(),
-  project_id UUID NOT NULL REFERENCES projects(id),
-  CONSTRAINT valid_entity_type CHECK (entity_type ~ '^E[0-9]{2}$')
-);
+-- ============================================================
+-- RELATIONSHIPS: Drop ALL global unique constraints on instance_id
+-- ============================================================
+DO $$
+DECLARE
+  r record;
+BEGIN
+  FOR r IN
+    SELECT c.conname
+    FROM pg_constraint c
+    JOIN pg_class t ON t.oid = c.conrelid
+    WHERE t.relname = 'relationships'
+      AND c.contype = 'u'
+      AND pg_get_constraintdef(c.oid) ILIKE '%(instance_id)%'
+      AND pg_get_constraintdef(c.oid) NOT ILIKE '%project_id%'
+  LOOP
+    EXECUTE format('ALTER TABLE relationships DROP CONSTRAINT %I', r.conname);
+    RAISE NOTICE 'Dropped constraint: %', r.conname;
+  END LOOP;
+END $$;
 
--- Indexes (per Cursor Plan lines 461-463) - use EXACT names from Cursor Plan
-CREATE INDEX idx_entities_type ON entities(entity_type);
-CREATE INDEX idx_entities_project ON entities(project_id);
-CREATE INDEX idx_entities_instance ON entities(instance_id);
+-- RELATIONSHIPS: Add composite unique if not exists
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint c
+    JOIN pg_class t ON t.oid = c.conrelid
+    WHERE t.relname = 'relationships'
+      AND c.contype = 'u'
+      AND (pg_get_constraintdef(c.oid) ILIKE '%(project_id, instance_id)%'
+           OR pg_get_constraintdef(c.oid) ILIKE '%(instance_id, project_id)%')
+  ) THEN
+    ALTER TABLE relationships
+      ADD CONSTRAINT relationships_project_instance_unique UNIQUE (project_id, instance_id);
+    RAISE NOTICE 'Added composite unique constraint on relationships(project_id, instance_id)';
+  END IF;
+END $$;
 
--- RLS (per Cursor Plan lines 466-468)
-ALTER TABLE entities ENABLE ROW LEVEL SECURITY;
-CREATE POLICY entities_allow_all ON entities USING (true);  -- Permissive initially per line 429
+-- ============================================================
+-- INDEXES: Add composite indexes (idempotent)
+-- ============================================================
+CREATE INDEX IF NOT EXISTS idx_entities_project_instance 
+  ON entities(project_id, instance_id);
+CREATE INDEX IF NOT EXISTS idx_relationships_project_instance 
+  ON relationships(project_id, instance_id);
 
--- =============================================================================
--- RELATIONSHIPS TABLE (per Cursor Plan lines 470-494)
--- =============================================================================
-CREATE TABLE relationships (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  relationship_type VARCHAR(10) NOT NULL,
-  instance_id VARCHAR(500) NOT NULL UNIQUE,
-  name VARCHAR(100) NOT NULL,
-  from_entity_id UUID NOT NULL REFERENCES entities(id) DEFERRABLE INITIALLY DEFERRED,
-  to_entity_id UUID NOT NULL REFERENCES entities(id) DEFERRABLE INITIALLY DEFERRED,
-  confidence DECIMAL(3,2) DEFAULT 1.0,
-  extracted_at TIMESTAMPTZ DEFAULT NOW(),
-  project_id UUID NOT NULL REFERENCES projects(id),
-  CONSTRAINT valid_relationship_type CHECK (relationship_type ~ '^R[0-9]{2}$'),
-  CONSTRAINT valid_confidence CHECK (confidence >= 0 AND confidence <= 1)
-);
-
--- Indexes (per Cursor Plan lines 487-490) - use EXACT names from Cursor Plan
-CREATE INDEX idx_relationships_type ON relationships(relationship_type);
-CREATE INDEX idx_relationships_from ON relationships(from_entity_id);
-CREATE INDEX idx_relationships_to ON relationships(to_entity_id);
-CREATE INDEX idx_relationships_project ON relationships(project_id);
-
--- RLS (per Cursor Plan lines 492-495)
-ALTER TABLE relationships ENABLE ROW LEVEL SECURITY;
-CREATE POLICY relationships_allow_all ON relationships USING (true);  -- Permissive initially per line 429
+-- Verification query (for manual sanity check)
+-- SELECT c.conname, pg_get_constraintdef(c.oid) 
+-- FROM pg_constraint c JOIN pg_class t ON t.oid = c.conrelid 
+-- WHERE t.relname IN ('entities', 'relationships') AND c.contype = 'u';
