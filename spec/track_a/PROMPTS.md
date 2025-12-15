@@ -4,6 +4,8 @@
 **Purpose:** Verbatim prompts for Cursor execution  
 **Rule:** Use these prompts exactly as written. Do not paraphrase or summarize.
 
+**Schema Authority:** `src/schema/track-a/entities.ts` and `src/schema/track-a/relationships.ts` are authoritative. Do not hardcode type lists.
+
 ---
 
 ## Critical: Database Access Boundary
@@ -247,28 +249,24 @@ If all pass, Phase 0 is complete. Proceed to Story A.1.
 ### Initial Implementation Prompt
 
 ```
-I need you to implement Story A.1: Entity Registry from the spec file spec/track_a/stories/A1_ENTITY_REGISTRY.md
+Implement Story A.1: Entity Registry per spec/track_a/stories/A1_ENTITY_REGISTRY.md
 
-Key requirements:
-1. Create entity type definitions in src/entities/types.ts
-2. Create PostgreSQL migration in migrations/001_entities.sql
-3. Implement BRD parser in src/extraction/providers/brd-provider.ts
-4. Implement AST provider in src/extraction/providers/ast-provider.ts
-5. Create shadow ledger in src/ledger/shadow-ledger.ts
-6. Create semantic corpus in src/ledger/semantic-corpus.ts
-7. Create entity API in src/api/v1/entities.ts
+Architecture:
+1. Entity service layer (src/services/entities/) - implements ENTRY.md Upsert Rule (Locked)
+2. Entity API (src/api/v1/entities.ts) - project-scoped operations
+3. Providers (src/extraction/providers/) - emit ExtractedEntity only, NO DB imports
+4. Shadow ledger (src/ledger/shadow-ledger.ts) - CREATE/UPDATE only, not NO-OP
 
 Constraints:
-- All entity types must match Epic 64 specification (E01-E50)
-- Every entity must have an evidence anchor
-- All operations must log to shadow ledger
-- Semantic corpus must be initialized for Track C signals
-- Use PostgreSQL with RLS per AC-39.6.1
-- Do not import database modules directly in providers
+- Entity types: reference src/schema/track-a/entities.ts (ENTITY_TYPE_CODES export is authoritative)
+- Extraction types: use src/extraction/types.ts (ExtractedEntity, EvidenceAnchor)
+- Do NOT reference migrations/001_entities.sql or migrations/002_relationships.sql (schema established by 001-003)
+- Do not create new migrations unless the story card explicitly requires a schema change; if it does, use migrations/004+
+- Do NOT duplicate type definitions
+- Providers must NOT import from src/db/* or src/services/*
+- Shadow ledger writes to shadow-ledger/ledger.jsonl
 
-Start with src/entities/types.ts and the PostgreSQL migration.
-
-Mark all code with @implements STORY-64.1 and @satisfies AC-64.1.X markers.
+Mark code with @implements STORY-64.1 and @satisfies AC-64.1.X markers.
 ```
 
 ### Verification Prompt
@@ -315,30 +313,25 @@ Show me the corrected code and test results.
 ### Initial Implementation Prompt
 
 ```
-I need you to implement Story A.2: Relationship Registry from the spec file spec/track_a/stories/A2_RELATIONSHIP_REGISTRY.md
+Implement Story A.2: Relationship Registry per spec/track_a/stories/A2_RELATIONSHIP_REGISTRY.md
 
-Prerequisites confirmed:
-- Story A.1 Entity Registry is complete
-- All 16 entity types are extractable
-- Entity API is operational
+Prerequisites:
+- Story A.1 complete (entity service + API operational)
 
-Key requirements:
-1. Create relationship type definitions in src/relationships/types.ts
-2. Create PostgreSQL migration in migrations/002_relationships.sql
-3. Implement BRD relationship provider in src/extraction/providers/brd-relationship-provider.ts
-4. Implement AST relationship provider in src/extraction/providers/ast-relationship-provider.ts
-5. Create relationship API in src/api/v1/relationships.ts
+Architecture:
+1. Relationship service layer (src/services/relationships/) - implements ENTRY.md Upsert Rule
+2. Relationship API (src/api/v1/relationships.ts) - project-scoped operations  
+3. Providers (src/extraction/providers/) - emit ExtractedRelationship only, NO DB imports
 
 Constraints:
-- All 21 relationship types must match Epic 64 specification (R01-R61)
-- Relationships must reference existing entities
-- All operations must log to shadow ledger
-- Neo4j must be used for graph traversal
-- Do not import database modules directly in providers
+- Relationship types: reference src/schema/track-a/relationships.ts (RELATIONSHIP_TYPE_CODES export is authoritative)
+- Extraction types: use src/extraction/types.ts (ExtractedRelationship uses from_instance_id/to_instance_id)
+- Do NOT reference migrations/001_entities.sql or migrations/002_relationships.sql (schema established by 001-003)
+- Do not create new migrations unless the story card explicitly requires a schema change; if it does, use migrations/004+
+- Do NOT duplicate type definitions
+- Providers must NOT import from src/db/* or src/services/*
 
-Start with src/relationships/types.ts and the PostgreSQL migration.
-
-Mark all code with @implements STORY-64.2 and @satisfies AC-64.2.X markers.
+Mark code with @implements STORY-64.2 and @satisfies AC-64.2.X markers.
 ```
 
 ### Verification Prompt
@@ -349,8 +342,8 @@ Run the verification tests for Story A.2:
 npm run test -- --grep "Relationship Registry"
 
 Expected results:
-- VERIFY-R01: 351 Epic→Story CONTAINS relationships
-- VERIFY-R02: 2,901 Story→AC CONTAINS relationships
+- VERIFY-R01: 351 Epic→Story HAS_STORY relationships
+- VERIFY-R02: 2,901 Story→AC HAS_AC relationships
 - VERIFY-R21: File import relationships extracted
 - VERIFY-R22: Function call relationships extracted
 - All relationships have evidence anchors
@@ -387,8 +380,10 @@ Constraints:
 - Must extract from single-line and multi-line comments
 - Must validate marker targets exist in entity registry
 - Must report orphan markers (target not found)
-- Must create IMPLEMENTS and SATISFIES relationships
-- All extractions must log to shadow ledger
+- Use marker relationship types from src/schema/track-a/relationships.ts (do not assume specific R-codes)
+- Use src/extraction/types.ts for ExtractedRelationship
+- All extractions must log to shadow ledger (CREATE/UPDATE only, not NO-OP)
+- Providers must NOT import from src/db/* or src/services/*
 
 Mark all code with @implements STORY-64.3 and @satisfies AC-64.3.X markers.
 ```
@@ -440,7 +435,9 @@ Constraints:
 - Must handle provider failures gracefully
 - Must validate graph integrity post-extraction
 - Must support incremental extraction
-- All pipeline operations must log to shadow ledger
+- All pipeline operations must log to shadow ledger (CREATE/UPDATE only, not NO-OP)
+- Reference src/schema/track-a/ for entity and relationship types (schema is authoritative)
+- Use src/extraction/types.ts for ExtractedEntity, ExtractedRelationship
 
 Mark all code with @implements STORY-64.4 and @satisfies AC-64.4.X markers.
 ```
@@ -489,10 +486,12 @@ Key requirements:
 
 Constraints:
 - API must be exported at @gnosis/api/v1
-- All operations must log to shadow ledger
+- All operations must log to shadow ledger (CREATE/UPDATE only, not NO-OP)
 - Must support pagination for large result sets
 - No direct database access outside src/db/
 - G-API gate must pass
+- Reference src/schema/track-a/ for entity and relationship types (schema is authoritative)
+- Use src/extraction/types.ts for ExtractedEntity, ExtractedRelationship
 
 Mark all code with @implements STORY-64.5 and @satisfies AC-64.5.X markers.
 ```
@@ -585,12 +584,14 @@ Format as the checklist in spec/track_a/EXIT.md with actual values filled in.
 ### Hallucinated Entity/Relationship
 
 ```
-STOP. You referenced an entity or relationship that does not exist in Epic 64.
+STOP. You referenced an entity or relationship that does not exist in Track A.
 
-Valid Track A entities: E01-E04, E06, E08, E11-E15, E27-E29, E49-E50
-Valid Track A relationships: R01-R05, R10-R11, R21-R26, R40-R45, R60-R61
+Valid Track A entity codes are exactly those exported by ENTITY_TYPE_CODES in src/schema/track-a/entities.ts.
+Valid Track A relationship codes are exactly those exported by RELATIONSHIP_TYPE_CODES in src/schema/track-a/relationships.ts.
 
-Delete the hallucinated code and re-implement using only valid entities/relationships from the Verification Spec V20.6.4.
+(If any hardcoded list in prompts conflicts with schema exports, schema exports win.)
+
+Delete the hallucinated code and re-implement using only valid entities/relationships from the schema files.
 ```
 
 ### G-API Violation
@@ -607,6 +608,12 @@ REQUIRED:
 - import { createEntity, queryEntities } from '@gnosis/api/v1'
 
 Remove the direct database imports and refactor to use the Graph API.
+
+Verification commands (run during story implementation):
+rg -n "(from|require)\s+['\"].*(/db/|@gnosis/db|src/db|\\./db|\\.\\./db)" src/extraction/providers
+rg -n "(from|require)\s+['\"].*(/services/|src/services|\\./services|\\.\\./services)" src/extraction/providers
+
+Both must return 0 results.
 ```
 
 ### Test Failure
