@@ -20,26 +20,26 @@
 
 ## Entity Verification
 
-All 16 Track A entity types extractable and verified:
+All 15 Track A entity types extractable and verified (E14 Interface deferred):
 
 | ID | Entity | Test | Status |
 |----|--------|------|--------|
 | E01 | Epic | VERIFY-E01 | [ ] Pass |
 | E02 | Story | VERIFY-E02 | [ ] Pass |
 | E03 | AcceptanceCriterion | VERIFY-E03 | [ ] Pass |
-| E04 | Requirement | VERIFY-E04 | [ ] Pass |
-| E06 | ArchitecturalDecision | VERIFY-E06 | [ ] Pass |
-| E08 | Component | VERIFY-E08 | [ ] Pass |
+| E04 | Constraint | VERIFY-E04 | [ ] Pass |
+| E06 | TechnicalDesign | VERIFY-E06 | [ ] Pass |
+| E08 | DataSchema | VERIFY-E08 | [ ] Pass |
 | E11 | SourceFile | VERIFY-E11 | [ ] Pass |
 | E12 | Function | VERIFY-E12 | [ ] Pass |
 | E13 | Class | VERIFY-E13 | [ ] Pass |
-| E14 | Interface | VERIFY-E14 | [ ] Pass |
 | E15 | Module | VERIFY-E15 | [ ] Pass |
 | E27 | TestFile | VERIFY-E27 | [ ] Pass |
 | E28 | TestSuite | VERIFY-E28 | [ ] Pass |
 | E29 | TestCase | VERIFY-E29 | [ ] Pass |
 | E49 | ReleaseVersion | VERIFY-E49 | [ ] Pass |
 | E50 | Commit | VERIFY-E50 | [ ] Pass |
+| E52 | ChangeSet | VERIFY-E52 | [ ] Pass |
 
 ---
 
@@ -49,27 +49,27 @@ All 21 Track A relationship types extractable and verified:
 
 | ID | Relationship | Test | Status |
 |----|--------------|------|--------|
-| R01 | CONTAINS (Epic→Story) | VERIFY-R01 | [ ] Pass |
-| R02 | CONTAINS (Story→AC) | VERIFY-R02 | [ ] Pass |
-| R03 | SATISFIES | VERIFY-R03 | [ ] Pass |
-| R04 | DERIVES_FROM | VERIFY-R04 | [ ] Pass |
-| R05 | CONFLICTS_WITH | VERIFY-R05 | [ ] Pass |
-| R10 | DECIDES | VERIFY-R10 | [ ] Pass |
-| R11 | COMPONENT_OF | VERIFY-R11 | [ ] Pass |
+| R01 | HAS_STORY (Epic→Story) | VERIFY-R01 | [ ] Pass |
+| R02 | HAS_AC (Story→AC) | VERIFY-R02 | [ ] Pass |
+| R03 | HAS_CONSTRAINT | VERIFY-R03 | [ ] Pass |
+| R04 | CONTAINS_FILE | VERIFY-R04 | [ ] Pass |
+| R05 | CONTAINS_ENTITY | VERIFY-R05 | [ ] Pass |
+| R06 | CONTAINS_SUITE | VERIFY-R06 | [ ] Pass |
+| R07 | CONTAINS_CASE | VERIFY-R07 | [ ] Pass |
+| R14 | IMPLEMENTED_BY | VERIFY-R14 | [ ] Pass |
+| R16 | DEFINED_IN | VERIFY-R16 | [ ] Pass |
+| R18 | IMPLEMENTS | VERIFY-R18 | [ ] Pass |
+| R19 | SATISFIES | VERIFY-R19 | [ ] Pass |
 | R21 | IMPORTS | VERIFY-R21 | [ ] Pass |
 | R22 | CALLS | VERIFY-R22 | [ ] Pass |
 | R23 | EXTENDS | VERIFY-R23 | [ ] Pass |
 | R24 | IMPLEMENTS_INTERFACE | VERIFY-R24 | [ ] Pass |
-| R25 | DEFINES | VERIFY-R25 | [ ] Pass |
 | R26 | DEPENDS_ON | VERIFY-R26 | [ ] Pass |
-| R40 | CONTAINS (TestFile→Suite) | VERIFY-R40 | [ ] Pass |
-| R41 | CONTAINS (Suite→Case) | VERIFY-R41 | [ ] Pass |
-| R42 | TESTS (Case→Function) | VERIFY-R42 | [ ] Pass |
-| R43 | TESTS (Case→AC) | VERIFY-R43 | [ ] Pass |
-| R44 | COVERS | VERIFY-R44 | [ ] Pass |
-| R45 | VERIFIES | VERIFY-R45 | [ ] Pass |
-| R60 | RELEASED_IN | VERIFY-R60 | [ ] Pass |
-| R61 | CHANGES | VERIFY-R61 | [ ] Pass |
+| R36 | TESTED_BY | VERIFY-R36 | [ ] Pass |
+| R37 | VERIFIED_BY | VERIFY-R37 | [ ] Pass |
+| R63 | INTRODUCED_IN | VERIFY-R63 | [ ] Pass |
+| R67 | MODIFIED_IN | VERIFY-R67 | [ ] Pass |
+| R70 | GROUPS | VERIFY-R70 | [ ] Pass |
 
 ---
 
@@ -115,7 +115,7 @@ npm run test:sanity
 
 ### Shadow Ledger
 
-- [ ] Shadow ledger file exists at `data/shadow_ledger.jsonl`
+- [ ] Shadow ledger file exists at `shadow-ledger/ledger.jsonl`
 - [ ] Ledger contains entries for all entity creations
 - [ ] Ledger contains entries for all relationship creations
 - [ ] Ledger contains entries for pipeline start/complete
@@ -123,7 +123,7 @@ npm run test:sanity
 
 ### Semantic Learning
 
-- [ ] Semantic corpus exists at `data/semantic_corpus.jsonl`
+- [ ] Semantic corpus exists at `semantic-corpus/signals.jsonl`
 - [ ] Minimum 50 signals captured during Track A
 - [ ] Signal types include: CORRECT, INCORRECT, PARTIAL, ORPHAN_MARKER, AMBIGUOUS
 - [ ] Signal count: ___ signals *(record actual, must be ≥50)*

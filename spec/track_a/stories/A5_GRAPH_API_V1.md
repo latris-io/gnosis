@@ -86,8 +86,8 @@ export interface PaginatedResult<T> {
 export interface TraversalOptions {
   direction: 'outgoing' | 'incoming' | 'both';
   maxDepth: number;
-  relationshipTypes?: RelationshipType[];
-  entityTypes?: EntityType[];
+  relationshipTypes?: RelationshipTypeCode[];
+  entityTypes?: EntityTypeCode[];
 }
 
 export interface ImpactResult {
@@ -115,7 +115,7 @@ export interface CoverageResult {
 
 import { pool, neo4jSession } from '../../db';
 import { shadowLedger } from '../../ledger';
-import { Entity, EntityType, QueryOptions, PaginatedResult } from './types';
+import { Entity, EntityTypeCode, QueryOptions, PaginatedResult } from './types';
 
 // CREATE
 export async function createEntity(entity: Entity): Promise<Entity> {
@@ -214,7 +214,7 @@ export async function deleteEntity(id: string): Promise<void> {
 
 // QUERY with pagination
 export async function queryEntities(
-  type?: EntityType,
+  entityType?: EntityTypeCode,
   options: QueryOptions = {}
 ): Promise<PaginatedResult<Entity>> {
   const { limit = 100, offset = 0, orderBy = 'created_at', orderDirection = 'desc' } = options;
@@ -223,10 +223,10 @@ export async function queryEntities(
   let countQuery = `SELECT COUNT(*) FROM entities`;
   const params: unknown[] = [];
   
-  if (type) {
-    query += ` WHERE type = $1`;
-    countQuery += ` WHERE type = $1`;
-    params.push(type);
+  if (entityType) {
+    query += ` WHERE entity_type = $1`;
+    countQuery += ` WHERE entity_type = $1`;
+    params.push(entityType);
   }
   
   query += ` ORDER BY ${orderBy} ${orderDirection} LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
@@ -234,7 +234,7 @@ export async function queryEntities(
   
   const [result, countResult] = await Promise.all([
     pool.query(query, params),
-    pool.query(countQuery, type ? [type] : [])
+    pool.query(countQuery, entityType ? [entityType] : [])
   ]);
   
   const total = parseInt(countResult.rows[0].count);
@@ -411,7 +411,7 @@ export async function analyzeImpact(
   const affectedIds = affected.map(e => e.id);
   const relResult = await pool.query(`
     SELECT * FROM relationships
-    WHERE source_id = ANY($1) OR target_id = ANY($1)
+    WHERE from_entity_id = ANY($1) OR to_entity_id = ANY($1)
   `, [affectedIds]);
   
   // Calculate impact score based on entity types and depths
@@ -494,21 +494,23 @@ export async function whatIf(
 // @satisfies AC-64.5.6
 
 export async function getStoryCoverage(): Promise<CoverageResult> {
-  // Stories with @implements markers
+  // Stories with @implements markers (R18 = IMPLEMENTS)
+  // Join to get instance_id from to_entity_id
   const coveredResult = await pool.query(`
-    SELECT DISTINCT r.target_id
+    SELECT DISTINCT e.instance_id
     FROM relationships r
-    WHERE r.type = 'IMPLEMENTS' AND r.target_id LIKE 'STORY-%'
+    JOIN entities e ON r.to_entity_id = e.id
+    WHERE r.relationship_type = 'R18' AND e.instance_id LIKE 'STORY-%'
   `);
   
-  const coveredIds = new Set(coveredResult.rows.map(r => r.target_id));
+  const coveredIds = new Set(coveredResult.rows.map(r => r.instance_id));
   
   // All stories
   const allStoriesResult = await pool.query(`
-    SELECT id FROM entities WHERE type = 'Story'
+    SELECT instance_id FROM entities WHERE entity_type = 'E02'
   `);
   
-  const allIds = allStoriesResult.rows.map(r => r.id);
+  const allIds = allStoriesResult.rows.map(r => r.instance_id);
   const uncoveredIds = allIds.filter(id => !coveredIds.has(id));
   
   return {
@@ -521,21 +523,22 @@ export async function getStoryCoverage(): Promise<CoverageResult> {
 }
 
 export async function getACCoverage(): Promise<CoverageResult> {
-  // ACs with @satisfies markers
+  // ACs with @satisfies markers (R19 = SATISFIES)
   const coveredResult = await pool.query(`
-    SELECT DISTINCT r.target_id
+    SELECT DISTINCT e.instance_id
     FROM relationships r
-    WHERE r.type = 'SATISFIES' AND r.target_id LIKE 'AC-%'
+    JOIN entities e ON r.to_entity_id = e.id
+    WHERE r.relationship_type = 'R19' AND e.instance_id LIKE 'AC-%'
   `);
   
-  const coveredIds = new Set(coveredResult.rows.map(r => r.target_id));
+  const coveredIds = new Set(coveredResult.rows.map(r => r.instance_id));
   
-  // All ACs
+  // All ACs (E03)
   const allACsResult = await pool.query(`
-    SELECT id FROM entities WHERE type = 'AcceptanceCriterion'
+    SELECT instance_id FROM entities WHERE entity_type = 'E03'
   `);
   
-  const allIds = allACsResult.rows.map(r => r.id);
+  const allIds = allACsResult.rows.map(r => r.instance_id);
   const uncoveredIds = allIds.filter(id => !coveredIds.has(id));
   
   return {
@@ -548,21 +551,23 @@ export async function getACCoverage(): Promise<CoverageResult> {
 }
 
 export async function getTestCoverage(): Promise<CoverageResult> {
-  // Stories with tests
+  // Stories with test coverage (R36 = TESTED_BY or similar)
+  // Note: This query uses relationship from test to code, need to trace back
   const coveredResult = await pool.query(`
-    SELECT DISTINCT r.target_id
+    SELECT DISTINCT e.instance_id
     FROM relationships r
-    WHERE r.type = 'COVERS' AND r.target_id LIKE 'STORY-%'
+    JOIN entities e ON r.to_entity_id = e.id
+    WHERE r.relationship_type = 'R36' AND e.entity_type = 'E02'
   `);
   
-  const coveredIds = new Set(coveredResult.rows.map(r => r.target_id));
+  const coveredIds = new Set(coveredResult.rows.map(r => r.instance_id));
   
-  // All stories
+  // All stories (E02)
   const allStoriesResult = await pool.query(`
-    SELECT id FROM entities WHERE type = 'Story'
+    SELECT instance_id FROM entities WHERE entity_type = 'E02'
   `);
   
-  const allIds = allStoriesResult.rows.map(r => r.id);
+  const allIds = allStoriesResult.rows.map(r => r.instance_id);
   const uncoveredIds = allIds.filter(id => !coveredIds.has(id));
   
   return {
@@ -676,19 +681,20 @@ describe('Graph API v1', () => {
   // VERIFY-API-02: Relationship CRUD
   it('performs relationship CRUD operations', async () => {
     // Create test entities first
-    await createEntity({ id: 'source-1', type: 'Function', ... });
-    await createEntity({ id: 'target-1', type: 'Function', ... });
+    await createEntity({ id: 'source-uuid-1', entity_type: 'E12', instance_id: 'FUNC-test:source', ... });
+    await createEntity({ id: 'target-uuid-1', entity_type: 'E12', instance_id: 'FUNC-test:target', ... });
     
     const rel = await createRelationship({
-      id: 'rel-1',
-      type: 'CALLS',
-      source_id: 'source-1',
-      target_id: 'target-1',
+      id: 'rel-uuid-1',
+      relationship_type: 'R22',  // CALLS
+      instance_id: 'R22:FUNC-test:source:FUNC-test:target',
+      from_entity_id: 'source-uuid-1',
+      to_entity_id: 'target-uuid-1',
       ...
     });
-    expect(rel.id).toBe('rel-1');
+    expect(rel.id).toBe('rel-uuid-1');
     
-    const retrieved = await getRelationship('rel-1');
+    const retrieved = await getRelationship('rel-uuid-1');
     expect(retrieved).not.toBeNull();
   });
   

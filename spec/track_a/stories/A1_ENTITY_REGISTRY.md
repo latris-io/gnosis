@@ -13,7 +13,9 @@
 
 ## User Story
 
-> As the Gnosis system, I need to extract and store all 16 Track A entity types from the codebase so that I have a complete structural inventory of what exists.
+> As the Gnosis system, I need to extract and store all 15 Track A entity types from the codebase so that I have a complete structural inventory of what exists.
+
+> **Note:** E14 Interface is NOT in Track A entity scope (16 total in schema, but 15 extractable in Track A).
 
 ---
 
@@ -24,22 +26,21 @@
 | AC-64.1.1 | Extract Epic entities from BRD | Shadow Ledger | VERIFY-E01 |
 | AC-64.1.2 | Extract Story entities from BRD | Shadow Ledger | VERIFY-E02 |
 | AC-64.1.3 | Extract AcceptanceCriterion entities from BRD | Shadow Ledger | VERIFY-E03 |
-| AC-64.1.4 | Extract Requirement entities from BRD | Shadow Ledger | VERIFY-E04 |
-| AC-64.1.5 | Extract ArchitecturalDecision entities from ADRs | Shadow Ledger | VERIFY-E06 |
-| AC-64.1.6 | Extract Component entities from module analysis | Shadow Ledger | VERIFY-E08 |
+| AC-64.1.4 | Extract Constraint entities from BRD | Shadow Ledger | VERIFY-E04 |
+| AC-64.1.5 | Extract TechnicalDesign entities from ADRs | Shadow Ledger | VERIFY-E06 |
+| AC-64.1.6 | Extract DataSchema entities from module analysis | Shadow Ledger | VERIFY-E08 |
 | AC-64.1.7 | Extract SourceFile entities from filesystem | Shadow Ledger | VERIFY-E11 |
 | AC-64.1.8 | Extract Function entities from AST | Shadow Ledger | VERIFY-E12 |
 | AC-64.1.9 | Extract Class entities from AST | Shadow Ledger | VERIFY-E13 |
-| AC-64.1.10 | Extract Interface entities from AST | Shadow Ledger | VERIFY-E14 |
-| AC-64.1.11 | Extract Module entities from imports | Shadow Ledger | VERIFY-E15 |
-| AC-64.1.12 | Extract TestFile entities from test directory | Shadow Ledger | VERIFY-E27 |
-| AC-64.1.13 | Extract TestSuite entities from describe blocks | Shadow Ledger | VERIFY-E28 |
-| AC-64.1.14 | Extract TestCase entities from it blocks | Shadow Ledger | VERIFY-E29 |
-| AC-64.1.15 | Extract ReleaseVersion entities from git tags | Shadow Ledger | VERIFY-E49 |
-| AC-64.1.16 | Extract Commit entities from git log | Shadow Ledger | VERIFY-E50 |
-| AC-64.1.17 | All extractions logged to shadow ledger | Shadow Ledger | RULE-LEDGER-001 |
-| AC-64.1.18 | All entities have evidence anchors | Evidence | SANITY-044 |
-| AC-64.1.19 | Semantic corpus initialized for Track C | Semantic Learning | VERIFY-CORPUS-01 |
+| AC-64.1.10 | Extract Module entities from imports | Shadow Ledger | VERIFY-E15 |
+| AC-64.1.11 | Extract TestFile entities from test directory | Shadow Ledger | VERIFY-E27 |
+| AC-64.1.12 | Extract TestSuite entities from describe blocks | Shadow Ledger | VERIFY-E28 |
+| AC-64.1.13 | Extract TestCase entities from it blocks | Shadow Ledger | VERIFY-E29 |
+| AC-64.1.14 | Extract ReleaseVersion entities from git tags | Shadow Ledger | VERIFY-E49 |
+| AC-64.1.15 | Extract Commit entities from git log | Shadow Ledger | VERIFY-E50 |
+| AC-64.1.16 | All extractions logged to shadow ledger | Shadow Ledger | RULE-LEDGER-001 |
+| AC-64.1.17 | All entities have evidence anchors | Evidence | SANITY-044 |
+| AC-64.1.18 | Semantic corpus initialized for Track C | Semantic Learning | VERIFY-CORPUS-01 |
 
 ---
 
@@ -61,18 +62,30 @@
 // src/schema/track-a/entities.ts
 // @implements STORY-64.1
 
-export type EntityType = 
-  | 'Epic' | 'Story' | 'AcceptanceCriterion' | 'Requirement'
-  | 'ArchitecturalDecision' | 'Component'
-  | 'SourceFile' | 'Function' | 'Class' | 'Interface' | 'Module'
-  | 'TestFile' | 'TestSuite' | 'TestCase'
-  | 'ReleaseVersion' | 'Commit' | 'ChangeSet';
+// Per Cursor Plan V20.8.5 lines 443-465
+export type EntityTypeCode = 
+  | 'E01' | 'E02' | 'E03' | 'E04'  // Requirements: Epic, Story, AcceptanceCriterion, Constraint
+  | 'E06' | 'E08'                  // Design: TechnicalDesign, DataSchema
+  | 'E11' | 'E12' | 'E13' | 'E15'  // Implementation: SourceFile, Function, Class, Module
+  | 'E27' | 'E28' | 'E29'          // Verification: TestFile, TestSuite, TestCase
+  | 'E49' | 'E50' | 'E52';         // Provenance: ReleaseVersion, Commit, ChangeSet
+
+// NOTE: E14 Interface is NOT in Track A entity scope
 
 export interface Entity {
-  id: string;
-  type: EntityType;
-  attributes: Record<string, unknown>;
-  evidence: EvidenceAnchor;
+  id: string;                          // UUID
+  entity_type: EntityTypeCode;         // E-code, not name
+  instance_id: string;                 // Stable business key, e.g., "STORY-64.1"
+  name: string;                        // Human-readable name
+  attributes: Record<string, unknown>; // JSONB
+  content_hash: string;                // SHA-256 hash for change detection
+  source_file: string;                 // Provenance: extraction source
+  line_start: number;                  // Provenance: start line
+  line_end: number;                    // Provenance: end line
+  commit_sha: string;                  // Provenance: git commit
+  extraction_timestamp: Date;          // Provenance: when extracted
+  extractor_version: string;           // Provenance: extractor version
+  project_id: string;                  // UUID, for RLS
   created_at: Date;
   updated_at: Date;
 }
@@ -87,34 +100,18 @@ export interface EvidenceAnchor {
 }
 ```
 
-### Step 2: Create PostgreSQL Schema
+### Step 2: PostgreSQL Schema (Already Applied)
 
-```sql
--- migrations/001_entities.sql
--- @implements STORY-64.1
--- @satisfies AC-64.1.17
+The entity schema is defined in `migrations/003_reset_schema_to_cursor_plan.sql` per Cursor Plan V20.8.5 lines 443-465.
 
-CREATE TABLE entities (
-  id TEXT PRIMARY KEY,
-  type TEXT NOT NULL,
-  attributes JSONB NOT NULL DEFAULT '{}',
-  evidence JSONB NOT NULL,
-  project_id UUID NOT NULL,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
+**Key schema points:**
+- `entity_type VARCHAR(10)` stores E-codes ('E01', 'E02', etc.)
+- `instance_id VARCHAR(500)` is a stable business key (e.g., 'STORY-64.1')
+- Flat provenance fields instead of nested `evidence` JSONB
+- RLS enabled with permissive policy (`USING (true)`)
+- CHECK constraint: `entity_type ~ '^E[0-9]{2}$'`
 
--- RLS Policy
-ALTER TABLE entities ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY entities_project_isolation ON entities
-  USING (project_id = current_setting('app.project_id')::UUID);
-
--- Indexes
-CREATE INDEX idx_entities_type ON entities(type);
-CREATE INDEX idx_entities_project ON entities(project_id);
-CREATE INDEX idx_entities_attributes ON entities USING GIN(attributes);
-```
+See migration 003 for full schema.
 
 ### Step 3: Implement BRD Parser (E01, E02, E03, E04)
 
@@ -123,9 +120,8 @@ CREATE INDEX idx_entities_attributes ON entities USING GIN(attributes);
 // @implements STORY-64.1
 // @satisfies AC-64.1.1, AC-64.1.2, AC-64.1.3, AC-64.1.4
 
-import { ExtractionProvider, RepoSnapshot, ExtractionResult } from '../types';
+import { ExtractionProvider, RepoSnapshot, ExtractionResult, ExtractedEntity } from '../types';
 import { parseBRD } from '../parsers/brd-parser';
-import { createEvidenceAnchor } from '../evidence';
 
 export class BRDProvider implements ExtractionProvider {
   name = 'brd-provider';
@@ -139,72 +135,74 @@ export class BRDProvider implements ExtractionProvider {
     const content = await fs.readFile(brdPath, 'utf8');
     const parsed = parseBRD(content);
     
-    const entities: Entity[] = [];
-    const evidence: EvidenceAnchor[] = [];
+    const entities: ExtractedEntity[] = [];
     
     // Extract Epics (E01)
     for (const epic of parsed.epics) {
-      const anchor = createEvidenceAnchor(brdPath, epic.lineStart, epic.lineEnd, snapshot);
       entities.push({
-        id: `EPIC-${epic.number}`,
-        type: 'Epic',
+        entity_type: 'E01',
+        instance_id: `EPIC-${epic.number}`,
+        name: epic.title,
         attributes: {
           number: epic.number,
-          title: epic.title,
           description: epic.description
         },
-        evidence: anchor
+        source_file: brdPath,
+        line_start: epic.lineStart,
+        line_end: epic.lineEnd
       });
-      evidence.push(anchor);
     }
     
     // Extract Stories (E02)
     for (const story of parsed.stories) {
-      const anchor = createEvidenceAnchor(brdPath, story.lineStart, story.lineEnd, snapshot);
       entities.push({
-        id: `STORY-${story.epicNumber}.${story.storyNumber}`,
-        type: 'Story',
+        entity_type: 'E02',
+        instance_id: `STORY-${story.epicNumber}.${story.storyNumber}`,
+        name: story.title,
         attributes: {
           epic_number: story.epicNumber,
           story_number: story.storyNumber,
-          title: story.title,
           user_story: story.userStory
         },
-        evidence: anchor
+        source_file: brdPath,
+        line_start: story.lineStart,
+        line_end: story.lineEnd
       });
-      evidence.push(anchor);
     }
     
     // Extract Acceptance Criteria (E03)
     for (const ac of parsed.acceptanceCriteria) {
-      const anchor = createEvidenceAnchor(brdPath, ac.lineStart, ac.lineEnd, snapshot);
       entities.push({
-        id: `AC-${ac.epicNumber}.${ac.storyNumber}.${ac.acNumber}`,
-        type: 'AcceptanceCriterion',
+        entity_type: 'E03',
+        instance_id: `AC-${ac.epicNumber}.${ac.storyNumber}.${ac.acNumber}`,
+        name: `AC-${ac.epicNumber}.${ac.storyNumber}.${ac.acNumber}`,
         attributes: {
           story_id: `STORY-${ac.epicNumber}.${ac.storyNumber}`,
           description: ac.description,
           verification: ac.verification
         },
-        evidence: anchor
+        source_file: brdPath,
+        line_start: ac.lineStart,
+        line_end: ac.lineEnd
       });
-      evidence.push(anchor);
     }
     
-    return { entities, relationships: [], evidence };
+    return { entities, relationships: [], evidence: [] };
   }
 }
 ```
 
-### Step 4: Implement AST Provider (E12, E13, E14)
+### Step 4: Implement AST Provider (E12, E13)
+
+> **Note:** E14 Interface is NOT in Track A entity scope. Interface extraction is deferred to a later track. Relationships referencing Interface targets (R24 IMPLEMENTS_INTERFACE) will have `confidence < 1.0` until Interface entities are extracted.
 
 ```typescript
 // src/extraction/providers/ast-provider.ts
 // @implements STORY-64.1
-// @satisfies AC-64.1.8, AC-64.1.9, AC-64.1.10
+// @satisfies AC-64.1.8, AC-64.1.9
 
 import { Project, SyntaxKind } from 'ts-morph';
-import { ExtractionProvider, RepoSnapshot, ExtractionResult } from '../types';
+import { ExtractionProvider, RepoSnapshot, ExtractionResult, ExtractedEntity } from '../types';
 
 export class ASTProvider implements ExtractionProvider {
   name = 'ast-provider';
@@ -217,79 +215,51 @@ export class ASTProvider implements ExtractionProvider {
     const project = new Project();
     project.addSourceFilesAtPaths(`${snapshot.root_path}/src/**/*.{ts,tsx}`);
     
-    const entities: Entity[] = [];
-    const evidence: EvidenceAnchor[] = [];
+    const entities: ExtractedEntity[] = [];
     
     for (const sourceFile of project.getSourceFiles()) {
       const filePath = sourceFile.getFilePath();
       
       // Extract Functions (E12)
       for (const func of sourceFile.getFunctions()) {
-        const anchor = createEvidenceAnchor(
-          filePath,
-          func.getStartLineNumber(),
-          func.getEndLineNumber(),
-          snapshot
-        );
         entities.push({
-          id: `function:${filePath}:${func.getName()}`,
-          type: 'Function',
+          entity_type: 'E12',
+          instance_id: `FUNC-${filePath}:${func.getName()}`,
+          name: func.getName() || '<anonymous>',
           attributes: {
-            name: func.getName(),
-            file_id: `file:${filePath}`,
+            file_id: `FILE-${filePath}`,
             visibility: func.isExported() ? 'export' : 'private',
             parameters: func.getParameters().map(p => p.getName()),
             return_type: func.getReturnType().getText()
           },
-          evidence: anchor
+          source_file: filePath,
+          line_start: func.getStartLineNumber(),
+          line_end: func.getEndLineNumber()
         });
       }
       
       // Extract Classes (E13)
       for (const cls of sourceFile.getClasses()) {
-        const anchor = createEvidenceAnchor(
-          filePath,
-          cls.getStartLineNumber(),
-          cls.getEndLineNumber(),
-          snapshot
-        );
         entities.push({
-          id: `class:${filePath}:${cls.getName()}`,
-          type: 'Class',
+          entity_type: 'E13',
+          instance_id: `CLASS-${filePath}:${cls.getName()}`,
+          name: cls.getName() || '<anonymous>',
           attributes: {
-            name: cls.getName(),
-            file_id: `file:${filePath}`,
+            file_id: `FILE-${filePath}`,
             visibility: cls.isExported() ? 'export' : 'private',
             extends: cls.getExtends()?.getText(),
             implements: cls.getImplements().map(i => i.getText())
           },
-          evidence: anchor
+          source_file: filePath,
+          line_start: cls.getStartLineNumber(),
+          line_end: cls.getEndLineNumber()
         });
       }
       
-      // Extract Interfaces (E14)
-      for (const iface of sourceFile.getInterfaces()) {
-        const anchor = createEvidenceAnchor(
-          filePath,
-          iface.getStartLineNumber(),
-          iface.getEndLineNumber(),
-          snapshot
-        );
-        entities.push({
-          id: `interface:${filePath}:${iface.getName()}`,
-          type: 'Interface',
-          attributes: {
-            name: iface.getName(),
-            file_id: `file:${filePath}`,
-            visibility: iface.isExported() ? 'export' : 'private',
-            extends: iface.getExtends().map(e => e.getText())
-          },
-          evidence: anchor
-        });
-      }
+      // NOTE: E14 Interface extraction is deferred to post-Track A
     }
     
-    return { entities, relationships: [], evidence };
+    return { entities, relationships: [], evidence: [] };
   }
 }
 ```
@@ -439,37 +409,50 @@ export async function captureSemanticSignal(signal: Omit<SemanticSignal, 'timest
 ```typescript
 // src/api/v1/entities.ts
 // @implements STORY-64.1
-// @satisfies AC-64.1.1 through AC-64.1.16
+// @satisfies AC-64.1.1 through AC-64.1.15
 
-import { GraphAPI } from './index';
 import { shadowLedger } from '../../ledger/shadow-ledger';
 import { pool } from '../../db/postgres';
 import { getSession } from '../../db/neo4j';
+import type { Entity, EntityTypeCode } from '../../schema/track-a/entities';
 
 export async function createEntity(entity: Entity): Promise<Entity> {
   // Log to shadow ledger first
   await shadowLedger.append({
     timestamp: new Date(),
     operation: 'CREATE',
-    entity_type: entity.type,
+    entity_type: entity.entity_type,
     entity_id: entity.id,
-    evidence: entity.evidence,
+    evidence: {
+      source_file: entity.source_file,
+      line_start: entity.line_start,
+      line_end: entity.line_end,
+      commit_sha: entity.commit_sha
+    },
     hash: computeHash(entity)
   });
   
-  // Insert into PostgreSQL
+  // Insert into PostgreSQL (uses migration 003 schema)
   const result = await pool.query(
-    `INSERT INTO entities (id, type, attributes, evidence, project_id)
-     VALUES ($1, $2, $3, $4, $5)
+    `INSERT INTO entities (
+       id, entity_type, instance_id, name, attributes, content_hash,
+       source_file, line_start, line_end, commit_sha, 
+       extraction_timestamp, extractor_version, project_id
+     ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
      RETURNING *`,
-    [entity.id, entity.type, entity.attributes, entity.evidence, projectId]
+    [
+      entity.id, entity.entity_type, entity.instance_id, entity.name,
+      entity.attributes, entity.content_hash,
+      entity.source_file, entity.line_start, entity.line_end, entity.commit_sha,
+      entity.extraction_timestamp, entity.extractor_version, entity.project_id
+    ]
   );
   
   // Insert into Neo4j for graph traversal
   const session = getSession();
   await session.run(
-    `CREATE (e:Entity {id: $id, type: $type})`,
-    { id: entity.id, type: entity.type }
+    `CREATE (e:Entity {id: $id, entity_type: $entity_type, instance_id: $instance_id})`,
+    { id: entity.id, entity_type: entity.entity_type, instance_id: entity.instance_id }
   );
   await session.close();
   
@@ -484,10 +467,10 @@ export async function getEntity(id: string): Promise<Entity | null> {
   return result.rows[0] || null;
 }
 
-export async function queryEntities(type: EntityType): Promise<Entity[]> {
+export async function queryEntities(entityType: EntityTypeCode): Promise<Entity[]> {
   const result = await pool.query(
-    `SELECT * FROM entities WHERE type = $1`,
-    [type]
+    `SELECT * FROM entities WHERE entity_type = $1`,
+    [entityType]
   );
   return result.rows;
 }
@@ -525,42 +508,41 @@ describe('Entity Registry', () => {
   // VERIFY-E01: Epic extraction
   it('extracts all epics from BRD', async () => {
     const result = await brdProvider.extract(snapshot);
-    const epics = result.entities.filter(e => e.type === 'Epic');
+    const epics = result.entities.filter(e => e.entity_type === 'E01');
     expect(epics.length).toBe(65);
-    expect(epics[0].id).toMatch(/^EPIC-\d+$/);
+    expect(epics[0].instance_id).toMatch(/^EPIC-\d+$/);
   });
   
   // VERIFY-E02: Story extraction
   it('extracts all stories from BRD', async () => {
     const result = await brdProvider.extract(snapshot);
-    const stories = result.entities.filter(e => e.type === 'Story');
+    const stories = result.entities.filter(e => e.entity_type === 'E02');
     expect(stories.length).toBe(351);
-    expect(stories[0].id).toMatch(/^STORY-\d+\.\d+$/);
+    expect(stories[0].instance_id).toMatch(/^STORY-\d+\.\d+$/);
   });
   
   // VERIFY-E03: AC extraction
   it('extracts all acceptance criteria from BRD', async () => {
     const result = await brdProvider.extract(snapshot);
-    const acs = result.entities.filter(e => e.type === 'AcceptanceCriterion');
+    const acs = result.entities.filter(e => e.entity_type === 'E03');
     expect(acs.length).toBe(2901);
-    expect(acs[0].id).toMatch(/^AC-\d+\.\d+\.\d+$/);
+    expect(acs[0].instance_id).toMatch(/^AC-\d+\.\d+\.\d+$/);
   });
   
   // VERIFY-E12: Function extraction
   it('extracts functions from source files', async () => {
     const result = await astProvider.extract(snapshot);
-    const functions = result.entities.filter(e => e.type === 'Function');
+    const functions = result.entities.filter(e => e.entity_type === 'E12');
     expect(functions.length).toBeGreaterThan(0);
-    expect(functions[0].attributes.name).toBeDefined();
+    expect(functions[0].name).toBeDefined();
   });
   
-  // Evidence anchor verification
-  it('all entities have evidence anchors', async () => {
+  // Evidence anchor verification (flat provenance fields)
+  it('all entities have provenance fields', async () => {
     const result = await brdProvider.extract(snapshot);
     for (const entity of result.entities) {
-      expect(entity.evidence).toBeDefined();
-      expect(entity.evidence.source_file).toBeDefined();
-      expect(entity.evidence.line_start).toBeGreaterThan(0);
+      expect(entity.source_file).toBeDefined();
+      expect(entity.line_start).toBeGreaterThan(0);
     }
   });
   
@@ -632,8 +614,8 @@ describe('Entity Registry', () => {
 
 ## Definition of Done
 
-- [ ] All 16 entity types extractable
-- [ ] All entity IDs match format patterns (SANITY-003)
+- [ ] All 15 Track A entity types extractable (E14 Interface deferred)
+- [ ] All entity instance_ids match format patterns (SANITY-003)
 - [ ] Entity counts match external verification:
   - [ ] 65 Epics
   - [ ] 351 Stories

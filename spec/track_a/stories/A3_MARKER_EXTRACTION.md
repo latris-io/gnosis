@@ -269,27 +269,17 @@ export class MarkerValidator {
     return entity !== null;
   }
   
-  private createRelationship(marker: Marker): Relationship {
-    const relType = marker.type === 'implements' ? 'IMPLEMENTS' : 'SATISFIES';
+  private createRelationship(marker: Marker): ExtractedRelationship {
+    // R18 = IMPLEMENTS (code → story), R19 = SATISFIES (code → AC)
+    const relTypeCode = marker.type === 'implements' ? 'R18' : 'R19';
     
     return {
-      id: `${relType}:${marker.source_entity_id}:${marker.target_id}`,
-      type: relType,
-      source_id: marker.source_entity_id,
-      target_id: marker.target_id,
-      attributes: {
-        marker_line: marker.line_number,
-        marker_raw: marker.raw_text,
-        extraction_method: 'marker'
-      },
-      evidence: {
-        source_file: marker.source_entity_id.split(':')[1],
-        line_start: marker.line_number,
-        line_end: marker.line_number,
-        commit_sha: '', // Will be filled by caller
-        extraction_timestamp: new Date(),
-        extractor_version: '1.0.0'
-      }
+      relationship_type: relTypeCode,
+      instance_id: `${relTypeCode}:${marker.source_entity_id}:${marker.target_id}`,
+      name: `${marker.type.toUpperCase()}: ${marker.source_entity_id} → ${marker.target_id}`,
+      from_instance_id: marker.source_entity_id,  // Resolved to UUID during persistence
+      to_instance_id: marker.target_id,           // Resolved to UUID during persistence
+      confidence: 1.0
     };
   }
 }

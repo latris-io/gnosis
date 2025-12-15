@@ -12,7 +12,7 @@
 HGR-1 validates that Track A has successfully built the structural extraction infrastructure required for Track B self-ingestion. This gate is **irreversible** — once approved, Track B begins building on Track A foundations.
 
 **What HGR-1 Certifies:**
-- All 16 Track A entity types are extractable
+- All 15 Track A entity types are extractable (E14 Interface deferred)
 - All 21 Track A relationship types are extractable
 - Graph API v1 is operational
 - Shadow ledger is capturing provenance
@@ -49,13 +49,12 @@ Before requesting HGR-1 review, confirm:
 | E01 Epic | 65 | ______ | [ ] |
 | E02 Story | 351 | ______ | [ ] |
 | E03 AcceptanceCriterion | 2,901 | ______ | [ ] |
-| E04 Requirement | ≥1 | ______ | [ ] |
-| E06 ArchitecturalDecision | ≥0 | ______ | [ ] |
-| E08 Component | ≥1 | ______ | [ ] |
+| E04 Constraint | ≥1 | ______ | [ ] |
+| E06 TechnicalDesign | ≥0 | ______ | [ ] |
+| E08 DataSchema | ≥1 | ______ | [ ] |
 | E11 SourceFile | ≥10 | ______ | [ ] |
 | E12 Function | ≥10 | ______ | [ ] |
 | E13 Class | ≥1 | ______ | [ ] |
-| E14 Interface | ≥1 | ______ | [ ] |
 | E15 Module | ≥1 | ______ | [ ] |
 | E27 TestFile | ≥5 | ______ | [ ] |
 | E28 TestSuite | ≥5 | ______ | [ ] |
@@ -107,12 +106,12 @@ Before requesting HGR-1 review, confirm:
 **Requirement:** All four pillars operational
 
 #### Shadow Ledger
-- [ ] File exists: `data/shadow_ledger.jsonl`
+- [ ] File exists: `shadow-ledger/ledger.jsonl`
 - [ ] Entry count: ______ entries
 - [ ] Sample entry validated (correct schema)
 
 #### Semantic Corpus
-- [ ] File exists: `data/semantic_corpus.jsonl`
+- [ ] File exists: `semantic-corpus/signals.jsonl`
 - [ ] Signal count: ______ signals (minimum 50)
 - [ ] Signal types present: CORRECT, INCORRECT, ORPHAN_MARKER
 

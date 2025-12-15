@@ -319,10 +319,10 @@ export class IntegrityValidator {
   
   private async checkRelationshipIntegrity(): Promise<IntegrityCheck> {
     const result = await pool.query(`
-      SELECT r.id, r.source_id, r.target_id
+      SELECT r.id, r.from_entity_id, r.to_entity_id
       FROM relationships r
-      LEFT JOIN entities s ON r.source_id = s.id
-      LEFT JOIN entities t ON r.target_id = t.id
+      LEFT JOIN entities s ON r.from_entity_id = s.id
+      LEFT JOIN entities t ON r.to_entity_id = t.id
       WHERE s.id IS NULL OR t.id IS NULL
     `);
     

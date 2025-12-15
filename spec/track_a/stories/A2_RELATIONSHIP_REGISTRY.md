@@ -21,29 +21,31 @@
 
 | AC | Description | Pillar | Verification (REQUIRED) |
 |----|-------------|--------|-------------------------|
-| AC-64.2.1 | Extract CONTAINS (Epic→Story) | Shadow Ledger | VERIFY-R01 |
-| AC-64.2.2 | Extract CONTAINS (Story→AC) | Shadow Ledger | VERIFY-R02 |
-| AC-64.2.3 | Extract SATISFIES (AC→Requirement) | Shadow Ledger | VERIFY-R03 |
-| AC-64.2.4 | Extract DERIVES_FROM (Req→Req) | Shadow Ledger | VERIFY-R04 |
-| AC-64.2.5 | Extract CONFLICTS_WITH (Req→Req) | Shadow Ledger | VERIFY-R05 |
-| AC-64.2.6 | Extract DECIDES (ADR→Component) | Shadow Ledger | VERIFY-R10 |
-| AC-64.2.7 | Extract COMPONENT_OF (Comp→Comp) | Shadow Ledger | VERIFY-R11 |
-| AC-64.2.8 | Extract IMPORTS (File→File) | Shadow Ledger | VERIFY-R21 |
-| AC-64.2.9 | Extract CALLS (Func→Func) | Shadow Ledger | VERIFY-R22 |
-| AC-64.2.10 | Extract EXTENDS (Class→Class) | Shadow Ledger | VERIFY-R23 |
-| AC-64.2.11 | Extract IMPLEMENTS_INTERFACE (Class→Interface) | Shadow Ledger | VERIFY-R24 |
-| AC-64.2.12 | Extract DEFINES (File→Func/Class/Interface) | Shadow Ledger | VERIFY-R25 |
-| AC-64.2.13 | Extract DEPENDS_ON (Module→Module) | Shadow Ledger | VERIFY-R26 |
-| AC-64.2.14 | Extract CONTAINS (TestFile→TestSuite) | Shadow Ledger | VERIFY-R40 |
-| AC-64.2.15 | Extract CONTAINS (TestSuite→TestCase) | Shadow Ledger | VERIFY-R41 |
-| AC-64.2.16 | Extract TESTS (TestCase→Function) | Shadow Ledger | VERIFY-R42 |
-| AC-64.2.17 | Extract TESTS (TestCase→AC) | Shadow Ledger | VERIFY-R43 |
-| AC-64.2.18 | Extract COVERS (TestSuite→Story) | Shadow Ledger | VERIFY-R44 |
-| AC-64.2.19 | Extract VERIFIES (TestCase→Requirement) | Shadow Ledger | VERIFY-R45 |
-| AC-64.2.20 | Extract RELEASED_IN (Commit→Release) | Shadow Ledger | VERIFY-R60 |
-| AC-64.2.21 | Extract CHANGES (Commit→File) | Shadow Ledger | VERIFY-R61 |
+| AC-64.2.1 | Extract HAS_STORY (Epic→Story) | Shadow Ledger | VERIFY-R01 |
+| AC-64.2.2 | Extract HAS_AC (Story→AC) | Shadow Ledger | VERIFY-R02 |
+| AC-64.2.3 | Extract HAS_CONSTRAINT (AC→Constraint) | Shadow Ledger | VERIFY-R03 |
+| AC-64.2.4 | Extract CONTAINS_FILE (File→File) | Shadow Ledger | VERIFY-R04 |
+| AC-64.2.5 | Extract CONTAINS_ENTITY (File→Func/Class) | Shadow Ledger | VERIFY-R05 |
+| AC-64.2.6 | Extract CONTAINS_SUITE (TestFile→TestSuite) | Shadow Ledger | VERIFY-R06 |
+| AC-64.2.7 | Extract CONTAINS_CASE (TestSuite→TestCase) | Shadow Ledger | VERIFY-R07 |
+| AC-64.2.8 | Extract IMPLEMENTED_BY (Story→Func/Class) | Shadow Ledger | VERIFY-R14 |
+| AC-64.2.9 | Extract DEFINED_IN (Func/Class→File) | Shadow Ledger | VERIFY-R16 |
+| AC-64.2.10 | Extract IMPLEMENTS (Func/Class→Story) | Shadow Ledger | VERIFY-R18 |
+| AC-64.2.11 | Extract SATISFIES (Func/Class→AC) | Shadow Ledger | VERIFY-R19 |
+| AC-64.2.12 | Extract IMPORTS (File→File) | Shadow Ledger | VERIFY-R21 |
+| AC-64.2.13 | Extract CALLS (Func→Func) | Shadow Ledger | VERIFY-R22 |
+| AC-64.2.14 | Extract EXTENDS (Class→Class) | Shadow Ledger | VERIFY-R23 |
+| AC-64.2.15 | Extract IMPLEMENTS_INTERFACE (Class→Interface) | Shadow Ledger | VERIFY-R24 |
+| AC-64.2.16 | Extract DEPENDS_ON (Module→Module) | Shadow Ledger | VERIFY-R26 |
+| AC-64.2.17 | Extract TESTED_BY (Func/Class→TestCase) | Shadow Ledger | VERIFY-R36 |
+| AC-64.2.18 | Extract VERIFIED_BY (AC→TestCase) | Shadow Ledger | VERIFY-R37 |
+| AC-64.2.19 | Extract INTRODUCED_IN (Entity→Commit) | Shadow Ledger | VERIFY-R63 |
+| AC-64.2.20 | Extract MODIFIED_IN (Entity→Commit) | Shadow Ledger | VERIFY-R67 |
+| AC-64.2.21 | Extract GROUPS (ChangeSet→Commit) | Shadow Ledger | VERIFY-R70 |
 | AC-64.2.22 | All relationships logged to shadow ledger | Shadow Ledger | RULE-LEDGER-002 |
-| AC-64.2.23 | All relationships have evidence anchors | Evidence | SANITY-044 |
+| AC-64.2.23 | All relationships have provenance fields | Evidence | SANITY-044 |
+
+> **Note on Interface Targets:** R05 (CONTAINS_ENTITY) and R24 (IMPLEMENTS_INTERFACE) may reference E14 Interface as a target entity type. Interface extraction is deferred to post-Track A; relationships with Interface targets will have `confidence < 1.0` until Interface entities are extracted in a later track.
 
 ---
 
@@ -61,100 +63,93 @@
 ### Step 1: Create Relationship Type Definitions
 
 ```typescript
-// src/relationships/types.ts
+// src/schema/track-a/relationships.ts
 // @implements STORY-64.2
+// Per Cursor Plan V20.8.5 lines 475-507
 
-export type RelationshipType =
-  // Requirements (R01-R05)
-  | 'CONTAINS' | 'SATISFIES' | 'DERIVES_FROM' | 'CONFLICTS_WITH'
-  // Design (R10-R11)
-  | 'DECIDES' | 'COMPONENT_OF'
-  // Implementation (R21-R26)
-  | 'IMPORTS' | 'CALLS' | 'EXTENDS' | 'IMPLEMENTS_INTERFACE' | 'DEFINES' | 'DEPENDS_ON'
-  // Verification (R40-R45)
-  | 'TESTS' | 'COVERS' | 'VERIFIES'
-  // Provenance (R60-R61)
-  | 'RELEASED_IN' | 'CHANGES';
+// Relationship type codes (21 for Track A)
+export type RelationshipTypeCode =
+  // Requirements (R01-R03)
+  | 'R01' | 'R02' | 'R03'  // HAS_STORY, HAS_AC, HAS_CONSTRAINT
+  // Containment (R04-R07)
+  | 'R04' | 'R05' | 'R06' | 'R07'  // CONTAINS_FILE, CONTAINS_ENTITY, CONTAINS_SUITE, CONTAINS_CASE
+  // Implementation (R14, R16, R18-R19, R21-R24, R26)
+  | 'R14' | 'R16' | 'R18' | 'R19'  // IMPLEMENTED_BY, DEFINED_IN, IMPLEMENTS, SATISFIES
+  | 'R21' | 'R22' | 'R23' | 'R24' | 'R26'  // IMPORTS, CALLS, EXTENDS, IMPLEMENTS_INTERFACE, DEPENDS_ON
+  // Verification (R36-R37)
+  | 'R36' | 'R37'  // TESTED_BY, VERIFIED_BY
+  // Provenance (R63, R67, R70)
+  | 'R63' | 'R67' | 'R70';  // INTRODUCED_IN, MODIFIED_IN, GROUPS
 
 export interface Relationship {
-  id: string;
-  type: RelationshipType;
-  source_id: string;
-  target_id: string;
-  attributes: Record<string, unknown>;
-  evidence: EvidenceAnchor;
+  id: string;                             // UUID
+  relationship_type: RelationshipTypeCode; // R-code
+  instance_id: string;                    // Stable business key
+  name: string;                           // Human-readable name
+  from_entity_id: string;                 // UUID of source entity
+  to_entity_id: string;                   // UUID of target entity
+  attributes: Record<string, unknown>;    // JSONB
+  confidence: number;                     // 0.0-1.0 (default 1.0)
+  source_file: string;                    // Provenance
+  line_start: number;
+  line_end: number;
+  commit_sha: string;
+  extraction_timestamp: Date;
+  extractor_version: string;
+  project_id: string;                     // UUID, for RLS
   created_at: Date;
   updated_at: Date;
 }
 
 export interface RelationshipDefinition {
-  type: RelationshipType;
-  source_type: EntityType;
-  target_type: EntityType;
+  code: RelationshipTypeCode;
+  name: string;
+  from_type: EntityTypeCode;
+  to_type: EntityTypeCode;
   cardinality: '1:1' | '1:N' | 'N:1' | 'N:M';
 }
 
 // Track A Relationship Definitions (21 total)
 export const TRACK_A_RELATIONSHIPS: RelationshipDefinition[] = [
-  { type: 'CONTAINS', source_type: 'Epic', target_type: 'Story', cardinality: '1:N' },
-  { type: 'CONTAINS', source_type: 'Story', target_type: 'AcceptanceCriterion', cardinality: '1:N' },
-  { type: 'SATISFIES', source_type: 'AcceptanceCriterion', target_type: 'Requirement', cardinality: 'N:M' },
-  { type: 'DERIVES_FROM', source_type: 'Requirement', target_type: 'Requirement', cardinality: 'N:M' },
-  { type: 'CONFLICTS_WITH', source_type: 'Requirement', target_type: 'Requirement', cardinality: 'N:M' },
-  { type: 'DECIDES', source_type: 'ArchitecturalDecision', target_type: 'Component', cardinality: 'N:M' },
-  { type: 'COMPONENT_OF', source_type: 'Component', target_type: 'Component', cardinality: 'N:1' },
-  { type: 'IMPORTS', source_type: 'SourceFile', target_type: 'SourceFile', cardinality: 'N:M' },
-  { type: 'CALLS', source_type: 'Function', target_type: 'Function', cardinality: 'N:M' },
-  { type: 'EXTENDS', source_type: 'Class', target_type: 'Class', cardinality: 'N:1' },
-  { type: 'IMPLEMENTS_INTERFACE', source_type: 'Class', target_type: 'Interface', cardinality: 'N:M' },
-  { type: 'DEFINES', source_type: 'SourceFile', target_type: 'Function', cardinality: '1:N' },
-  { type: 'DEPENDS_ON', source_type: 'Module', target_type: 'Module', cardinality: 'N:M' },
-  { type: 'CONTAINS', source_type: 'TestFile', target_type: 'TestSuite', cardinality: '1:N' },
-  { type: 'CONTAINS', source_type: 'TestSuite', target_type: 'TestCase', cardinality: '1:N' },
-  { type: 'TESTS', source_type: 'TestCase', target_type: 'Function', cardinality: 'N:M' },
-  { type: 'TESTS', source_type: 'TestCase', target_type: 'AcceptanceCriterion', cardinality: 'N:M' },
-  { type: 'COVERS', source_type: 'TestSuite', target_type: 'Story', cardinality: 'N:M' },
-  { type: 'VERIFIES', source_type: 'TestCase', target_type: 'Requirement', cardinality: 'N:M' },
-  { type: 'RELEASED_IN', source_type: 'Commit', target_type: 'ReleaseVersion', cardinality: 'N:1' },
-  { type: 'CHANGES', source_type: 'Commit', target_type: 'SourceFile', cardinality: 'N:M' },
+  { code: 'R01', name: 'HAS_STORY', from_type: 'E01', to_type: 'E02', cardinality: '1:N' },
+  { code: 'R02', name: 'HAS_AC', from_type: 'E02', to_type: 'E03', cardinality: '1:N' },
+  { code: 'R03', name: 'HAS_CONSTRAINT', from_type: 'E03', to_type: 'E04', cardinality: 'N:M' },
+  { code: 'R04', name: 'CONTAINS_FILE', from_type: 'E11', to_type: 'E11', cardinality: 'N:M' },
+  { code: 'R05', name: 'CONTAINS_ENTITY', from_type: 'E11', to_type: 'E12', cardinality: '1:N' },
+  { code: 'R06', name: 'CONTAINS_SUITE', from_type: 'E27', to_type: 'E28', cardinality: '1:N' },
+  { code: 'R07', name: 'CONTAINS_CASE', from_type: 'E28', to_type: 'E29', cardinality: '1:N' },
+  { code: 'R14', name: 'IMPLEMENTED_BY', from_type: 'E02', to_type: 'E12', cardinality: 'N:M' },
+  { code: 'R16', name: 'DEFINED_IN', from_type: 'E12', to_type: 'E11', cardinality: 'N:1' },
+  { code: 'R18', name: 'IMPLEMENTS', from_type: 'E12', to_type: 'E02', cardinality: 'N:M' },
+  { code: 'R19', name: 'SATISFIES', from_type: 'E12', to_type: 'E03', cardinality: 'N:M' },
+  { code: 'R21', name: 'IMPORTS', from_type: 'E11', to_type: 'E11', cardinality: 'N:M' },
+  { code: 'R22', name: 'CALLS', from_type: 'E12', to_type: 'E12', cardinality: 'N:M' },
+  { code: 'R23', name: 'EXTENDS', from_type: 'E13', to_type: 'E13', cardinality: 'N:1' },
+  { code: 'R24', name: 'IMPLEMENTS_INTERFACE', from_type: 'E13', to_type: 'E14', cardinality: 'N:M' },  // E14 deferred
+  { code: 'R26', name: 'DEPENDS_ON', from_type: 'E15', to_type: 'E15', cardinality: 'N:M' },
+  { code: 'R36', name: 'TESTED_BY', from_type: 'E12', to_type: 'E29', cardinality: 'N:M' },
+  { code: 'R37', name: 'VERIFIED_BY', from_type: 'E03', to_type: 'E29', cardinality: 'N:M' },
+  { code: 'R63', name: 'INTRODUCED_IN', from_type: 'E11', to_type: 'E50', cardinality: 'N:1' },
+  { code: 'R67', name: 'MODIFIED_IN', from_type: 'E11', to_type: 'E50', cardinality: 'N:M' },
+  { code: 'R70', name: 'GROUPS', from_type: 'E52', to_type: 'E50', cardinality: '1:N' },
 ];
 ```
 
-### Step 2: Create PostgreSQL Schema
+### Step 2: PostgreSQL Schema (Already Applied)
 
-```sql
--- migrations/002_relationships.sql
--- @implements STORY-64.2
--- @satisfies AC-64.2.22
+The relationship schema is defined in `migrations/003_reset_schema_to_cursor_plan.sql` per Cursor Plan V20.8.5 lines 475-507.
 
-CREATE TABLE relationships (
-  id TEXT PRIMARY KEY,
-  type TEXT NOT NULL,
-  source_id TEXT NOT NULL REFERENCES entities(id),
-  target_id TEXT NOT NULL REFERENCES entities(id),
-  attributes JSONB NOT NULL DEFAULT '{}',
-  evidence JSONB NOT NULL,
-  project_id UUID NOT NULL,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
+**Key schema points:**
+- `relationship_type VARCHAR(10)` stores R-codes ('R01', 'R02', etc.)
+- `instance_id VARCHAR(500)` is a stable business key
+- `from_entity_id UUID` and `to_entity_id UUID` (not source_id/target_id)
+- FKs are `DEFERRABLE INITIALLY DEFERRED` for batch insertion
+- Flat provenance fields instead of nested `evidence` JSONB
+- RLS enabled with permissive policy (`USING (true)`)
+- CHECK constraint: `relationship_type ~ '^R[0-9]{2}$'`
+- `confidence NUMERIC(3,2)` defaults to 1.0
 
--- RLS Policy
-ALTER TABLE relationships ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY relationships_project_isolation ON relationships
-  USING (project_id = current_setting('app.project_id')::UUID);
-
--- Indexes
-CREATE INDEX idx_relationships_type ON relationships(type);
-CREATE INDEX idx_relationships_source ON relationships(source_id);
-CREATE INDEX idx_relationships_target ON relationships(target_id);
-CREATE INDEX idx_relationships_project ON relationships(project_id);
-
--- Unique constraint per relationship instance
-CREATE UNIQUE INDEX idx_relationships_unique 
-  ON relationships(type, source_id, target_id);
-```
+See migration 003 for full schema.
 
 ### Step 3: Implement BRD Relationship Extraction (R01, R02)
 
@@ -163,39 +158,41 @@ CREATE UNIQUE INDEX idx_relationships_unique
 // @implements STORY-64.2
 // @satisfies AC-64.2.1, AC-64.2.2
 
+import type { ExtractedRelationship } from '../types';
+
 export class BRDRelationshipProvider implements ExtractionProvider {
   name = 'brd-relationship-provider';
   
   async extract(snapshot: RepoSnapshot): Promise<ExtractionResult> {
-    const entities = await getEntities(['Epic', 'Story', 'AcceptanceCriterion']);
-    const relationships: Relationship[] = [];
+    const entities = await getEntities(['E01', 'E02', 'E03']);  // Epic, Story, AC
+    const relationships: ExtractedRelationship[] = [];
     
-    // R01: Epic CONTAINS Story
-    for (const story of entities.filter(e => e.type === 'Story')) {
+    // R01: Epic HAS_STORY Story
+    for (const story of entities.filter(e => e.entity_type === 'E02')) {
       const epicNumber = story.attributes.epic_number;
-      const epicId = `EPIC-${epicNumber}`;
+      const epicInstanceId = `EPIC-${epicNumber}`;
       
       relationships.push({
-        id: `R01:${epicId}:${story.id}`,
-        type: 'CONTAINS',
-        source_id: epicId,
-        target_id: story.id,
-        attributes: { relationship_code: 'R01' },
-        evidence: story.evidence
+        relationship_type: 'R01',
+        instance_id: `R01:${epicInstanceId}:${story.instance_id}`,
+        name: `HAS_STORY: ${epicInstanceId} → ${story.instance_id}`,
+        from_instance_id: epicInstanceId,     // Resolved to UUID during persistence
+        to_instance_id: story.instance_id,    // Resolved to UUID during persistence
+        confidence: 1.0
       });
     }
     
-    // R02: Story CONTAINS AcceptanceCriterion
-    for (const ac of entities.filter(e => e.type === 'AcceptanceCriterion')) {
-      const storyId = ac.attributes.story_id;
+    // R02: Story HAS_AC AcceptanceCriterion
+    for (const ac of entities.filter(e => e.entity_type === 'E03')) {
+      const storyInstanceId = ac.attributes.story_id;
       
       relationships.push({
-        id: `R02:${storyId}:${ac.id}`,
-        type: 'CONTAINS',
-        source_id: storyId,
-        target_id: ac.id,
-        attributes: { relationship_code: 'R02' },
-        evidence: ac.evidence
+        relationship_type: 'R02',
+        instance_id: `R02:${storyInstanceId}:${ac.instance_id}`,
+        name: `HAS_AC: ${storyInstanceId} → ${ac.instance_id}`,
+        from_instance_id: storyInstanceId,
+        to_instance_id: ac.instance_id,
+        confidence: 1.0
       });
     }
     
@@ -204,12 +201,14 @@ export class BRDRelationshipProvider implements ExtractionProvider {
 }
 ```
 
-### Step 4: Implement AST Relationship Extraction (R21-R26)
+### Step 4: Implement AST Relationship Extraction (R16, R21-R24, R26)
 
 ```typescript
 // src/extraction/providers/ast-relationship-provider.ts
 // @implements STORY-64.2
-// @satisfies AC-64.2.8, AC-64.2.9, AC-64.2.10, AC-64.2.11, AC-64.2.12, AC-64.2.13
+// @satisfies AC-64.2.9, AC-64.2.12, AC-64.2.13, AC-64.2.14, AC-64.2.15, AC-64.2.16
+
+import type { ExtractedRelationship } from '../types';
 
 export class ASTRelationshipProvider implements ExtractionProvider {
   name = 'ast-relationship-provider';
@@ -218,49 +217,46 @@ export class ASTRelationshipProvider implements ExtractionProvider {
     const project = new Project();
     project.addSourceFilesAtPaths(`${snapshot.root_path}/src/**/*.{ts,tsx}`);
     
-    const relationships: Relationship[] = [];
+    const relationships: ExtractedRelationship[] = [];
     
     for (const sourceFile of project.getSourceFiles()) {
       const filePath = sourceFile.getFilePath();
-      const fileId = `file:${filePath}`;
+      const fileInstanceId = `FILE-${filePath}`;
       
       // R21: IMPORTS
       for (const imp of sourceFile.getImportDeclarations()) {
         const moduleSpecifier = imp.getModuleSpecifierValue();
-        const targetFileId = resolveModulePath(filePath, moduleSpecifier);
+        const targetFileInstanceId = resolveModulePath(filePath, moduleSpecifier);
         
-        if (targetFileId) {
+        if (targetFileInstanceId) {
           relationships.push({
-            id: `R21:${fileId}:${targetFileId}`,
-            type: 'IMPORTS',
-            source_id: fileId,
-            target_id: targetFileId,
-            attributes: { 
-              relationship_code: 'R21',
-              import_type: imp.isTypeOnly() ? 'type' : 'value'
-            },
-            evidence: createEvidenceAnchor(filePath, imp.getStartLineNumber(), imp.getEndLineNumber(), snapshot)
+            relationship_type: 'R21',
+            instance_id: `R21:${fileInstanceId}:${targetFileInstanceId}`,
+            name: `IMPORTS: ${fileInstanceId} → ${targetFileInstanceId}`,
+            from_instance_id: fileInstanceId,
+            to_instance_id: targetFileInstanceId,
+            confidence: 1.0
           });
         }
       }
       
       // R22: CALLS
       for (const func of sourceFile.getFunctions()) {
-        const funcId = `function:${filePath}:${func.getName()}`;
+        const funcInstanceId = `FUNC-${filePath}:${func.getName()}`;
         const callExpressions = func.getDescendantsOfKind(SyntaxKind.CallExpression);
         
         for (const call of callExpressions) {
           const calledFuncName = call.getExpression().getText();
-          const targetFuncId = resolveFunctionCall(filePath, calledFuncName);
+          const targetFuncInstanceId = resolveFunctionCall(filePath, calledFuncName);
           
-          if (targetFuncId) {
+          if (targetFuncInstanceId) {
             relationships.push({
-              id: `R22:${funcId}:${targetFuncId}`,
-              type: 'CALLS',
-              source_id: funcId,
-              target_id: targetFuncId,
-              attributes: { relationship_code: 'R22' },
-              evidence: createEvidenceAnchor(filePath, call.getStartLineNumber(), call.getEndLineNumber(), snapshot)
+              relationship_type: 'R22',
+              instance_id: `R22:${funcInstanceId}:${targetFuncInstanceId}`,
+              name: `CALLS: ${funcInstanceId} → ${targetFuncInstanceId}`,
+              from_instance_id: funcInstanceId,
+              to_instance_id: targetFuncInstanceId,
+              confidence: 1.0
             });
           }
         }
@@ -268,69 +264,67 @@ export class ASTRelationshipProvider implements ExtractionProvider {
       
       // R23: EXTENDS
       for (const cls of sourceFile.getClasses()) {
-        const classId = `class:${filePath}:${cls.getName()}`;
+        const classInstanceId = `CLASS-${filePath}:${cls.getName()}`;
         const extendsClause = cls.getExtends();
         
         if (extendsClause) {
           const baseClassName = extendsClause.getText();
-          const baseClassId = resolveClassName(filePath, baseClassName);
+          const baseClassInstanceId = resolveClassName(filePath, baseClassName);
           
-          if (baseClassId) {
+          if (baseClassInstanceId) {
             relationships.push({
-              id: `R23:${classId}:${baseClassId}`,
-              type: 'EXTENDS',
-              source_id: classId,
-              target_id: baseClassId,
-              attributes: { relationship_code: 'R23' },
-              evidence: createEvidenceAnchor(filePath, extendsClause.getStartLineNumber(), extendsClause.getEndLineNumber(), snapshot)
+              relationship_type: 'R23',
+              instance_id: `R23:${classInstanceId}:${baseClassInstanceId}`,
+              name: `EXTENDS: ${classInstanceId} → ${baseClassInstanceId}`,
+              from_instance_id: classInstanceId,
+              to_instance_id: baseClassInstanceId,
+              confidence: 1.0
             });
           }
         }
       }
       
-      // R24: IMPLEMENTS_INTERFACE
+      // R24: IMPLEMENTS_INTERFACE (confidence < 1.0 since E14 deferred)
       for (const cls of sourceFile.getClasses()) {
-        const classId = `class:${filePath}:${cls.getName()}`;
+        const classInstanceId = `CLASS-${filePath}:${cls.getName()}`;
         
         for (const impl of cls.getImplements()) {
           const interfaceName = impl.getText();
-          const interfaceId = resolveInterfaceName(filePath, interfaceName);
+          const interfaceInstanceId = `IFACE-${filePath}:${interfaceName}`;  // Placeholder
           
-          if (interfaceId) {
-            relationships.push({
-              id: `R24:${classId}:${interfaceId}`,
-              type: 'IMPLEMENTS_INTERFACE',
-              source_id: classId,
-              target_id: interfaceId,
-              attributes: { relationship_code: 'R24' },
-              evidence: createEvidenceAnchor(filePath, impl.getStartLineNumber(), impl.getEndLineNumber(), snapshot)
-            });
-          }
+          relationships.push({
+            relationship_type: 'R24',
+            instance_id: `R24:${classInstanceId}:${interfaceInstanceId}`,
+            name: `IMPLEMENTS_INTERFACE: ${classInstanceId} → ${interfaceInstanceId}`,
+            from_instance_id: classInstanceId,
+            to_instance_id: interfaceInstanceId,
+            confidence: 0.5  // E14 Interface extraction deferred
+          });
         }
       }
       
-      // R25: DEFINES
+      // R16: DEFINED_IN (Function/Class → SourceFile)
       for (const func of sourceFile.getFunctions()) {
-        const funcId = `function:${filePath}:${func.getName()}`;
+        const funcInstanceId = `FUNC-${filePath}:${func.getName()}`;
         relationships.push({
-          id: `R25:${fileId}:${funcId}`,
-          type: 'DEFINES',
-          source_id: fileId,
-          target_id: funcId,
-          attributes: { relationship_code: 'R25' },
-          evidence: createEvidenceAnchor(filePath, func.getStartLineNumber(), func.getEndLineNumber(), snapshot)
+          relationship_type: 'R16',
+          instance_id: `R16:${funcInstanceId}:${fileInstanceId}`,
+          name: `DEFINED_IN: ${funcInstanceId} → ${fileInstanceId}`,
+          from_instance_id: funcInstanceId,
+          to_instance_id: fileInstanceId,
+          confidence: 1.0
         });
       }
       
       for (const cls of sourceFile.getClasses()) {
-        const classId = `class:${filePath}:${cls.getName()}`;
+        const classInstanceId = `CLASS-${filePath}:${cls.getName()}`;
         relationships.push({
-          id: `R25:${fileId}:${classId}`,
-          type: 'DEFINES',
-          source_id: fileId,
-          target_id: classId,
-          attributes: { relationship_code: 'R25' },
-          evidence: createEvidenceAnchor(filePath, cls.getStartLineNumber(), cls.getEndLineNumber(), snapshot)
+          relationship_type: 'R16',
+          instance_id: `R16:${classInstanceId}:${fileInstanceId}`,
+          name: `DEFINED_IN: ${classInstanceId} → ${fileInstanceId}`,
+          from_instance_id: classInstanceId,
+          to_instance_id: fileInstanceId,
+          confidence: 1.0
         });
       }
     }
@@ -347,30 +341,46 @@ export class ASTRelationshipProvider implements ExtractionProvider {
 // @implements STORY-64.2
 // @satisfies AC-64.2.1 through AC-64.2.21
 
+import type { Relationship, RelationshipTypeCode } from '../../schema/track-a/relationships';
+
 export async function createRelationship(rel: Relationship): Promise<Relationship> {
   // Log to shadow ledger first
   await shadowLedger.append({
     timestamp: new Date(),
     operation: 'CREATE',
-    entity_type: `relationship:${rel.type}`,
+    entity_type: `relationship:${rel.relationship_type}`,
     entity_id: rel.id,
-    evidence: rel.evidence,
+    evidence: {
+      source_file: rel.source_file,
+      line_start: rel.line_start,
+      line_end: rel.line_end,
+      commit_sha: rel.commit_sha
+    },
     hash: computeHash(rel)
   });
   
-  // Insert into PostgreSQL
+  // Insert into PostgreSQL (uses migration 003 schema)
   const result = await pool.query(
-    `INSERT INTO relationships (id, type, source_id, target_id, attributes, evidence, project_id)
-     VALUES ($1, $2, $3, $4, $5, $6, $7)
+    `INSERT INTO relationships (
+       id, relationship_type, instance_id, name,
+       from_entity_id, to_entity_id, attributes, confidence,
+       source_file, line_start, line_end, commit_sha,
+       extraction_timestamp, extractor_version, project_id
+     ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
      RETURNING *`,
-    [rel.id, rel.type, rel.source_id, rel.target_id, rel.attributes, rel.evidence, projectId]
+    [
+      rel.id, rel.relationship_type, rel.instance_id, rel.name,
+      rel.from_entity_id, rel.to_entity_id, rel.attributes, rel.confidence,
+      rel.source_file, rel.line_start, rel.line_end, rel.commit_sha,
+      rel.extraction_timestamp, rel.extractor_version, rel.project_id
+    ]
   );
   
   // Insert into Neo4j for graph traversal
   await neo4jSession.run(
-    `MATCH (s:Entity {id: $source_id}), (t:Entity {id: $target_id})
-     CREATE (s)-[r:${rel.type} {id: $id}]->(t)`,
-    { id: rel.id, source_id: rel.source_id, target_id: rel.target_id }
+    `MATCH (s:Entity {id: $from_entity_id}), (t:Entity {id: $to_entity_id})
+     CREATE (s)-[r:${rel.relationship_type} {id: $id}]->(t)`,
+    { id: rel.id, from_entity_id: rel.from_entity_id, to_entity_id: rel.to_entity_id }
   );
   
   return result.rows[0];
@@ -385,21 +395,21 @@ export async function getRelationship(id: string): Promise<Relationship | null> 
 }
 
 export async function queryRelationships(
-  type: RelationshipType,
-  sourceId?: string,
-  targetId?: string
+  relationshipType: RelationshipTypeCode,
+  fromEntityId?: string,
+  toEntityId?: string
 ): Promise<Relationship[]> {
-  let query = `SELECT * FROM relationships WHERE type = $1`;
-  const params: unknown[] = [type];
+  let query = `SELECT * FROM relationships WHERE relationship_type = $1`;
+  const params: unknown[] = [relationshipType];
   
-  if (sourceId) {
-    params.push(sourceId);
-    query += ` AND source_id = $${params.length}`;
+  if (fromEntityId) {
+    params.push(fromEntityId);
+    query += ` AND from_entity_id = $${params.length}`;
   }
   
-  if (targetId) {
-    params.push(targetId);
-    query += ` AND target_id = $${params.length}`;
+  if (toEntityId) {
+    params.push(toEntityId);
+    query += ` AND to_entity_id = $${params.length}`;
   }
   
   const result = await pool.query(query, params);
@@ -408,7 +418,7 @@ export async function queryRelationships(
 
 export async function traverseGraph(
   startId: string,
-  relationshipTypes: RelationshipType[],
+  relationshipTypes: RelationshipTypeCode[],
   direction: 'outgoing' | 'incoming' | 'both',
   maxDepth: number = 3
 ): Promise<Entity[]> {
@@ -453,52 +463,49 @@ export async function traverseGraph(
 // @implements STORY-64.2
 
 describe('Relationship Registry', () => {
-  // VERIFY-R01: Epic CONTAINS Story
+  // VERIFY-R01: Epic HAS_STORY Story
   it('extracts Epic→Story relationships', async () => {
-    const rels = await queryRelationships('CONTAINS');
-    const epicToStory = rels.filter(r => 
-      r.source_id.startsWith('EPIC-') && r.target_id.startsWith('STORY-')
-    );
-    expect(epicToStory.length).toBe(351); // One per story
+    const rels = await queryRelationships('R01');  // HAS_STORY
+    expect(rels.length).toBe(351); // One per story
+    // Verify via joined entity instance_ids
+    for (const rel of rels.slice(0, 5)) {
+      expect(rel.instance_id).toMatch(/^R01:EPIC-\d+:STORY-\d+\.\d+$/);
+    }
   });
   
-  // VERIFY-R02: Story CONTAINS AC
+  // VERIFY-R02: Story HAS_AC AC
   it('extracts Story→AC relationships', async () => {
-    const rels = await queryRelationships('CONTAINS');
-    const storyToAC = rels.filter(r => 
-      r.source_id.startsWith('STORY-') && r.target_id.startsWith('AC-')
-    );
-    expect(storyToAC.length).toBe(2901); // One per AC
+    const rels = await queryRelationships('R02');  // HAS_AC
+    expect(rels.length).toBe(2901); // One per AC
   });
   
   // VERIFY-R21: IMPORTS
   it('extracts file import relationships', async () => {
-    const rels = await queryRelationships('IMPORTS');
+    const rels = await queryRelationships('R21');  // IMPORTS
     expect(rels.length).toBeGreaterThan(0);
-    expect(rels[0].source_id).toMatch(/^file:/);
-    expect(rels[0].target_id).toMatch(/^file:/);
+    expect(rels[0].instance_id).toMatch(/^R21:FILE-.+:FILE-.+$/);
   });
   
   // VERIFY-R22: CALLS
   it('extracts function call relationships', async () => {
-    const rels = await queryRelationships('CALLS');
+    const rels = await queryRelationships('R22');  // CALLS
     expect(rels.length).toBeGreaterThan(0);
-    expect(rels[0].source_id).toMatch(/^function:/);
-    expect(rels[0].target_id).toMatch(/^function:/);
+    expect(rels[0].instance_id).toMatch(/^R22:FUNC-.+:FUNC-.+$/);
   });
   
-  // Evidence verification
-  it('all relationships have evidence anchors', async () => {
+  // Provenance verification (flat fields, not nested evidence JSONB)
+  it('all relationships have provenance fields', async () => {
     const rels = await pool.query('SELECT * FROM relationships LIMIT 100');
     for (const rel of rels.rows) {
-      expect(rel.evidence).toBeDefined();
-      expect(rel.evidence.source_file).toBeDefined();
+      expect(rel.source_file).toBeDefined();
+      expect(rel.from_entity_id).toBeDefined();
+      expect(rel.to_entity_id).toBeDefined();
     }
   });
   
   // Graph traversal
   it('can traverse relationships in Neo4j', async () => {
-    const entities = await traverseGraph('EPIC-64', ['CONTAINS'], 'outgoing', 2);
+    const entities = await traverseGraph('EPIC-64', ['R01'], 'outgoing', 2);  // HAS_STORY
     expect(entities.length).toBeGreaterThan(0);
   });
 });
@@ -521,10 +528,10 @@ describe('Relationship Registry', () => {
 
 ## Definition of Done
 
-- [ ] All 21 relationship types extractable
+- [ ] All 21 relationship types extractable (using R-codes)
 - [ ] Relationship counts validate against entities:
-  - [ ] 351 Epic→Story CONTAINS
-  - [ ] 2,901 Story→AC CONTAINS
+  - [ ] 351 Epic→Story HAS_STORY (R01)
+  - [ ] 2,901 Story→AC HAS_AC (R02)
 - [ ] All tests pass
 - [ ] Neo4j traversal operational
 - [ ] Shadow ledger contains entries for all relationships

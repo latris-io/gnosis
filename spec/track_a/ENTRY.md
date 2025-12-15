@@ -85,13 +85,12 @@
 | E01 | Epic | Requirements | BRD parsing |
 | E02 | Story | Requirements | BRD parsing |
 | E03 | AcceptanceCriterion | Requirements | BRD parsing |
-| E04 | Requirement | Requirements | BRD parsing |
-| E06 | ArchitecturalDecision | Design | ADR files |
-| E08 | Component | Design | Module analysis |
+| E04 | Constraint | Requirements | BRD parsing |
+| E06 | TechnicalDesign | Design | ADR files |
+| E08 | DataSchema | Design | Module analysis |
 | E11 | SourceFile | Implementation | Filesystem |
 | E12 | Function | Implementation | AST analysis |
 | E13 | Class | Implementation | AST analysis |
-| E14 | Interface | Implementation | AST analysis |
 | E15 | Module | Implementation | Import analysis |
 | E27 | TestFile | Verification | Filesystem |
 | E28 | TestSuite | Verification | AST analysis |
@@ -104,27 +103,27 @@
 
 | ID | Name | From → To |
 |----|------|-----------|
-| R01 | CONTAINS | Epic → Story |
-| R02 | CONTAINS | Story → AcceptanceCriterion |
-| R03 | SATISFIES | AcceptanceCriterion → Requirement |
-| R04 | DERIVES_FROM | Requirement → Requirement |
-| R05 | CONFLICTS_WITH | Requirement → Requirement |
-| R10 | DECIDES | ArchitecturalDecision → Component |
-| R11 | COMPONENT_OF | Component → Component |
+| R01 | HAS_STORY | Epic → Story |
+| R02 | HAS_AC | Story → AcceptanceCriterion |
+| R03 | HAS_CONSTRAINT | AcceptanceCriterion → Constraint |
+| R04 | CONTAINS_FILE | SourceFile → SourceFile |
+| R05 | CONTAINS_ENTITY | SourceFile → Function/Class |
+| R06 | CONTAINS_SUITE | TestFile → TestSuite |
+| R07 | CONTAINS_CASE | TestSuite → TestCase |
+| R14 | IMPLEMENTED_BY | Story → Function/Class |
+| R16 | DEFINED_IN | Function/Class → SourceFile |
+| R18 | IMPLEMENTS | Function/Class → Story |
+| R19 | SATISFIES | Function/Class → AcceptanceCriterion |
 | R21 | IMPORTS | SourceFile → SourceFile |
 | R22 | CALLS | Function → Function |
 | R23 | EXTENDS | Class → Class |
 | R24 | IMPLEMENTS_INTERFACE | Class → Interface |
-| R25 | DEFINES | SourceFile → Function/Class/Interface |
 | R26 | DEPENDS_ON | Module → Module |
-| R40 | CONTAINS | TestFile → TestSuite |
-| R41 | CONTAINS | TestSuite → TestCase |
-| R42 | TESTS | TestCase → Function |
-| R43 | TESTS | TestCase → AcceptanceCriterion |
-| R44 | COVERS | TestSuite → Story |
-| R45 | VERIFIES | TestCase → Requirement |
-| R60 | RELEASED_IN | Commit → ReleaseVersion |
-| R61 | CHANGES | Commit → SourceFile |
+| R36 | TESTED_BY | Function/Class → TestCase |
+| R37 | VERIFIED_BY | AcceptanceCriterion → TestCase |
+| R63 | INTRODUCED_IN | Entity → Commit |
+| R67 | MODIFIED_IN | Entity → Commit |
+| R70 | GROUPS | ChangeSet → Commit |
 
 ### Gates to Pass
 
@@ -213,7 +212,7 @@ interface EvidenceAnchor {
 ### Semantic Learning (Track A)
 - Capture ≥50 signals during Track A
 - Signal types: CORRECT, INCORRECT, PARTIAL
-- Store in `data/semantic_corpus.jsonl`
+- Store in `semantic-corpus/signals.jsonl`
 
 ### API Boundary (Track A)
 - Graph API v1 exposed at `@gnosis/api`
