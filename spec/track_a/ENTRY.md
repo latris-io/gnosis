@@ -223,6 +223,15 @@ interface EvidenceAnchor {
 - N/A (Track A establishes base schema)
 - No extensions permitted until Track B
 
+### Upsert Rule (Locked)
+
+- **Identity lookup** is project-scoped: `(project_id, instance_id)` at API/service boundary.
+- **Persistence** uses PostgreSQL upsert: `ON CONFLICT (instance_id) DO UPDATE` until schema evolves to composite uniqueness.
+- **Conditional update**: Write only if `content_hash IS DISTINCT FROM EXCLUDED.content_hash`; otherwise NO-OP.
+- **Shadow ledger**: `entity-link` entry emitted only on CREATE or UPDATE (not NO-OP).
+- **Provenance**: Flat columns (`source_file`, `line_start`, `line_end`, `extracted_at`) overwritten on UPDATE.
+- **Detection**: Use `RETURNING id, (xmax = 0) AS inserted` to distinguish INSERT vs UPDATE for ledger.
+
 ---
 
 ## Forbidden Actions
