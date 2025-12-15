@@ -1,6 +1,6 @@
 # Story A.1: Entity Registry
 
-**Version:** 1.2.0  
+**Version:** 1.5.0  
 **Implements:** STORY-64.1 (UTG Entity Extraction)  
 **Track:** A  
 **Duration:** 2-3 days  
@@ -9,15 +9,18 @@
 - UTG Schema V20.6.1 §Entity Registry
 - Verification Spec V20.6.4 §Part IX
 
+> **v1.5.0:** Multi-tenant identity fix: ON CONFLICT (project_id, instance_id)  
+> **v1.4.0:** Entity count consistency: "16 in scope, 15 extractable (E14 deferred)"  
+> **v1.3.0:** Fixed incomplete service delegation in API snippet; added service interface requirements  
 > **v1.2.0:** Added service-layer architecture per PROMPTS.md alignment
 
 ---
 
 ## User Story
 
-> As the Gnosis system, I need to extract and store all 15 Track A entity types from the codebase so that I have a complete structural inventory of what exists.
+> As the Gnosis system, I need to extract and store all 16 Track A entity types from the codebase so that I have a complete structural inventory of what exists.
 
-> **Note:** E14 Interface is NOT in Track A entity scope (16 total in schema, but 15 extractable in Track A).
+> **Note:** 16 entity types are in Track A scope. 15 are extractable; E14 Interface extraction is deferred to a later track. Relationships referencing E14 (e.g., R24 IMPLEMENTS_INTERFACE) will carry reduced confidence until E14 is populated.
 
 ---
 
@@ -416,8 +419,7 @@ export async function captureSemanticSignal(signal: Omit<SemanticSignal, 'timest
 import { pool } from '../../db/postgres';
 
 /**
- * Identity at service boundary: (project_id, instance_id)
- * Persistence uses ON CONFLICT (instance_id) until composite uniqueness exists.
+ * Identity and persistence both use (project_id, instance_id).
  * Per ENTRY.md locked upsert rule.
  */
 export async function upsert(projectId: string, extracted: ExtractedEntity): Promise<Entity> {
@@ -430,7 +432,7 @@ export async function upsert(projectId: string, extracted: ExtractedEntity): Pro
     ) VALUES (
       gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, $9, NOW()
     )
-    ON CONFLICT (instance_id) DO UPDATE SET
+    ON CONFLICT (project_id, instance_id) DO UPDATE SET
       name = EXCLUDED.name,
       attributes = EXCLUDED.attributes,
       content_hash = EXCLUDED.content_hash,
@@ -454,6 +456,29 @@ export async function upsert(projectId: string, extracted: ExtractedEntity): Pro
   
   return result.rows[0];
 }
+
+/**
+ * Additional service methods required by API:
+ * - getById(projectId, id): Retrieve entity by UUID, project-scoped
+ * - getByInstanceId(projectId, instanceId): Retrieve entity by instance_id, project-scoped
+ * - queryByType(projectId, entityType): Query entities by type, project-scoped
+ * 
+ * Implementation per schema in migrations/003.
+ * 
+ * NOTE: Stub signatures only. Implementations MUST follow Track A schema + story requirements.
+ * Do NOT invent additional behaviors beyond what is specified here.
+ */
+export async function getById(projectId: string, id: string): Promise<Entity | null> {
+  // Implementation: project-scoped query by UUID
+}
+
+export async function getByInstanceId(projectId: string, instanceId: string): Promise<Entity | null> {
+  // Implementation: project-scoped query by instance_id
+}
+
+export async function queryByType(projectId: string, entityType: EntityTypeCode): Promise<Entity[]> {
+  // Implementation: project-scoped query by entity_type
+}
 ```
 
 ### Step 6: Create Graph API v1 Entity Operations
@@ -466,25 +491,23 @@ export async function upsert(projectId: string, extracted: ExtractedEntity): Pro
 // @implements STORY-64.1
 // @satisfies AC-64.1.1 through AC-64.1.15
 
-import { upsert as upsertEntity } from '../../services/entities/entity-service';
+import * as entityService from '../../services/entities/entity-service';
 import type { Entity, EntityTypeCode } from '../../schema/track-a/entities';
 import type { ExtractedEntity } from '../../extraction/types';
 
 /**
- * Create or update an entity via service layer.
- * API is project-scoped; service handles upsert logic and ledger emission.
+ * API delegates to entity service.
+ * All operations are project-scoped at service boundary.
  */
 export async function createEntity(projectId: string, extracted: ExtractedEntity): Promise<Entity> {
-  return upsertEntity(projectId, extracted);
+  return entityService.upsert(projectId, extracted);
 }
 
 export async function getEntity(projectId: string, id: string): Promise<Entity | null> {
-  // Delegate to service layer for project-scoped query
   return entityService.getById(projectId, id);
 }
 
 export async function queryEntities(projectId: string, entityType: EntityTypeCode): Promise<Entity[]> {
-  // Delegate to service layer for project-scoped query
   return entityService.queryByType(projectId, entityType);
 }
 ```
@@ -628,7 +651,7 @@ describe('Entity Registry', () => {
 
 ## Definition of Done
 
-- [ ] All 15 Track A entity types extractable (E14 Interface deferred)
+- [ ] All 16 Track A entity types in scope (15 extractable; E14 Interface deferred)
 - [ ] All entity instance_ids match format patterns (SANITY-003)
 - [ ] Entity counts match external verification:
   - [ ] 65 Epics

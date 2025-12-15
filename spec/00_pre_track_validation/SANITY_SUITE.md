@@ -1,10 +1,11 @@
 # SANITY Test Suite Specification
 
-**Version:** 1.1.0  
+**Version:** 1.2.0  
 **Implements:** Verification Spec V20.6.4 Part II  
 **Purpose:** Foundational tests that must pass before any track begins  
 **Canonical Source:** UNIFIED_VERIFICATION_SPECIFICATION_V20_6_4.md §Part II
 
+> **v1.2.0:** Added SANITY-023/024 for composite uniqueness constraint verification (multi-tenant isolation)  
 > **v1.1.0:** Aligned entity/relationship lists with Track A scope (E14 deferred, R-codes per ENTRY.md); fixed ID format patterns to use canonical uppercase prefixes
 
 ---
@@ -242,6 +243,64 @@ test('SANITY-022: Entity ID formats match patterns', () => {
   for (const [entityId, pattern] of Object.entries(patterns)) {
     expect(schema.entities[entityId].idFormat).toMatch(pattern);
   }
+});
+```
+
+### SANITY-023: Entities Composite Uniqueness
+```typescript
+// @implements SANITY-023
+// @satisfies BRD Epic 39.5 (Complete Data Isolation)
+
+test('SANITY-023: Entities enforce UNIQUE(project_id, instance_id)', async () => {
+  const { rows } = await pool.query(`
+    SELECT
+      c.conname,
+      pg_get_constraintdef(c.oid) AS def
+    FROM pg_constraint c
+    WHERE c.conrelid = 'entities'::regclass
+      AND c.contype = 'u'
+  `);
+  
+  const hasComposite = rows.some(r => 
+    r.def.includes('(project_id, instance_id)') || 
+    r.def.includes('(instance_id, project_id)')
+  );
+  expect(hasComposite).toBe(true);
+  
+  // Verify NO global uniqueness on instance_id alone
+  const hasGlobalInstanceOnly = rows.some(r =>
+    r.def.includes('(instance_id)') && !r.def.includes('project_id')
+  );
+  expect(hasGlobalInstanceOnly).toBe(false);
+});
+```
+
+### SANITY-024: Relationships Composite Uniqueness
+```typescript
+// @implements SANITY-024
+// @satisfies BRD Epic 39.5 (Complete Data Isolation)
+
+test('SANITY-024: Relationships enforce UNIQUE(project_id, instance_id)', async () => {
+  const { rows } = await pool.query(`
+    SELECT
+      c.conname,
+      pg_get_constraintdef(c.oid) AS def
+    FROM pg_constraint c
+    WHERE c.conrelid = 'relationships'::regclass
+      AND c.contype = 'u'
+  `);
+  
+  const hasComposite = rows.some(r => 
+    r.def.includes('(project_id, instance_id)') || 
+    r.def.includes('(instance_id, project_id)')
+  );
+  expect(hasComposite).toBe(true);
+  
+  // Verify NO global uniqueness on instance_id alone
+  const hasGlobalInstanceOnly = rows.some(r =>
+    r.def.includes('(instance_id)') && !r.def.includes('project_id')
+  );
+  expect(hasGlobalInstanceOnly).toBe(false);
 });
 ```
 
@@ -491,7 +550,7 @@ All SANITY tests must pass before any track begins:
 - [ ] SANITY-055 to 057: BRD parseable ✓
 - [ ] SANITY-080 to 083: Dormant tests return skipped ✓
 
-**Total: 54 active tests + 4 dormant = 58 tests**
+**Total: 56 active tests + 4 dormant = 60 tests**
 
 ---
 

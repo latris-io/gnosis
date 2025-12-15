@@ -1,9 +1,12 @@
 # Track A Entry Criteria
 
-**Version:** 1.0.0  
+**Version:** 1.2.0  
 **Implements:** Roadmap V20.6.4 Track A Entry  
 **Purpose:** Prerequisites that must be satisfied before Track A implementation begins  
 **Canonical Source:** GNOSIS_TO_SOPHIA_MASTER_ROADMAP_V20_6_4.md §Track A
+
+> **v1.2.0:** Multi-tenant identity fix: composite uniqueness ON CONFLICT (project_id, instance_id)  
+> **v1.1.0:** Added instance_id patterns reference section
 
 ---
 
@@ -226,11 +229,45 @@ interface EvidenceAnchor {
 ### Upsert Rule (Locked)
 
 - **Identity lookup** is project-scoped: `(project_id, instance_id)` at API/service boundary.
-- **Persistence** uses PostgreSQL upsert: `ON CONFLICT (instance_id) DO UPDATE` until schema evolves to composite uniqueness.
+- **Persistence** uses PostgreSQL upsert: `ON CONFLICT (project_id, instance_id) DO UPDATE` with composite uniqueness constraint.
 - **Conditional update**: Write only if `content_hash IS DISTINCT FROM EXCLUDED.content_hash`; otherwise NO-OP.
 - **Shadow ledger**: `entity-link` entry emitted only on CREATE or UPDATE (not NO-OP).
 - **Provenance**: Flat columns (`source_file`, `line_start`, `line_end`, `extracted_at`) overwritten on UPDATE.
 - **Detection**: Use `RETURNING id, (xmax = 0) AS inserted` to distinguish INSERT vs UPDATE for ledger.
+
+### Instance ID Patterns (Reference)
+
+Canonical patterns used by Track A extraction. **If a story card specifies a different pattern, the story card wins until reconciled.**
+
+| Entity | Pattern | Example | Defined In |
+|--------|---------|---------|------------|
+| E01 Epic | `EPIC-{number}` | `EPIC-64` | A1 §Step 3 |
+| E02 Story | `STORY-{epic}.{story}` | `STORY-64.1` | A1 §Step 3 |
+| E03 AcceptanceCriterion | `AC-{epic}.{story}.{ac}` | `AC-64.1.1` | A1 §Step 3 |
+| E11 SourceFile | `FILE-{path}` | `FILE-src/index.ts` | A1 §Step 4 |
+| E12 Function | `FUNC-{path}:{name}` | `FUNC-src/index.ts:main` | A1 §Step 4 |
+| E13 Class | `CLASS-{path}:{name}` | `CLASS-src/entity.ts:Entity` | A1 §Step 4 |
+
+**Patterns defined in story cards (not invented here):**
+
+| Entity | Authority |
+|--------|-----------|
+| E04 Requirement | A1 BRD provider (if extracted) |
+| E06 ArchitecturalDecision | A1 ADR provider |
+| E08 Component | A1 module analysis |
+| E15 Module | A1 import analysis |
+| E27 TestFile | A1 filesystem provider |
+| E28 TestSuite | A1 test provider |
+| E29 TestCase | A1 test provider |
+| E49 ReleaseVersion | A4 GIT provider |
+| E50 Commit | A4 GIT provider |
+
+> **Rule:** If an instance_id pattern is not explicitly defined above, the implementing provider defines it. Do not invent patterns here.
+
+These patterns are used for:
+- **Persistence:** `ON CONFLICT (project_id, instance_id)` deduplication
+- **Identity:** `(project_id, instance_id)` at service boundary
+- **Traceability:** Stable references across extractions
 
 ---
 

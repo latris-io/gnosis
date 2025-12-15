@@ -1,6 +1,6 @@
 # Story A.2: Relationship Registry
 
-**Version:** 1.1.0  
+**Version:** 1.3.0  
 **Implements:** STORY-64.2 (UTG Relationship Extraction)  
 **Track:** A  
 **Duration:** 2-3 days  
@@ -9,6 +9,8 @@
 - UTG Schema V20.6.1 §Relationship Registry
 - Verification Spec V20.6.4 §Part IX
 
+> **v1.3.0:** Multi-tenant identity fix: ON CONFLICT (project_id, instance_id)  
+> **v1.2.0:** Entity count consistency: "16 in scope, 15 extractable (E14 deferred)"  
 > **v1.1.0:** Added service-layer architecture per PROMPTS.md alignment
 
 ---
@@ -54,7 +56,7 @@
 ## Entry Criteria
 
 - [ ] Story A.1 (Entity Registry) complete
-- [ ] All 16 entity types extractable
+- [ ] All 16 entity types in scope (15 extractable; E14 deferred)
 - [ ] Entity extraction tests pass
 - [ ] Shadow ledger operational
 
@@ -346,8 +348,7 @@ export class ASTRelationshipProvider implements ExtractionProvider {
 import { pool } from '../../db/postgres';
 
 /**
- * Identity at service boundary: (project_id, instance_id)
- * Persistence uses ON CONFLICT (instance_id) until composite uniqueness exists.
+ * Identity and persistence both use (project_id, instance_id).
  * Per ENTRY.md locked upsert rule.
  */
 export async function upsert(projectId: string, extracted: ExtractedRelationship): Promise<Relationship> {
@@ -362,7 +363,7 @@ export async function upsert(projectId: string, extracted: ExtractedRelationship
     ) VALUES (
       gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, NOW()
     )
-    ON CONFLICT (instance_id) DO UPDATE SET
+    ON CONFLICT (project_id, instance_id) DO UPDATE SET
       name = EXCLUDED.name,
       from_entity_id = EXCLUDED.from_entity_id,
       to_entity_id = EXCLUDED.to_entity_id,
