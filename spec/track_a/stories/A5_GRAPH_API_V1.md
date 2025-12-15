@@ -1,6 +1,6 @@
 # Story A.5: Graph API v1
 
-**Version:** 1.0.0  
+**Version:** 1.1.0  
 **Implements:** STORY-64.5 (Graph API v1)  
 **Track:** A  
 **Duration:** 2-3 days  
@@ -8,6 +8,8 @@
 - BRD V20.6.3 §Epic 64, Story 64.5
 - UTG Schema V20.6.1 §API Specification
 - Verification Spec V20.6.4 §8.3 (G-API)
+
+> **v1.1.0:** Service-layer alignment; API delegates to services per PROMPTS.md
 
 ---
 
@@ -58,6 +60,9 @@
 └── index.ts         # Public exports
 ```
 
+> **Architecture:** API routes delegate to services; they do NOT import from `src/db/*` directly.
+> See PROMPTS.md Database Access Boundary.
+
 ---
 
 ## Implementation Steps
@@ -106,348 +111,188 @@ export interface CoverageResult {
 }
 ```
 
+### Step 1b: Entity and Relationship Services (from A1/A2)
+
+> **Reuse, do not recreate.** Entity and relationship services are implemented in A1 and A2.
+> - Identity at service boundary: `(project_id, instance_id)`
+> - Emit ledger entries per Verification Spec §8.1.3 on CREATE/UPDATE only
+> - See `src/services/entities/entity-service.ts` and `src/services/relationships/relationship-service.ts`
+
 ### Step 2: Implement Entity API
+
+> API delegates to entity service from A1. No direct DB imports.
 
 ```typescript
 // src/api/v1/entities.ts
 // @implements STORY-64.5
 // @satisfies AC-64.5.1, AC-64.5.7, AC-64.5.10
 
-import { pool, neo4jSession } from '../../db';
-import { shadowLedger } from '../../ledger';
-import { Entity, EntityTypeCode, QueryOptions, PaginatedResult } from './types';
+import { entityService } from '../../services/entities/entity-service';
+import type { Entity, EntityTypeCode, QueryOptions, PaginatedResult } from './types';
+import type { ExtractedEntity } from '../../extraction/types';
+
+/**
+ * API delegates to entity service.
+ * All operations are project-scoped at service boundary.
+ */
 
 // CREATE
-export async function createEntity(entity: Entity): Promise<Entity> {
-  // Log to shadow ledger FIRST
-  await shadowLedger.append({
-    timestamp: new Date(),
-    operation: 'CREATE',
-    entity_type: entity.type,
-    entity_id: entity.id,
-    evidence: entity.evidence,
-    hash: computeHash(entity)
-  });
-  
-  // Insert into PostgreSQL
-  const result = await pool.query(
-    `INSERT INTO entities (id, type, attributes, evidence, project_id, created_at, updated_at)
-     VALUES ($1, $2, $3, $4, current_setting('app.project_id')::UUID, NOW(), NOW())
-     RETURNING *`,
-    [entity.id, entity.type, entity.attributes, entity.evidence]
-  );
-  
-  // Insert into Neo4j
-  await neo4jSession.run(
-    `CREATE (e:Entity:${entity.type} {id: $id, type: $type})`,
-    { id: entity.id, type: entity.type }
-  );
-  
-  return result.rows[0];
+export async function createEntity(projectId: string, entity: ExtractedEntity): Promise<Entity> {
+  return entityService.upsert(projectId, entity);
 }
 
 // READ
-export async function getEntity(id: string): Promise<Entity | null> {
-  const result = await pool.query(
-    `SELECT * FROM entities WHERE id = $1`,
-    [id]
-  );
-  return result.rows[0] || null;
+export async function getEntity(projectId: string, id: string): Promise<Entity | null> {
+  return entityService.getById(projectId, id);
 }
 
 // UPDATE
-export async function updateEntity(id: string, updates: Partial<Entity>): Promise<Entity> {
-  const existing = await getEntity(id);
-  if (!existing) {
-    throw new Error(`Entity ${id} not found`);
-  }
-  
-  // Log to shadow ledger
-  await shadowLedger.append({
-    timestamp: new Date(),
-    operation: 'UPDATE',
-    entity_type: existing.type,
-    entity_id: id,
-    evidence: { before: existing, after: updates },
-    hash: computeHash({ id, updates })
-  });
-  
-  const result = await pool.query(
-    `UPDATE entities 
-     SET attributes = COALESCE($1, attributes),
-         evidence = COALESCE($2, evidence),
-         updated_at = NOW()
-     WHERE id = $3
-     RETURNING *`,
-    [updates.attributes, updates.evidence, id]
-  );
-  
-  return result.rows[0];
+export async function updateEntity(projectId: string, id: string, updates: Partial<Entity>): Promise<Entity> {
+  return entityService.update(projectId, id, updates);
 }
 
 // DELETE
-export async function deleteEntity(id: string): Promise<void> {
-  const existing = await getEntity(id);
-  if (!existing) {
-    throw new Error(`Entity ${id} not found`);
-  }
-  
-  // Log to shadow ledger
-  await shadowLedger.append({
-    timestamp: new Date(),
-    operation: 'DELETE',
-    entity_type: existing.type,
-    entity_id: id,
-    evidence: existing,
-    hash: computeHash(existing)
-  });
-  
-  // Delete from Neo4j first (due to relationships)
-  await neo4jSession.run(
-    `MATCH (e:Entity {id: $id}) DETACH DELETE e`,
-    { id }
-  );
-  
-  // Delete from PostgreSQL
-  await pool.query(`DELETE FROM entities WHERE id = $1`, [id]);
+export async function deleteEntity(projectId: string, id: string): Promise<void> {
+  return entityService.delete(projectId, id);
 }
 
 // QUERY with pagination
 export async function queryEntities(
+  projectId: string,
   entityType?: EntityTypeCode,
   options: QueryOptions = {}
 ): Promise<PaginatedResult<Entity>> {
-  const { limit = 100, offset = 0, orderBy = 'created_at', orderDirection = 'desc' } = options;
-  
-  let query = `SELECT * FROM entities`;
-  let countQuery = `SELECT COUNT(*) FROM entities`;
-  const params: unknown[] = [];
-  
-  if (entityType) {
-    query += ` WHERE entity_type = $1`;
-    countQuery += ` WHERE entity_type = $1`;
-    params.push(entityType);
-  }
-  
-  query += ` ORDER BY ${orderBy} ${orderDirection} LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
-  params.push(limit, offset);
-  
-  const [result, countResult] = await Promise.all([
-    pool.query(query, params),
-    pool.query(countQuery, entityType ? [entityType] : [])
-  ]);
-  
-  const total = parseInt(countResult.rows[0].count);
-  
-  return {
-    data: result.rows,
-    total,
-    limit,
-    offset,
-    hasMore: offset + result.rows.length < total
-  };
+  return entityService.query(projectId, entityType, options);
 }
 
 // BATCH operations
-export async function createEntities(entities: Entity[]): Promise<Entity[]> {
-  const results: Entity[] = [];
-  
-  // Use transaction for atomicity
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-    
-    for (const entity of entities) {
-      const result = await createEntity(entity);
-      results.push(result);
-    }
-    
-    await client.query('COMMIT');
-  } catch (error) {
-    await client.query('ROLLBACK');
-    throw error;
-  } finally {
-    client.release();
-  }
-  
-  return results;
+export async function createEntities(projectId: string, entities: ExtractedEntity[]): Promise<Entity[]> {
+  return entityService.upsertBatch(projectId, entities);
+}
+```
+
+### Step 2b: Traversal Service
+
+> Example shape showing responsibility. Service owns DB access (Neo4j + PostgreSQL).
+
+```typescript
+// src/services/traversal/traversal-service.ts
+// @implements STORY-64.5
+
+import { pool } from '../../db/postgres';
+import { getSession } from '../../db/neo4j';
+
+/**
+ * Responsibility: Graph traversal and path finding.
+ * Identity at service boundary: (project_id, startId).
+ */
+export async function traverse(projectId: string, startId: string, options: TraversalOptions): Promise<Entity[]> {
+  // Service owns DB logic (Neo4j + PostgreSQL)
+  // project_id scoping at service boundary
+}
+
+export async function findPath(projectId: string, fromId: string, toId: string, maxDepth: number): Promise<Array<Entity | Relationship>> {
+  // Path finding logic here
+}
+
+export async function getNeighbors(projectId: string, entityId: string, depth: number): Promise<{ entities: Entity[]; relationships: Relationship[] }> {
+  // Neighbor retrieval logic here
 }
 ```
 
 ### Step 3: Implement Traversal API
+
+> API delegates to traversal service. No direct DB imports.
 
 ```typescript
 // src/api/v1/traversal.ts
 // @implements STORY-64.5
 // @satisfies AC-64.5.4
 
+import { traversalService } from '../../services/traversal/traversal-service';
+import type { Entity, Relationship, TraversalOptions } from './types';
+
+/**
+ * API delegates to traversal service.
+ * All operations are project-scoped at service boundary.
+ */
+
 export async function traverse(
+  projectId: string,
   startId: string,
   options: TraversalOptions
 ): Promise<Entity[]> {
-  const { direction, maxDepth, relationshipTypes, entityTypes } = options;
-  
-  // Build Cypher query
-  const directionClause = direction === 'outgoing' ? '-[r]->'
-    : direction === 'incoming' ? '<-[r]-'
-    : '-[r]-';
-  
-  let whereClause = '';
-  const params: Record<string, unknown> = { startId, maxDepth };
-  
-  if (relationshipTypes?.length) {
-    whereClause += ` AND type(r) IN $relTypes`;
-    params.relTypes = relationshipTypes;
-  }
-  
-  if (entityTypes?.length) {
-    whereClause += ` AND end.type IN $entityTypes`;
-    params.entityTypes = entityTypes;
-  }
-  
-  const result = await neo4jSession.run(`
-    MATCH path = (start:Entity {id: $startId})${directionClause}(end:Entity)
-    WHERE length(path) <= $maxDepth ${whereClause}
-    RETURN DISTINCT end.id as id
-    LIMIT 1000
-  `, params);
-  
-  const entityIds = result.records.map(r => r.get('id'));
-  
-  // Fetch full entities from PostgreSQL
-  if (entityIds.length === 0) return [];
-  
-  const pgResult = await pool.query(
-    `SELECT * FROM entities WHERE id = ANY($1)`,
-    [entityIds]
-  );
-  
-  return pgResult.rows;
+  return traversalService.traverse(projectId, startId, options);
 }
 
 export async function findPath(
+  projectId: string,
   fromId: string,
   toId: string,
   maxDepth: number = 10
 ): Promise<Array<Entity | Relationship>> {
-  const result = await neo4jSession.run(`
-    MATCH path = shortestPath((from:Entity {id: $fromId})-[*..${maxDepth}]-(to:Entity {id: $toId}))
-    RETURN [node IN nodes(path) | node.id] as nodeIds,
-           [rel IN relationships(path) | rel.id] as relIds
-  `, { fromId, toId });
-  
-  if (result.records.length === 0) {
-    return [];
-  }
-  
-  const nodeIds = result.records[0].get('nodeIds');
-  const relIds = result.records[0].get('relIds');
-  
-  const [entities, relationships] = await Promise.all([
-    pool.query(`SELECT * FROM entities WHERE id = ANY($1)`, [nodeIds]),
-    pool.query(`SELECT * FROM relationships WHERE id = ANY($1)`, [relIds])
-  ]);
-  
-  // Interleave entities and relationships in path order
-  const path: Array<Entity | Relationship> = [];
-  for (let i = 0; i < nodeIds.length; i++) {
-    path.push(entities.rows.find(e => e.id === nodeIds[i]));
-    if (i < relIds.length) {
-      path.push(relationships.rows.find(r => r.id === relIds[i]));
-    }
-  }
-  
-  return path;
+  return traversalService.findPath(projectId, fromId, toId, maxDepth);
 }
 
 export async function getNeighbors(
+  projectId: string,
   entityId: string,
   depth: number = 1
 ): Promise<{ entities: Entity[]; relationships: Relationship[] }> {
-  const result = await neo4jSession.run(`
-    MATCH (start:Entity {id: $entityId})-[r]-(neighbor:Entity)
-    WHERE length(shortestPath((start)-[*..${depth}]-(neighbor))) <= ${depth}
-    RETURN DISTINCT neighbor.id as entityId, r.id as relId
-    LIMIT 500
-  `, { entityId });
-  
-  const entityIds = result.records.map(r => r.get('entityId'));
-  const relIds = result.records.map(r => r.get('relId'));
-  
-  const [entities, relationships] = await Promise.all([
-    pool.query(`SELECT * FROM entities WHERE id = ANY($1)`, [entityIds]),
-    pool.query(`SELECT * FROM relationships WHERE id = ANY($1)`, [relIds])
-  ]);
-  
-  return {
-    entities: entities.rows,
-    relationships: relationships.rows
-  };
+  return traversalService.getNeighbors(projectId, entityId, depth);
+}
+```
+
+### Step 3b: Impact Service
+
+> Example shape showing responsibility. Service owns DB access and impact calculation.
+
+```typescript
+// src/services/impact/impact-service.ts
+// @implements STORY-64.5
+
+import { pool } from '../../db/postgres';
+
+/**
+ * Responsibility: Impact analysis queries.
+ * May delegate to traversal service for affected entity discovery.
+ */
+export async function analyze(projectId: string, entityId: string, maxDepth: number): Promise<ImpactResult> {
+  // Impact calculation logic here
+}
+
+export async function whatIf(projectId: string, entityId: string, operation: 'delete' | 'modify'): Promise<WhatIfResult> {
+  // What-if analysis logic here
 }
 ```
 
 ### Step 4: Implement Impact Analysis API
+
+> API delegates to impact service. No direct DB imports.
 
 ```typescript
 // src/api/v1/impact.ts
 // @implements STORY-64.5
 // @satisfies AC-64.5.5
 
+import { impactService } from '../../services/impact/impact-service';
+import type { ImpactResult } from './types';
+
+/**
+ * API delegates to impact service.
+ * All operations are project-scoped at service boundary.
+ */
+
 export async function analyzeImpact(
+  projectId: string,
   entityId: string,
   maxDepth: number = 5
 ): Promise<ImpactResult> {
-  // Find all entities that could be affected by changes to this entity
-  const affected = await traverse(entityId, {
-    direction: 'both',
-    maxDepth,
-    relationshipTypes: [
-      'CONTAINS', 'IMPORTS', 'CALLS', 'EXTENDS', 'IMPLEMENTS_INTERFACE',
-      'DEPENDS_ON', 'TESTS', 'SATISFIES'
-    ]
-  });
-  
-  // Get relationships involving affected entities
-  const affectedIds = affected.map(e => e.id);
-  const relResult = await pool.query(`
-    SELECT * FROM relationships
-    WHERE from_entity_id = ANY($1) OR to_entity_id = ANY($1)
-  `, [affectedIds]);
-  
-  // Calculate impact score based on entity types and depths
-  const impactScore = calculateImpactScore(affected);
-  
-  return {
-    affected_entities: affected,
-    affected_relationships: relResult.rows,
-    impact_score: impactScore,
-    traversal_depth: maxDepth
-  };
-}
-
-function calculateImpactScore(entities: Entity[]): number {
-  // Weight by entity type (requirements more impactful than code)
-  const weights: Record<string, number> = {
-    'Epic': 10,
-    'Story': 8,
-    'AcceptanceCriterion': 6,
-    'Requirement': 7,
-    'TestCase': 5,
-    'TestSuite': 4,
-    'Function': 2,
-    'Class': 3,
-    'SourceFile': 1
-  };
-  
-  let score = 0;
-  for (const entity of entities) {
-    score += weights[entity.type] || 1;
-  }
-  
-  return Math.min(100, score); // Cap at 100
+  return impactService.analyze(projectId, entityId, maxDepth);
 }
 
 export async function whatIf(
+  projectId: string,
   entityId: string,
   operation: 'delete' | 'modify'
 ): Promise<{
@@ -455,128 +300,64 @@ export async function whatIf(
   warnings: string[];
   blockers: string[];
 }> {
-  const impact = await analyzeImpact(entityId, 5);
-  const warnings: string[] = [];
-  const blockers: string[] = [];
-  
-  // Check for requirements that would be orphaned
-  const orphanedReqs = impact.affected_entities.filter(e => 
-    e.type === 'AcceptanceCriterion' || e.type === 'Story'
-  );
-  
-  if (orphanedReqs.length > 0) {
-    warnings.push(`${orphanedReqs.length} requirements would lose traceability`);
-  }
-  
-  // Check for tests that would fail
-  const affectedTests = impact.affected_entities.filter(e => 
-    e.type === 'TestCase' || e.type === 'TestSuite'
-  );
-  
-  if (affectedTests.length > 0) {
-    warnings.push(`${affectedTests.length} tests would be affected`);
-  }
-  
-  // Block if deleting something with high coverage
-  if (operation === 'delete' && impact.impact_score > 50) {
-    blockers.push(`Impact score ${impact.impact_score} exceeds threshold (50)`);
-  }
-  
-  return { impact, warnings, blockers };
+  return impactService.whatIf(projectId, entityId, operation);
+}
+```
+
+### Step 4b: Coverage Service
+
+> Example shape showing responsibility. Service owns DB access for coverage queries.
+
+```typescript
+// src/services/coverage/coverage-service.ts
+// @implements STORY-64.5
+
+import { pool } from '../../db/postgres';
+
+/**
+ * Responsibility: Coverage computation (story, AC, test).
+ * All coverage queries are project-scoped.
+ */
+export async function getStoryCoverage(projectId: string): Promise<CoverageResult> {
+  // Coverage query logic here
+}
+
+export async function getACCoverage(projectId: string): Promise<CoverageResult> {
+  // AC coverage logic here
+}
+
+export async function getTestCoverage(projectId: string): Promise<CoverageResult> {
+  // Test coverage logic here
 }
 ```
 
 ### Step 5: Implement Coverage API
+
+> API delegates to coverage service. No direct DB imports.
 
 ```typescript
 // src/api/v1/coverage.ts
 // @implements STORY-64.5
 // @satisfies AC-64.5.6
 
-export async function getStoryCoverage(): Promise<CoverageResult> {
-  // Stories with @implements markers (R18 = IMPLEMENTS)
-  // Join to get instance_id from to_entity_id
-  const coveredResult = await pool.query(`
-    SELECT DISTINCT e.instance_id
-    FROM relationships r
-    JOIN entities e ON r.to_entity_id = e.id
-    WHERE r.relationship_type = 'R18' AND e.instance_id LIKE 'STORY-%'
-  `);
-  
-  const coveredIds = new Set(coveredResult.rows.map(r => r.instance_id));
-  
-  // All stories
-  const allStoriesResult = await pool.query(`
-    SELECT instance_id FROM entities WHERE entity_type = 'E02'
-  `);
-  
-  const allIds = allStoriesResult.rows.map(r => r.instance_id);
-  const uncoveredIds = allIds.filter(id => !coveredIds.has(id));
-  
-  return {
-    total: allIds.length,
-    covered: coveredIds.size,
-    uncovered: uncoveredIds.length,
-    percentage: (coveredIds.size / allIds.length) * 100,
-    uncovered_items: uncoveredIds
-  };
+import { coverageService } from '../../services/coverage/coverage-service';
+import type { CoverageResult } from './types';
+
+/**
+ * API delegates to coverage service.
+ * All operations are project-scoped at service boundary.
+ */
+
+export async function getStoryCoverage(projectId: string): Promise<CoverageResult> {
+  return coverageService.getStoryCoverage(projectId);
 }
 
-export async function getACCoverage(): Promise<CoverageResult> {
-  // ACs with @satisfies markers (R19 = SATISFIES)
-  const coveredResult = await pool.query(`
-    SELECT DISTINCT e.instance_id
-    FROM relationships r
-    JOIN entities e ON r.to_entity_id = e.id
-    WHERE r.relationship_type = 'R19' AND e.instance_id LIKE 'AC-%'
-  `);
-  
-  const coveredIds = new Set(coveredResult.rows.map(r => r.instance_id));
-  
-  // All ACs (E03)
-  const allACsResult = await pool.query(`
-    SELECT instance_id FROM entities WHERE entity_type = 'E03'
-  `);
-  
-  const allIds = allACsResult.rows.map(r => r.instance_id);
-  const uncoveredIds = allIds.filter(id => !coveredIds.has(id));
-  
-  return {
-    total: allIds.length,
-    covered: coveredIds.size,
-    uncovered: uncoveredIds.length,
-    percentage: (coveredIds.size / allIds.length) * 100,
-    uncovered_items: uncoveredIds
-  };
+export async function getACCoverage(projectId: string): Promise<CoverageResult> {
+  return coverageService.getACCoverage(projectId);
 }
 
-export async function getTestCoverage(): Promise<CoverageResult> {
-  // Stories with test coverage (R36 = TESTED_BY or similar)
-  // Note: This query uses relationship from test to code, need to trace back
-  const coveredResult = await pool.query(`
-    SELECT DISTINCT e.instance_id
-    FROM relationships r
-    JOIN entities e ON r.to_entity_id = e.id
-    WHERE r.relationship_type = 'R36' AND e.entity_type = 'E02'
-  `);
-  
-  const coveredIds = new Set(coveredResult.rows.map(r => r.instance_id));
-  
-  // All stories (E02)
-  const allStoriesResult = await pool.query(`
-    SELECT instance_id FROM entities WHERE entity_type = 'E02'
-  `);
-  
-  const allIds = allStoriesResult.rows.map(r => r.instance_id);
-  const uncoveredIds = allIds.filter(id => !coveredIds.has(id));
-  
-  return {
-    total: allIds.length,
-    covered: coveredIds.size,
-    uncovered: uncoveredIds.length,
-    percentage: (coveredIds.size / allIds.length) * 100,
-    uncovered_items: uncoveredIds
-  };
+export async function getTestCoverage(projectId: string): Promise<CoverageResult> {
+  return coverageService.getTestCoverage(projectId);
 }
 ```
 
@@ -637,16 +418,23 @@ export * from './types';
 
 ## Files to Create
 
+> **Prerequisite:** Entity and relationship services from A1/A2 must already exist. Do not recreate them.
+
 | File | Purpose | Lines |
 |------|---------|-------|
 | `src/api/v1/types.ts` | API type definitions | ~80 |
-| `src/api/v1/entities.ts` | Entity CRUD | ~200 |
-| `src/api/v1/relationships.ts` | Relationship CRUD | ~200 |
-| `src/api/v1/traversal.ts` | Graph traversal | ~150 |
-| `src/api/v1/impact.ts` | Impact analysis | ~120 |
-| `src/api/v1/coverage.ts` | Coverage queries | ~100 |
+| `src/api/v1/entities.ts` | Entity CRUD (delegates to service) | ~80 |
+| `src/api/v1/relationships.ts` | Relationship CRUD (delegates to service) | ~80 |
+| `src/api/v1/traversal.ts` | Graph traversal (delegates to service) | ~50 |
+| `src/api/v1/impact.ts` | Impact analysis (delegates to service) | ~50 |
+| `src/api/v1/coverage.ts` | Coverage queries (delegates to service) | ~50 |
 | `src/api/v1/index.ts` | Public exports | ~50 |
+| `src/services/traversal/*` | Graph traversal + path finding | ~120 |
+| `src/services/impact/*` | Impact analysis queries | ~80 |
+| `src/services/coverage/*` | Coverage computation | ~100 |
 | `test/api/v1/api.test.ts` | API tests | ~400 |
+
+> Suggested service names: `traversal-service.ts`, `impact-service.ts`, `coverage-service.ts` — adjust to match repo conventions.
 
 ---
 
@@ -768,6 +556,7 @@ describe('Graph API v1', () => {
 - [ ] Functions have `@satisfies AC-64.5.*` markers
 - [ ] All operations logged to shadow ledger
 - [ ] No direct database access from outside src/db/
+- [ ] After implementation: `rg -n "(from|require).*(/db/|@gnosis/db|src/db|\\./db|\\.\\./db)" src/api/v1` returns 0 matches
 - [ ] **Mission Alignment:** Confirm no oracle claims (confidence ≠ truth, alignment ≠ understanding)
 - [ ] **No Placeholders:** All bracketed placeholders resolved to concrete values
 
