@@ -1,0 +1,39 @@
+{
+  "name": "@gnosis/core",
+  "version": "0.0.1",
+  "type": "module",
+  "description": "Gnosis Traceability System - Evidence-bounded verification engine",
+  "main": "dist/index.js",
+  "scripts": {
+    "sanity": "vitest run test/sanity/",
+    "test:sanity": "vitest run test/sanity/",
+    "test": "vitest",
+    "verify:gates": "vitest run test/verification/gates/",
+    "verify:integrity": "vitest run test/verification/integrity/",
+    "verify:env": "npx tsx scripts/verify-env.ts",
+    "verify:infrastructure": "npx tsx scripts/verify-infrastructure.ts",
+    "report:coverage": "vitest run --coverage",
+    "build": "tsc",
+    "migrate": "npx tsx src/db/migrate.ts",
+    "migrate:neo4j": "npx tsx src/db/neo4j-migrate.ts"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.1",
+    "neo4j-driver": "^5.17.0",
+    "pg": "^8.11.3",
+    "remark-parse": "^11.0.0",
+    "ts-morph": "^21.0.1",
+    "unified": "^11.0.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.16",
+    "@types/pg": "^8.11.0",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.21.0",
+    "typescript": "^5.3.3",
+    "vitest": "^1.2.2"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

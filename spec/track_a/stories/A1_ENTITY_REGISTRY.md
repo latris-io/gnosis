@@ -1,6 +1,6 @@
 # Story A.1: Entity Registry
 
-**Version:** 1.0.0  
+**Version:** 1.1.0  
 **Implements:** STORY-64.1 (UTG Entity Extraction)  
 **Track:** A  
 **Duration:** 2-3 days  
@@ -46,7 +46,7 @@
 ## Entry Criteria
 
 - [ ] Track A ENTRY.md checklist complete
-- [ ] SANITY suite passes (58 tests)
+- [ ] SANITY suite passes (SANITY-001..014 pre-track tests)
 - [ ] PostgreSQL schema migrations applied
 - [ ] Neo4j constraints created
 - [ ] Provider interface file exists (`src/extraction/types.ts`)
@@ -58,7 +58,7 @@
 ### Step 1: Create Entity Type Definitions
 
 ```typescript
-// src/entities/types.ts
+// src/schema/track-a/entities.ts
 // @implements STORY-64.1
 
 export type EntityType = 
@@ -302,6 +302,7 @@ export class ASTProvider implements ExtractionProvider {
 // @satisfies AC-64.1.17
 
 import * as fs from 'fs/promises';
+import * as path from 'path';
 
 export interface LedgerEntry {
   timestamp: Date;
@@ -315,8 +316,20 @@ export interface LedgerEntry {
 export class ShadowLedger {
   private path: string;
   
-  constructor(path: string = 'data/shadow_ledger.jsonl') {
-    this.path = path;
+  constructor(ledgerPath: string = 'shadow-ledger/ledger.jsonl') {
+    this.path = ledgerPath;
+  }
+  
+  async initialize(): Promise<void> {
+    // Ensure directory exists
+    const dir = path.dirname(this.path);
+    await fs.mkdir(dir, { recursive: true });
+    // Create file if it doesn't exist
+    try {
+      await fs.access(this.path);
+    } catch {
+      await fs.writeFile(this.path, '');
+    }
   }
   
   async append(entry: LedgerEntry): Promise<void> {
@@ -335,6 +348,9 @@ export class ShadowLedger {
       .map(line => JSON.parse(line));
   }
 }
+
+// Singleton instance
+export const shadowLedger = new ShadowLedger();
 ```
 
 ### Step 5b: Implement Semantic Corpus
@@ -345,6 +361,7 @@ export class ShadowLedger {
 // @satisfies AC-64.1.19
 
 import * as fs from 'fs/promises';
+import * as path from 'path';
 
 export type SignalType = 'CORRECT' | 'INCORRECT' | 'PARTIAL' | 'ORPHAN_MARKER' | 'AMBIGUOUS';
 
@@ -362,13 +379,14 @@ export interface SemanticSignal {
 export class SemanticCorpus {
   private path: string;
   
-  constructor(path: string = 'data/semantic_corpus.jsonl') {
-    this.path = path;
+  constructor(corpusPath: string = 'semantic-corpus/signals.jsonl') {
+    this.path = corpusPath;
   }
   
   async initialize(): Promise<void> {
-    // Ensure data directory exists
-    await fs.mkdir('data', { recursive: true });
+    // Ensure directory exists
+    const dir = path.dirname(this.path);
+    await fs.mkdir(dir, { recursive: true });
     // Create file if it doesn't exist
     try {
       await fs.access(this.path);
@@ -415,7 +433,6 @@ export async function captureSemanticSignal(signal: Omit<SemanticSignal, 'timest
   });
 }
 ```
-```
 
 ### Step 6: Create Graph API v1 Entity Operations
 
@@ -425,6 +442,9 @@ export async function captureSemanticSignal(signal: Omit<SemanticSignal, 'timest
 // @satisfies AC-64.1.1 through AC-64.1.16
 
 import { GraphAPI } from './index';
+import { shadowLedger } from '../../ledger/shadow-ledger';
+import { pool } from '../../db/postgres';
+import { getSession } from '../../db/neo4j';
 
 export async function createEntity(entity: Entity): Promise<Entity> {
   // Log to shadow ledger first
@@ -446,10 +466,12 @@ export async function createEntity(entity: Entity): Promise<Entity> {
   );
   
   // Insert into Neo4j for graph traversal
-  await neo4jSession.run(
+  const session = getSession();
+  await session.run(
     `CREATE (e:Entity {id: $id, type: $type})`,
     { id: entity.id, type: entity.type }
   );
+  await session.close();
   
   return result.rows[0];
 }
@@ -477,7 +499,7 @@ export async function queryEntities(type: EntityType): Promise<Entity[]> {
 
 | File | Purpose | Lines |
 |------|---------|-------|
-| `src/entities/types.ts` | Entity type definitions | ~50 |
+| `src/schema/track-a/entities.ts` | Entity type definitions | ~50 |
 | `src/extraction/types.ts` | Provider interface | ~40 |
 | `src/extraction/providers/brd-provider.ts` | BRD parsing | ~150 |
 | `src/extraction/providers/ast-provider.ts` | AST extraction | ~200 |
@@ -489,14 +511,14 @@ export async function queryEntities(type: EntityType): Promise<Entity[]> {
 | `src/ledger/semantic-corpus.ts` | Semantic signals for Track C | ~80 |
 | `src/api/v1/entities.ts` | Entity CRUD operations | ~100 |
 | `migrations/001_entities.sql` | PostgreSQL schema | ~30 |
-| `test/entities/entity-registry.test.ts` | Entity tests | ~200 |
+| `test/verification/entity-registry.test.ts` | Entity tests | ~200 |
 
 ---
 
 ## Verification Tests
 
 ```typescript
-// test/entities/entity-registry.test.ts
+// test/verification/entity-registry.test.ts
 // @implements STORY-64.1
 
 describe('Entity Registry', () => {
@@ -553,7 +575,7 @@ describe('Entity Registry', () => {
   // VERIFY-CORPUS-01: Semantic corpus initialization
   it('semantic corpus initialized', async () => {
     await semanticCorpus.initialize();
-    const exists = await fs.access('data/semantic_corpus.jsonl').then(() => true).catch(() => false);
+    const exists = await fs.access('semantic-corpus/signals.jsonl').then(() => true).catch(() => false);
     expect(exists).toBe(true);
   });
   
@@ -578,10 +600,10 @@ describe('Entity Registry', () => {
 ### Shadow Ledger
 - [ ] Every entity creation logged
 - [ ] Log format: JSONL with timestamp, operation, entity_id, evidence
-- [ ] Log location: `data/shadow_ledger.jsonl`
+- [ ] Log location: `shadow-ledger/ledger.jsonl`
 
 ### Semantic Learning
-- [ ] Semantic corpus file created at `data/semantic_corpus.jsonl`
+- [ ] Semantic corpus file created at `semantic-corpus/signals.jsonl`
 - [ ] `captureSemanticSignal()` function exported
 - [ ] Signal types defined: CORRECT, INCORRECT, PARTIAL, ORPHAN_MARKER, AMBIGUOUS
 - [ ] Minimum 10 signals captured during this story (from extraction validation)
@@ -611,7 +633,7 @@ describe('Entity Registry', () => {
 ## Definition of Done
 
 - [ ] All 16 entity types extractable
-- [ ] All entity IDs match format patterns (SANITY-022)
+- [ ] All entity IDs match format patterns (SANITY-003)
 - [ ] Entity counts match external verification:
   - [ ] 65 Epics
   - [ ] 351 Stories
