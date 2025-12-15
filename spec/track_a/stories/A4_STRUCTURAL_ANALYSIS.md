@@ -1,6 +1,6 @@
 # Story A.4: Structural Analysis
 
-**Version:** 1.0.0  
+**Version:** 1.3.0  
 **Implements:** STORY-64.4 (Structural Analysis Pipeline)  
 **Track:** A  
 **Duration:** 2-3 days  
@@ -8,6 +8,10 @@
 - BRD V20.6.3 §Epic 64, Story 64.4
 - UTG Schema V20.6.1 §Analysis Pipeline
 - Verification Spec V20.6.4 §Part IX
+
+> **v1.3.0:** Added explicit project_id propagation in PipelineConfig, RepoSnapshot, createSnapshot, and create* calls  
+> **v1.2.0:** Epistemic hygiene: IntegrityValidator→IntegrityEvaluator, pass/fail→findings with severity, schema column fix (entity_type with E-codes)  
+> **v1.1.0:** Added architecture note clarifying IntegrityEvaluator is service-layer; added verification guardrail
 
 ---
 
@@ -76,6 +80,7 @@ export type PipelineStage =
   | 'MARKERS' | 'BRD_REL' | 'AST_REL' | 'TEST_REL' | 'GIT_REL' | 'VALIDATE';
 
 export interface PipelineConfig {
+  project_id: string;
   repo_path: string;
   incremental: boolean;
   skip_stages?: PipelineStage[];
@@ -111,14 +116,15 @@ export interface ExtractionStatistics {
 }
 
 export interface IntegrityResult {
-  valid: boolean;
-  checks: IntegrityCheck[];
+  findings: IntegrityFinding[];
+  summary: string;
 }
 
-export interface IntegrityCheck {
+export interface IntegrityFinding {
   name: string;
-  passed: boolean;
+  severity: 'info' | 'warning' | 'critical';
   message: string;
+  evidence?: Record<string, unknown>;
 }
 ```
 
@@ -190,12 +196,12 @@ export class PipelineOrchestrator {
         
         const result = await provider.extract(snapshot);
         
-        // Persist results
+        // Persist results (project-scoped)
         for (const entity of result.entities) {
-          await createEntity(entity);
+          await createEntity(snapshot.project_id, entity);
         }
         for (const rel of result.relationships) {
-          await createRelationship(rel);
+          await createRelationship(snapshot.project_id, rel);
         }
         
         stages.push(this.recordStage(
@@ -255,6 +261,7 @@ export class PipelineOrchestrator {
     
     return {
       id: `snapshot-${Date.now()}-${gitSha.slice(0, 8)}`,
+      project_id: config.project_id,
       root_path: config.repo_path,
       commit_sha: gitSha,
       timestamp: new Date()
@@ -282,42 +289,48 @@ export class PipelineOrchestrator {
 }
 ```
 
-### Step 3: Implement Integrity Validator
+### Step 3: Implement Integrity Evaluator
+
+> **Architecture Note:** `IntegrityEvaluator` is a **service-layer module** (`src/pipeline/integrity.ts`), not an API route. Service-layer modules MAY access `pool` and `neo4jSession` directly per PROMPTS.md: "src/services/** may import from src/db/**". The pipeline module follows the same rule.
 
 ```typescript
 // src/pipeline/integrity.ts
 // @implements STORY-64.4
 // @satisfies AC-64.4.5
 
-export class IntegrityValidator {
-  async validate(snapshot: RepoSnapshot): Promise<IntegrityResult> {
-    const checks: IntegrityCheck[] = [];
+export class IntegrityEvaluator {
+  async evaluate(snapshot: RepoSnapshot): Promise<IntegrityResult> {
+    const findings: IntegrityFinding[] = [];
     
-    // Check 1: All relationships reference existing entities
-    checks.push(await this.checkRelationshipIntegrity());
+    // Evaluate 1: All relationships reference existing entities
+    findings.push(await this.evaluateRelationshipIntegrity());
     
-    // Check 2: No duplicate entity IDs
-    checks.push(await this.checkEntityUniqueness());
+    // Evaluate 2: No duplicate entity IDs
+    findings.push(await this.evaluateEntityUniqueness());
     
-    // Check 3: All required entity types present
-    checks.push(await this.checkRequiredEntityTypes());
+    // Evaluate 3: All required entity types present
+    findings.push(await this.evaluateRequiredEntityTypes());
     
-    // Check 4: BRD counts match expected
-    checks.push(await this.checkBRDCounts());
+    // Evaluate 4: BRD counts (reported as finding, not assertion)
+    findings.push(await this.evaluateBRDCounts());
     
-    // Check 5: No orphan files (files without functions/classes)
-    checks.push(await this.checkOrphanFiles());
+    // Evaluate 5: No orphan files (files without functions/classes)
+    findings.push(await this.evaluateOrphanFiles());
     
-    // Check 6: Graph is connected (from Epic to Code)
-    checks.push(await this.checkGraphConnectivity());
+    // Evaluate 6: Graph connectivity (from Epic to Code)
+    findings.push(await this.evaluateGraphConnectivity());
     
+    // NOTE: Findings are signals. Track B + Human Gate (HGR-1) determine whether
+    // discrepancies are blocking. Track A does not assert correctness.
+    
+    const criticalCount = findings.filter(f => f.severity === 'critical').length;
     return {
-      valid: checks.every(c => c.passed),
-      checks
+      findings,
+      summary: `${findings.length} findings (${criticalCount} critical)`
     };
   }
   
-  private async checkRelationshipIntegrity(): Promise<IntegrityCheck> {
+  private async evaluateRelationshipIntegrity(): Promise<IntegrityFinding> {
     const result = await pool.query(`
       SELECT r.id, r.from_entity_id, r.to_entity_id
       FROM relationships r
@@ -328,14 +341,15 @@ export class IntegrityValidator {
     
     return {
       name: 'relationship_integrity',
-      passed: result.rows.length === 0,
+      severity: result.rows.length === 0 ? 'info' : 'critical',
       message: result.rows.length === 0 
         ? 'All relationships reference valid entities'
-        : `${result.rows.length} relationships have invalid references`
+        : `${result.rows.length} relationships have invalid references`,
+      evidence: { orphan_count: result.rows.length }
     };
   }
   
-  private async checkEntityUniqueness(): Promise<IntegrityCheck> {
+  private async evaluateEntityUniqueness(): Promise<IntegrityFinding> {
     const result = await pool.query(`
       SELECT id, COUNT(*) as count
       FROM entities
@@ -345,39 +359,40 @@ export class IntegrityValidator {
     
     return {
       name: 'entity_uniqueness',
-      passed: result.rows.length === 0,
+      severity: result.rows.length === 0 ? 'info' : 'critical',
       message: result.rows.length === 0
         ? 'All entity IDs are unique'
-        : `${result.rows.length} duplicate entity IDs found`
+        : `${result.rows.length} duplicate entity IDs found`,
+      evidence: { duplicate_count: result.rows.length }
     };
   }
   
-  private async checkRequiredEntityTypes(): Promise<IntegrityCheck> {
-    const requiredTypes = [
-      'Epic', 'Story', 'AcceptanceCriterion',
-      'SourceFile', 'Function', 'TestFile', 'TestCase'
-    ];
+  private async evaluateRequiredEntityTypes(): Promise<IntegrityFinding> {
+    // NOTE: Column name + enum values MUST match Track A schema (entity_type with E-codes)
+    const requiredTypes = ['E01', 'E02', 'E03', 'E11', 'E12', 'E27', 'E29'];  // Epic, Story, AC, SourceFile, Function, TestFile, TestCase
     
     const result = await pool.query(`
-      SELECT DISTINCT type FROM entities
+      SELECT DISTINCT entity_type FROM entities
     `);
     
-    const foundTypes = new Set(result.rows.map(r => r.type));
+    const foundTypes = new Set(result.rows.map(r => r.entity_type));
     const missingTypes = requiredTypes.filter(t => !foundTypes.has(t));
     
     return {
       name: 'required_entity_types',
-      passed: missingTypes.length === 0,
+      severity: missingTypes.length === 0 ? 'info' : 'warning',
       message: missingTypes.length === 0
         ? 'All required entity types present'
-        : `Missing entity types: ${missingTypes.join(', ')}`
+        : `Missing entity types: ${missingTypes.join(', ')}`,
+      evidence: { missing_types: missingTypes }
     };
   }
   
-  private async checkBRDCounts(): Promise<IntegrityCheck> {
-    const epicCount = await pool.query(`SELECT COUNT(*) FROM entities WHERE type = 'Epic'`);
-    const storyCount = await pool.query(`SELECT COUNT(*) FROM entities WHERE type = 'Story'`);
-    const acCount = await pool.query(`SELECT COUNT(*) FROM entities WHERE type = 'AcceptanceCriterion'`);
+  private async evaluateBRDCounts(): Promise<IntegrityFinding> {
+    // NOTE: Column name + enum values MUST match Track A schema (entity_type with E-codes)
+    const epicCount = await pool.query(`SELECT COUNT(*) FROM entities WHERE entity_type = 'E01'`);
+    const storyCount = await pool.query(`SELECT COUNT(*) FROM entities WHERE entity_type = 'E02'`);
+    const acCount = await pool.query(`SELECT COUNT(*) FROM entities WHERE entity_type = 'E03'`);
     
     const expected = { epics: 65, stories: 351, acs: 2901 };
     const actual = {
@@ -386,24 +401,41 @@ export class IntegrityValidator {
       acs: parseInt(acCount.rows[0].count)
     };
     
-    const matches = 
-      actual.epics === expected.epics &&
-      actual.stories === expected.stories &&
-      actual.acs === expected.acs;
-    
+    // Report as finding, not assertion. Track B/HGR-1 determines if discrepancy is blocking.
     return {
       name: 'brd_counts',
-      passed: matches,
-      message: matches
-        ? `BRD counts match: ${expected.epics}/${expected.stories}/${expected.acs}`
-        : `BRD count mismatch: expected ${expected.epics}/${expected.stories}/${expected.acs}, got ${actual.epics}/${actual.stories}/${actual.acs}`
+      severity: 'info',  // Always info - human gate reviews discrepancies
+      message: `BRD counts: expected ${expected.epics}/${expected.stories}/${expected.acs}, found ${actual.epics}/${actual.stories}/${actual.acs}`,
+      evidence: { expected, actual }
     };
   }
   
-  private async checkGraphConnectivity(): Promise<IntegrityCheck> {
-    // Check that we can traverse from at least one Epic to at least one Function
+  private async evaluateOrphanFiles(): Promise<IntegrityFinding> {
+    // Check for source files without any functions or classes
+    const result = await pool.query(`
+      SELECT sf.id FROM entities sf
+      WHERE sf.entity_type = 'E11'
+      AND NOT EXISTS (
+        SELECT 1 FROM relationships r
+        WHERE r.from_entity_id = sf.id
+        AND r.relationship_type IN ('R05')
+      )
+    `);
+    
+    return {
+      name: 'orphan_files',
+      severity: result.rows.length === 0 ? 'info' : 'warning',
+      message: result.rows.length === 0
+        ? 'No orphan source files found'
+        : `${result.rows.length} source files have no contained entities`,
+      evidence: { orphan_count: result.rows.length }
+    };
+  }
+  
+  private async evaluateGraphConnectivity(): Promise<IntegrityFinding> {
+    // Evaluate that we can traverse from at least one Epic to at least one Function
     const result = await neo4jSession.run(`
-      MATCH path = (e:Entity {type: 'Epic'})-[*1..5]->(f:Entity {type: 'Function'})
+      MATCH path = (e:Entity {entity_type: 'E01'})-[*1..5]->(f:Entity {entity_type: 'E12'})
       RETURN COUNT(DISTINCT path) as paths
       LIMIT 1
     `);
@@ -412,10 +444,11 @@ export class IntegrityValidator {
     
     return {
       name: 'graph_connectivity',
-      passed: pathCount > 0,
+      severity: pathCount > 0 ? 'info' : 'warning',
       message: pathCount > 0
         ? 'Graph is connected (Epic → Function paths exist)'
-        : 'Graph may be disconnected (no Epic → Function paths found)'
+        : 'Graph may be disconnected (no Epic → Function paths found)',
+      evidence: { path_count: pathCount }
     };
   }
 }
@@ -514,7 +547,7 @@ export class IncrementalExtractor {
 describe('Structural Analysis Pipeline', () => {
   // VERIFY-PIPELINE-01: Orchestrates all providers
   it('executes all extraction providers', async () => {
-    const result = await pipeline.execute({ repo_path: '.', incremental: false, fail_fast: true });
+    const result = await pipeline.execute({ project_id: projectId, repo_path: '.', incremental: false, fail_fast: true });
     
     const expectedStages = ['FILESYSTEM', 'BRD', 'AST', 'TEST', 'GIT', 'MARKERS'];
     for (const stage of expectedStages) {
@@ -524,7 +557,7 @@ describe('Structural Analysis Pipeline', () => {
   
   // VERIFY-PIPELINE-02: Dependency order
   it('executes providers in dependency order', async () => {
-    const result = await pipeline.execute({ repo_path: '.', incremental: false, fail_fast: true });
+    const result = await pipeline.execute({ project_id: projectId, repo_path: '.', incremental: false, fail_fast: true });
     
     const stageOrder = result.stages.map(s => s.stage);
     expect(stageOrder.indexOf('FILESYSTEM')).toBeLessThan(stageOrder.indexOf('AST'));
@@ -534,6 +567,7 @@ describe('Structural Analysis Pipeline', () => {
   // VERIFY-PIPELINE-03: Handles failures
   it('handles provider failures gracefully', async () => {
     const result = await pipeline.execute({ 
+      project_id: projectId,
       repo_path: '/nonexistent', 
       incremental: false, 
       fail_fast: false 
@@ -545,16 +579,16 @@ describe('Structural Analysis Pipeline', () => {
   
   // VERIFY-PIPELINE-04: Reports statistics
   it('reports extraction statistics', async () => {
-    const result = await pipeline.execute({ repo_path: '.', incremental: false, fail_fast: true });
+    const result = await pipeline.execute({ project_id: projectId, repo_path: '.', incremental: false, fail_fast: true });
     
     expect(result.statistics).toBeDefined();
     expect(result.statistics.total_entities).toBeGreaterThan(0);
     expect(result.statistics.entities_by_type).toBeDefined();
   });
   
-  // VERIFY-PIPELINE-05: Validates integrity
-  it('validates graph integrity', async () => {
-    const result = await pipeline.execute({ repo_path: '.', incremental: false, fail_fast: true });
+  // VERIFY-PIPELINE-05: Evaluates integrity signals
+  it('evaluates structural integrity signals', async () => {
+    const result = await pipeline.execute({ project_id: projectId, repo_path: '.', incremental: false, fail_fast: true });
     
     expect(result.integrity_check).toBeDefined();
     expect(result.integrity_check.checks.length).toBeGreaterThan(0);
@@ -563,20 +597,20 @@ describe('Structural Analysis Pipeline', () => {
   // VERIFY-PIPELINE-06: Supports incremental
   it('supports incremental extraction', async () => {
     // First full extraction
-    const full = await pipeline.execute({ repo_path: '.', incremental: false, fail_fast: true });
+    const full = await pipeline.execute({ project_id: projectId, repo_path: '.', incremental: false, fail_fast: true });
     
     // Make a change
     await fs.writeFile('src/test-file.ts', '// test');
     
     // Incremental extraction
-    const incr = await pipeline.execute({ repo_path: '.', incremental: true, fail_fast: true });
+    const incr = await pipeline.execute({ project_id: projectId, repo_path: '.', incremental: true, fail_fast: true });
     
     expect(incr.total_duration_ms).toBeLessThan(full.total_duration_ms);
   });
   
   // VERIFY-PIPELINE-07: Creates snapshot
   it('creates snapshot before extraction', async () => {
-    const result = await pipeline.execute({ repo_path: '.', incremental: false, fail_fast: true });
+    const result = await pipeline.execute({ project_id: projectId, repo_path: '.', incremental: false, fail_fast: true });
     
     expect(result.snapshot_id).toBeDefined();
     expect(result.snapshot_id).toMatch(/^snapshot-\d+-[a-f0-9]+$/);
@@ -593,9 +627,13 @@ describe('Structural Analysis Pipeline', () => {
 - [ ] Code has `@implements STORY-64.4` marker
 - [ ] Functions have `@satisfies AC-64.4.*` markers
 - [ ] Shadow ledger entries for pipeline start/complete
-- [ ] Integrity checks all pass
+- [ ] All integrity findings reviewed (no unresolved critical findings)
 - [ ] **Mission Alignment:** Confirm no oracle claims (confidence ≠ truth, alignment ≠ understanding)
 - [ ] **No Placeholders:** All bracketed placeholders resolved to concrete values
+- [ ] **Architecture Compliance:**
+  - `rg -n "from.*db/" src/api/v1` returns 0 matches
+  - `rg -n "from.*db/" src/pipeline` returns matches only in orchestrator/integrity (service-layer)
+  - `rg -n "from.*db/" src/extraction/providers` returns 0 matches
 
 ---
 
@@ -605,7 +643,7 @@ describe('Structural Analysis Pipeline', () => {
 - [ ] Providers execute in dependency order
 - [ ] Failures handled gracefully (with fail_fast option)
 - [ ] Statistics reported accurately
-- [ ] Integrity validation passes
+- [ ] Integrity evaluation completes (findings reviewed at HGR-1)
 - [ ] Incremental extraction works
 - [ ] All tests pass
 - [ ] Committed with message: "STORY-64.4: Structural Analysis Pipeline"

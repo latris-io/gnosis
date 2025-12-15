@@ -1,6 +1,6 @@
 # Story A.3: Marker Extraction
 
-**Version:** 1.0.0  
+**Version:** 1.2.0  
 **Implements:** STORY-64.3 (Traceability Marker Extraction)  
 **Track:** A  
 **Duration:** 1-2 days  
@@ -8,6 +8,9 @@
 - BRD V20.6.3 §Epic 64, Story 64.3
 - UTG Schema V20.6.1 §Marker Patterns
 - Verification Spec V20.6.4 §Part IX, SANITY-030-033
+
+> **v1.2.0:** Fixed instance_id prefixes to canonical uppercase forms (FILE-, FUNC-, CLASS-) per ENTRY.md  
+> **v1.1.0:** Added service-layer imports; added projectId scoping; added architecture note
 
 ---
 
@@ -39,6 +42,28 @@
 - [ ] Story A.2 (Relationship Registry) complete
 - [ ] Entity and relationship APIs operational
 - [ ] SANITY-030 to 033 pass (marker patterns)
+
+---
+
+## Architecture Note
+
+A3 operates within the **Provider + Service** layers:
+
+```
+MarkerProvider (src/extraction/providers/)
+    ↓ emits raw markers (no DB access)
+MarkerValidator (src/markers/)
+    ↓ validates via entityService (service-layer, not API)
+markers.ts API (src/api/v1/)
+    ↓ orchestrates extraction, delegates persistence to relationshipService
+```
+
+**Layering rules:**
+- Providers: NO imports from `src/db/*` or `src/services/*`
+- Validators: MAY import from `src/services/*`, MUST NOT import from `src/api/*`
+- API: Delegates to services, MUST NOT import from `src/db/*`
+
+This story reuses entity/relationship services from A1/A2. It does NOT create new services.
 
 ---
 
@@ -93,7 +118,7 @@ export type MarkerType = 'implements' | 'satisfies';
 export interface Marker {
   type: MarkerType;
   target_id: string;        // STORY-64.1 or AC-64.1.1
-  source_entity_id: string; // function:path:name or file:path
+  source_entity_id: string; // FUNC-path:name or FILE-path
   line_number: number;
   raw_text: string;
   validated: boolean;
@@ -106,6 +131,13 @@ export interface MarkerExtractionResult {
   relationships: Relationship[];
 }
 ```
+
+> **Instance ID Rule:** All instance_id prefixes MUST match ENTRY.md canonical forms:
+> - `FILE-{path}` for SourceFile (E11)
+> - `FUNC-{path}:{name}` for Function (E12)
+> - `CLASS-{path}:{name}` for Class (E13)
+>
+> Do NOT use lowercase prefixes like `function:`, `class:`, or `file:`.
 
 ### Step 2: Implement Marker Extractor
 
@@ -134,7 +166,7 @@ export class MarkerProvider implements ExtractionProvider {
     
     for (const sourceFile of project.getSourceFiles()) {
       const filePath = sourceFile.getFilePath();
-      const fileId = `file:${filePath}`;
+      const fileId = `FILE-${filePath}`;
       
       // Extract from file-level comments
       const fileComments = this.extractCommentsFromNode(sourceFile);
@@ -144,7 +176,7 @@ export class MarkerProvider implements ExtractionProvider {
       
       // Extract from function-level comments
       for (const func of sourceFile.getFunctions()) {
-        const funcId = `function:${filePath}:${func.getName()}`;
+        const funcId = `FUNC-${filePath}:${func.getName()}`;
         const jsDocs = func.getJsDocs();
         
         for (const jsDoc of jsDocs) {
@@ -161,7 +193,7 @@ export class MarkerProvider implements ExtractionProvider {
       
       // Extract from class-level comments
       for (const cls of sourceFile.getClasses()) {
-        const classId = `class:${filePath}:${cls.getName()}`;
+        const classId = `CLASS-${filePath}:${cls.getName()}`;
         const jsDocs = cls.getJsDocs();
         
         for (const jsDoc of jsDocs) {
@@ -228,14 +260,21 @@ export class MarkerProvider implements ExtractionProvider {
 // @implements STORY-64.3
 // @satisfies AC-64.3.6, AC-64.3.7
 
+import * as entityService from '../services/entities/entity-service';
+import { captureSemanticSignal } from '../ledger/semantic-corpus';
+import type { Marker, MarkerExtractionResult } from './types';
+import type { ExtractedRelationship } from '../extraction/types';
+
 export class MarkerValidator {
+  constructor(private projectId: string) {}
+
   async validate(markers: Marker[]): Promise<MarkerExtractionResult> {
     const validatedMarkers: Marker[] = [];
     const orphans: Marker[] = [];
-    const relationships: Relationship[] = [];
+    const relationships: ExtractedRelationship[] = [];
     
     for (const marker of markers) {
-      // Check if target exists
+      // Check if target exists (project-scoped)
       const targetExists = await this.targetExists(marker.target_id);
       
       if (targetExists) {
@@ -265,7 +304,7 @@ export class MarkerValidator {
   }
   
   private async targetExists(targetId: string): Promise<boolean> {
-    const entity = await getEntity(targetId);
+    const entity = await entityService.getByInstanceId(this.projectId, targetId);
     return entity !== null;
   }
   
@@ -292,16 +331,25 @@ export class MarkerValidator {
 // @implements STORY-64.3
 // @satisfies AC-64.3.3, AC-64.3.4, AC-64.3.5, AC-64.3.9
 
+import { MarkerProvider } from '../../extraction/providers/marker-provider';
+import { MarkerValidator } from '../../markers/validator';
+import { shadowLedger } from '../../ledger/shadow-ledger';
+import * as relationshipService from '../../services/relationships/relationship-service';
+import { computeHash } from '../../utils/hash';
+import type { RepoSnapshot } from '../../extraction/types';
+import type { MarkerExtractionResult, Marker } from '../../markers/types';
+
 export async function extractAndValidateMarkers(
+  projectId: string,
   snapshot: RepoSnapshot
 ): Promise<MarkerExtractionResult> {
   const provider = new MarkerProvider();
-  const validator = new MarkerValidator();
+  const validator = new MarkerValidator(projectId);
   
   // Extract all markers
   const extracted = await provider.extract(snapshot);
   
-  // Validate markers against entity registry
+  // Validate markers against entity registry (project-scoped)
   const result = await validator.validate(extracted.markers);
   
   // Log to shadow ledger
@@ -316,9 +364,9 @@ export async function extractAndValidateMarkers(
     });
   }
   
-  // Create relationships
+  // Create relationships via service
   for (const rel of result.relationships) {
-    await createRelationship(rel);
+    await relationshipService.upsert(projectId, rel);
   }
   
   // Report orphans
@@ -332,17 +380,20 @@ export async function extractAndValidateMarkers(
   return result;
 }
 
-export async function getMarkersForEntity(entityId: string): Promise<Marker[]> {
-  // Get all relationships where this entity is the target
-  const implementsRels = await queryRelationships('IMPLEMENTS', undefined, entityId);
-  const satisfiesRels = await queryRelationships('SATISFIES', undefined, entityId);
+export async function getMarkersForEntity(
+  projectId: string,
+  entityId: string
+): Promise<Marker[]> {
+  // Get all relationships where this entity is the target (project-scoped)
+  const implementsRels = await relationshipService.queryByType(projectId, 'R18', undefined, entityId);
+  const satisfiesRels = await relationshipService.queryByType(projectId, 'R19', undefined, entityId);
   
   return [...implementsRels, ...satisfiesRels].map(rel => ({
-    type: rel.type === 'IMPLEMENTS' ? 'implements' : 'satisfies',
+    type: rel.relationship_type === 'R18' ? 'implements' : 'satisfies',
     target_id: entityId,
-    source_entity_id: rel.source_id,
-    line_number: rel.attributes.marker_line,
-    raw_text: rel.attributes.marker_raw,
+    source_entity_id: rel.from_id,
+    line_number: rel.attributes?.marker_line,
+    raw_text: rel.attributes?.marker_raw,
     validated: true
   }));
 }
@@ -401,7 +452,7 @@ describe('Marker Extraction', () => {
     
     for (const marker of result.markers) {
       expect(marker.source_entity_id).toBeDefined();
-      expect(marker.source_entity_id).toMatch(/^(function|class|file):/);
+      expect(marker.source_entity_id).toMatch(/^(FUNC-|CLASS-|FILE-)/);
     }
   });
   

@@ -1,9 +1,11 @@
 # SANITY Test Suite Specification
 
-**Version:** 1.0.0  
+**Version:** 1.1.0  
 **Implements:** Verification Spec V20.6.4 Part II  
 **Purpose:** Foundational tests that must pass before any track begins  
 **Canonical Source:** UNIFIED_VERIFICATION_SPECIFICATION_V20_6_4.md §Part II
+
+> **v1.1.0:** Aligned entity/relationship lists with Track A scope (E14 deferred, R-codes per ENTRY.md); fixed ID format patterns to use canonical uppercase prefixes
 
 ---
 
@@ -184,11 +186,11 @@ test('SANITY-016: All canonical docs have valid version headers', () => {
 // @implements SANITY-020
 // @satisfies UTG Schema V20.6.1 §Entity Registry
 
-test('SANITY-020: All 16 Track A entity types defined', () => {
+test('SANITY-020: All 15 extractable Track A entity types defined (E14 deferred)', () => {
   const trackAEntities = [
     'E01', 'E02', 'E03', 'E04',  // Requirements
     'E06', 'E08',                 // Design
-    'E11', 'E12', 'E13', 'E14', 'E15', // Implementation
+    'E11', 'E12', 'E13', 'E15',  // Implementation (E14 Interface deferred)
     'E27', 'E28', 'E29',          // Verification
     'E49', 'E50', 'E52'           // Provenance
   ];
@@ -207,11 +209,12 @@ test('SANITY-020: All 16 Track A entity types defined', () => {
 
 test('SANITY-021: All 21 Track A relationship types defined', () => {
   const trackARelationships = [
-    'R01', 'R02', 'R03', 'R04', 'R05', // Requirements
-    'R10', 'R11',                       // Design
-    'R21', 'R22', 'R23', 'R24', 'R25', 'R26', // Implementation
-    'R40', 'R41', 'R42', 'R43', 'R44', 'R45', // Verification
-    'R60', 'R61'                        // Provenance
+    'R01', 'R02', 'R03',              // Requirements: HAS_STORY, HAS_AC, HAS_CONSTRAINT
+    'R04', 'R05', 'R06', 'R07',       // Containment: CONTAINS_*
+    'R14', 'R16', 'R18', 'R19',       // Design->Impl links
+    'R21', 'R22', 'R23', 'R24', 'R26', // Implementation (no R25)
+    'R36', 'R37',                      // Verification: TESTED_BY, VERIFIED_BY
+    'R63', 'R67', 'R70'                // Provenance: INTRODUCED_IN, MODIFIED_IN, GROUPS
   ];
   
   const schema = loadUTGSchema();
@@ -230,9 +233,9 @@ test('SANITY-022: Entity ID formats match patterns', () => {
     'E01': /^EPIC-\d+$/,        // Epic
     'E02': /^STORY-\d+\.\d+$/,  // Story
     'E03': /^AC-\d+\.\d+\.\d+$/, // AcceptanceCriterion
-    'E11': /^file:.+$/,         // SourceFile
-    'E12': /^function:.+:.+$/,  // Function
-    'E13': /^class:.+:.+$/,     // Class
+    'E11': /^FILE-.+$/,         // SourceFile
+    'E12': /^FUNC-.+:.+$/,      // Function
+    'E13': /^CLASS-.+:.+$/,     // Class
   };
   
   const schema = loadUTGSchema();
