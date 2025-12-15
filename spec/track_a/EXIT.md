@@ -1,9 +1,27 @@
 # Track A Exit Criteria
 
-**Version:** 1.0.0  
+**Version:** 1.2.0  
 **Implements:** Roadmap V20.6.4 Track A Exit  
 **Purpose:** Verification checklist before HGR-1 (Human Gate Review 1)  
 **Canonical Source:** GNOSIS_TO_SOPHIA_MASTER_ROADMAP_V20_6_4.md §Track A
+
+> **v1.2.0:** Entity count consistency: "16 in scope, 15 extractable (E14 deferred)"  
+> **v1.1.0:** Added script reference note
+
+---
+
+## Verification Scripts
+
+> **Note:** Verification scripts are defined during Phase 0 infrastructure setup. See `PROMPTS.md` §Phase 0.1 for `package.json` script definitions and §Phase 0.6 for test framework setup.
+
+**Available scripts** (per `package.json`):
+- `test:sanity` — Run SANITY suite
+- `verify:gates` — Verify gate requirements
+- `verify:integrity` — Run integrity checks
+- `report:coverage` — Generate coverage report
+
+**Phase 0 deliverables** (create if missing):
+- `verify:track-a-entry` — Verify Track A entry criteria (referenced in ENTRY.md)
 
 ---
 
@@ -20,7 +38,7 @@
 
 ## Entity Verification
 
-All 15 Track A entity types extractable and verified (E14 Interface deferred):
+All 16 Track A entity types in scope; 15 extractable and verified (E14 Interface deferred):
 
 | ID | Entity | Test | Status |
 |----|--------|------|--------|

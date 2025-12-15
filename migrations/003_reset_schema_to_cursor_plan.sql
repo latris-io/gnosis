@@ -67,7 +67,9 @@ CREATE TABLE relationships (
   project_id UUID NOT NULL REFERENCES projects(id),
   
   -- Constraints
-  CONSTRAINT valid_relationship_type CHECK (relationship_type ~ '^R[0-9]{2,3}$'),
+  -- IMPORTANT: Uses ^R[0-9]{2}$ (2-digit only) per Cursor Plan line 482
+  -- R113/R114 are DORMANT until Track D.9 per cursorrules line 106
+  CONSTRAINT valid_relationship_type CHECK (relationship_type ~ '^R[0-9]{2}$'),
   CONSTRAINT valid_confidence CHECK (confidence >= 0 AND confidence <= 1),
   CONSTRAINT relationships_project_instance_unique UNIQUE (project_id, instance_id)
 );

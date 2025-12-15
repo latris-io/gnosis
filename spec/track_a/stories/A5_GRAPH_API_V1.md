@@ -1,6 +1,6 @@
 # Story A.5: Graph API v1
 
-**Version:** 1.1.0  
+**Version:** 1.2.0  
 **Implements:** STORY-64.5 (Graph API v1)  
 **Track:** A  
 **Duration:** 2-3 days  
@@ -9,6 +9,7 @@
 - UTG Schema V20.6.1 §API Specification
 - Verification Spec V20.6.4 §8.3 (G-API)
 
+> **v1.2.0:** Added scope note clarifying pipeline is not public API surface  
 > **v1.1.0:** Service-layer alignment; API delegates to services per PROMPTS.md
 
 ---
@@ -62,6 +63,10 @@
 
 > **Architecture:** API routes delegate to services; they do NOT import from `src/db/*` directly.
 > See PROMPTS.md Database Access Boundary.
+
+> **Scope Note:** Graph API v1 provides CRUD operations, queries, and traversals.
+> Pipeline execution (orchestration, extraction) is NOT part of the public API surface.
+> Pipeline is an operator/CLI concern, accessed via internal modules only.
 
 ---
 

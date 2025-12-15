@@ -1,9 +1,12 @@
 # Human Gate Review 1 (HGR-1)
 
+**Version:** 1.1.0  
 **Gate:** HGR-1  
 **Transition:** Track A → Track B  
 **Criticality:** HIGH — Irreversible transition to self-ingestion capability  
 **Canonical Source:** Verification Spec V20.6.4 §Part XI
+
+> **v1.1.0:** Entity count consistency: "16 in scope, 15 extractable (E14 deferred)"
 
 ---
 
@@ -12,7 +15,7 @@
 HGR-1 validates that Track A has successfully built the structural extraction infrastructure required for Track B self-ingestion. This gate is **irreversible** — once approved, Track B begins building on Track A foundations.
 
 **What HGR-1 Certifies:**
-- All 15 Track A entity types are extractable (E14 Interface deferred)
+- All 16 Track A entity types in scope (15 extractable; E14 deferred)
 - All 21 Track A relationship types are extractable
 - Graph API v1 is operational
 - Shadow ledger is capturing provenance
@@ -42,7 +45,7 @@ Before requesting HGR-1 review, confirm:
 
 ### Section 1: Entity Verification
 
-**Requirement:** All 16 Track A entity types extractable
+**Requirement:** All 16 Track A entity types in scope (15 extractable; E14 deferred)
 
 | Entity | Expected | Actual | Verified |
 |--------|----------|--------|----------|
