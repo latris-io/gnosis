@@ -1,6 +1,6 @@
 # Story A.2: Relationship Registry
 
-**Version:** 1.0.0  
+**Version:** 1.1.0  
 **Implements:** STORY-64.2 (UTG Relationship Extraction)  
 **Track:** A  
 **Duration:** 2-3 days  
@@ -8,6 +8,8 @@
 - BRD V20.6.3 §Epic 64, Story 64.2
 - UTG Schema V20.6.1 §Relationship Registry
 - Verification Spec V20.6.4 §Part IX
+
+> **v1.1.0:** Added service-layer architecture per PROMPTS.md alignment
 
 ---
 
@@ -334,108 +336,100 @@ export class ASTRelationshipProvider implements ExtractionProvider {
 }
 ```
 
+### Step 4b: Relationship Service (Upsert Logic)
+
+```typescript
+// src/services/relationships/relationship-service.ts
+// @implements STORY-64.2
+// Implements ENTRY.md Upsert Rule (Locked)
+
+import { pool } from '../../db/postgres';
+
+/**
+ * Identity at service boundary: (project_id, instance_id)
+ * Persistence uses ON CONFLICT (instance_id) until composite uniqueness exists.
+ * Per ENTRY.md locked upsert rule.
+ */
+export async function upsert(projectId: string, extracted: ExtractedRelationship): Promise<Relationship> {
+  // Resolve from_instance_id and to_instance_id to UUIDs
+  const fromEntityId = await resolveEntityId(extracted.from_instance_id);
+  const toEntityId = await resolveEntityId(extracted.to_instance_id);
+  
+  const result = await pool.query(`
+    INSERT INTO relationships (
+      id, relationship_type, instance_id, name,
+      from_entity_id, to_entity_id, confidence, project_id, extracted_at
+    ) VALUES (
+      gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, NOW()
+    )
+    ON CONFLICT (instance_id) DO UPDATE SET
+      name = EXCLUDED.name,
+      from_entity_id = EXCLUDED.from_entity_id,
+      to_entity_id = EXCLUDED.to_entity_id,
+      confidence = EXCLUDED.confidence,
+      extracted_at = NOW()
+    RETURNING id, (xmax = 0) AS inserted
+  `, [
+    extracted.relationship_type, extracted.instance_id, extracted.name,
+    fromEntityId, toEntityId, extracted.confidence ?? 1.0,
+    projectId  // project_id included in INSERT
+  ]);
+  
+  // Emit relationship-link entry per Verification Spec §8.1.3 on CREATE/UPDATE only
+  if (result.rows[0]) {
+    await emitRelationshipLinkEntry(result.rows[0], extracted);
+  }
+  
+  return result.rows[0];
+}
+```
+
 ### Step 5: Create Graph API v1 Relationship Operations
+
+> **Architecture:** API routes delegate to services; they do NOT import from `src/db/*` directly.
+> See PROMPTS.md Database Access Boundary.
 
 ```typescript
 // src/api/v1/relationships.ts
 // @implements STORY-64.2
 // @satisfies AC-64.2.1 through AC-64.2.21
 
+import { upsert as upsertRelationship } from '../../services/relationships/relationship-service';
 import type { Relationship, RelationshipTypeCode } from '../../schema/track-a/relationships';
+import type { ExtractedRelationship } from '../../extraction/types';
 
-export async function createRelationship(rel: Relationship): Promise<Relationship> {
-  // Log to shadow ledger first
-  await shadowLedger.append({
-    timestamp: new Date(),
-    operation: 'CREATE',
-    entity_type: `relationship:${rel.relationship_type}`,
-    entity_id: rel.id,
-    evidence: {
-      source_file: rel.source_file,
-      line_start: rel.line_start,
-      line_end: rel.line_end,
-      commit_sha: rel.commit_sha
-    },
-    hash: computeHash(rel)
-  });
-  
-  // Insert into PostgreSQL (uses migration 003 schema)
-  const result = await pool.query(
-    `INSERT INTO relationships (
-       id, relationship_type, instance_id, name,
-       from_entity_id, to_entity_id, attributes, confidence,
-       source_file, line_start, line_end, commit_sha,
-       extraction_timestamp, extractor_version, project_id
-     ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
-     RETURNING *`,
-    [
-      rel.id, rel.relationship_type, rel.instance_id, rel.name,
-      rel.from_entity_id, rel.to_entity_id, rel.attributes, rel.confidence,
-      rel.source_file, rel.line_start, rel.line_end, rel.commit_sha,
-      rel.extraction_timestamp, rel.extractor_version, rel.project_id
-    ]
-  );
-  
-  // Insert into Neo4j for graph traversal
-  await neo4jSession.run(
-    `MATCH (s:Entity {id: $from_entity_id}), (t:Entity {id: $to_entity_id})
-     CREATE (s)-[r:${rel.relationship_type} {id: $id}]->(t)`,
-    { id: rel.id, from_entity_id: rel.from_entity_id, to_entity_id: rel.to_entity_id }
-  );
-  
-  return result.rows[0];
+/**
+ * Create or update a relationship via service layer.
+ * API is project-scoped; service handles upsert logic and ledger emission.
+ */
+export async function createRelationship(projectId: string, extracted: ExtractedRelationship): Promise<Relationship> {
+  return upsertRelationship(projectId, extracted);
 }
 
-export async function getRelationship(id: string): Promise<Relationship | null> {
-  const result = await pool.query(
-    `SELECT * FROM relationships WHERE id = $1`,
-    [id]
-  );
-  return result.rows[0] || null;
+export async function getRelationship(projectId: string, id: string): Promise<Relationship | null> {
+  // Delegate to service layer for project-scoped query
+  return relationshipService.getById(projectId, id);
 }
 
 export async function queryRelationships(
+  projectId: string,
   relationshipType: RelationshipTypeCode,
   fromEntityId?: string,
   toEntityId?: string
 ): Promise<Relationship[]> {
-  let query = `SELECT * FROM relationships WHERE relationship_type = $1`;
-  const params: unknown[] = [relationshipType];
-  
-  if (fromEntityId) {
-    params.push(fromEntityId);
-    query += ` AND from_entity_id = $${params.length}`;
-  }
-  
-  if (toEntityId) {
-    params.push(toEntityId);
-    query += ` AND to_entity_id = $${params.length}`;
-  }
-  
-  const result = await pool.query(query, params);
-  return result.rows;
+  // Delegate to service layer for project-scoped query
+  return relationshipService.query(projectId, relationshipType, fromEntityId, toEntityId);
 }
 
 export async function traverseGraph(
+  projectId: string,
   startId: string,
   relationshipTypes: RelationshipTypeCode[],
   direction: 'outgoing' | 'incoming' | 'both',
   maxDepth: number = 3
 ): Promise<Entity[]> {
-  const directionClause = direction === 'outgoing' ? '-[r]->' 
-    : direction === 'incoming' ? '<-[r]-'
-    : '-[r]-';
-  
-  const result = await neo4jSession.run(
-    `MATCH (start:Entity {id: $startId})${directionClause}(end:Entity)
-     WHERE type(r) IN $types
-     RETURN DISTINCT end.id as id
-     LIMIT 100`,
-    { startId, types: relationshipTypes }
-  );
-  
-  const entityIds = result.records.map(r => r.get('id'));
-  return getEntitiesByIds(entityIds);
+  // Delegate to service layer for project-scoped traversal
+  return relationshipService.traverse(projectId, startId, relationshipTypes, direction, maxDepth);
 }
 ```
 
@@ -450,8 +444,9 @@ export async function traverseGraph(
 | `src/extraction/providers/ast-relationship-provider.ts` | AST relationships | ~200 |
 | `src/extraction/providers/test-relationship-provider.ts` | Test relationships | ~120 |
 | `src/extraction/providers/git-relationship-provider.ts` | Git relationships | ~80 |
+| `src/services/relationships/relationship-service.ts` | Upsert logic + ledger emission | ~100 |
 | `src/api/v1/relationships.ts` | Relationship CRUD | ~150 |
-| `migrations/002_relationships.sql` | PostgreSQL schema | ~30 |
+| `migrations/003_reset_schema_to_cursor_plan.sql` | Schema already established (do not modify); future changes require 004+ | — |
 | `test/relationships/relationship-registry.test.ts` | Relationship tests | ~250 |
 
 ---

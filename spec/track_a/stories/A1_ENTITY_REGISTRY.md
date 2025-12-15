@@ -1,6 +1,6 @@
 # Story A.1: Entity Registry
 
-**Version:** 1.1.0  
+**Version:** 1.2.0  
 **Implements:** STORY-64.1 (UTG Entity Extraction)  
 **Track:** A  
 **Duration:** 2-3 days  
@@ -8,6 +8,8 @@
 - BRD V20.6.3 §Epic 64, Story 64.1
 - UTG Schema V20.6.1 §Entity Registry
 - Verification Spec V20.6.4 §Part IX
+
+> **v1.2.0:** Added service-layer architecture per PROMPTS.md alignment
 
 ---
 
@@ -404,75 +406,86 @@ export async function captureSemanticSignal(signal: Omit<SemanticSignal, 'timest
 }
 ```
 
+### Step 5c: Entity Service (Upsert Logic)
+
+```typescript
+// src/services/entities/entity-service.ts
+// @implements STORY-64.1
+// Implements ENTRY.md Upsert Rule (Locked)
+
+import { pool } from '../../db/postgres';
+
+/**
+ * Identity at service boundary: (project_id, instance_id)
+ * Persistence uses ON CONFLICT (instance_id) until composite uniqueness exists.
+ * Per ENTRY.md locked upsert rule.
+ */
+export async function upsert(projectId: string, extracted: ExtractedEntity): Promise<Entity> {
+  const contentHash = computeHash(extracted);
+  
+  const result = await pool.query(`
+    INSERT INTO entities (
+      id, entity_type, instance_id, name, attributes, content_hash,
+      source_file, line_start, line_end, project_id, extracted_at
+    ) VALUES (
+      gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, $9, NOW()
+    )
+    ON CONFLICT (instance_id) DO UPDATE SET
+      name = EXCLUDED.name,
+      attributes = EXCLUDED.attributes,
+      content_hash = EXCLUDED.content_hash,
+      source_file = EXCLUDED.source_file,
+      line_start = EXCLUDED.line_start,
+      line_end = EXCLUDED.line_end,
+      extracted_at = NOW()
+    WHERE entities.content_hash IS DISTINCT FROM EXCLUDED.content_hash
+    RETURNING id, (xmax = 0) AS inserted
+  `, [
+    extracted.entity_type, extracted.instance_id, extracted.name,
+    extracted.attributes, contentHash,
+    extracted.source_file, extracted.line_start, extracted.line_end,
+    projectId  // project_id included in INSERT
+  ]);
+  
+  // Emit entity-link entry per Verification Spec §8.1.3 on CREATE/UPDATE only
+  if (result.rows[0]) {
+    await emitEntityLinkEntry(result.rows[0], extracted);
+  }
+  
+  return result.rows[0];
+}
+```
+
 ### Step 6: Create Graph API v1 Entity Operations
+
+> **Architecture:** API routes delegate to services; they do NOT import from `src/db/*` directly.
+> See PROMPTS.md Database Access Boundary.
 
 ```typescript
 // src/api/v1/entities.ts
 // @implements STORY-64.1
 // @satisfies AC-64.1.1 through AC-64.1.15
 
-import { shadowLedger } from '../../ledger/shadow-ledger';
-import { pool } from '../../db/postgres';
-import { getSession } from '../../db/neo4j';
+import { upsert as upsertEntity } from '../../services/entities/entity-service';
 import type { Entity, EntityTypeCode } from '../../schema/track-a/entities';
+import type { ExtractedEntity } from '../../extraction/types';
 
-export async function createEntity(entity: Entity): Promise<Entity> {
-  // Log to shadow ledger first
-  await shadowLedger.append({
-    timestamp: new Date(),
-    operation: 'CREATE',
-    entity_type: entity.entity_type,
-    entity_id: entity.id,
-    evidence: {
-      source_file: entity.source_file,
-      line_start: entity.line_start,
-      line_end: entity.line_end,
-      commit_sha: entity.commit_sha
-    },
-    hash: computeHash(entity)
-  });
-  
-  // Insert into PostgreSQL (uses migration 003 schema)
-  const result = await pool.query(
-    `INSERT INTO entities (
-       id, entity_type, instance_id, name, attributes, content_hash,
-       source_file, line_start, line_end, commit_sha, 
-       extraction_timestamp, extractor_version, project_id
-     ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
-     RETURNING *`,
-    [
-      entity.id, entity.entity_type, entity.instance_id, entity.name,
-      entity.attributes, entity.content_hash,
-      entity.source_file, entity.line_start, entity.line_end, entity.commit_sha,
-      entity.extraction_timestamp, entity.extractor_version, entity.project_id
-    ]
-  );
-  
-  // Insert into Neo4j for graph traversal
-  const session = getSession();
-  await session.run(
-    `CREATE (e:Entity {id: $id, entity_type: $entity_type, instance_id: $instance_id})`,
-    { id: entity.id, entity_type: entity.entity_type, instance_id: entity.instance_id }
-  );
-  await session.close();
-  
-  return result.rows[0];
+/**
+ * Create or update an entity via service layer.
+ * API is project-scoped; service handles upsert logic and ledger emission.
+ */
+export async function createEntity(projectId: string, extracted: ExtractedEntity): Promise<Entity> {
+  return upsertEntity(projectId, extracted);
 }
 
-export async function getEntity(id: string): Promise<Entity | null> {
-  const result = await pool.query(
-    `SELECT * FROM entities WHERE id = $1`,
-    [id]
-  );
-  return result.rows[0] || null;
+export async function getEntity(projectId: string, id: string): Promise<Entity | null> {
+  // Delegate to service layer for project-scoped query
+  return entityService.getById(projectId, id);
 }
 
-export async function queryEntities(entityType: EntityTypeCode): Promise<Entity[]> {
-  const result = await pool.query(
-    `SELECT * FROM entities WHERE entity_type = $1`,
-    [entityType]
-  );
-  return result.rows;
+export async function queryEntities(projectId: string, entityType: EntityTypeCode): Promise<Entity[]> {
+  // Delegate to service layer for project-scoped query
+  return entityService.queryByType(projectId, entityType);
 }
 ```
 
@@ -492,8 +505,9 @@ export async function queryEntities(entityType: EntityTypeCode): Promise<Entity[
 | `src/extraction/evidence.ts` | Evidence anchor creation | ~30 |
 | `src/ledger/shadow-ledger.ts` | JSONL ledger | ~60 |
 | `src/ledger/semantic-corpus.ts` | Semantic signals for Track C | ~80 |
+| `src/services/entities/entity-service.ts` | Upsert logic + ledger emission | ~80 |
 | `src/api/v1/entities.ts` | Entity CRUD operations | ~100 |
-| `migrations/001_entities.sql` | PostgreSQL schema | ~30 |
+| `migrations/003_reset_schema_to_cursor_plan.sql` | Schema already established (do not modify); future changes require 004+ | — |
 | `test/verification/entity-registry.test.ts` | Entity tests | ~200 |
 
 ---
