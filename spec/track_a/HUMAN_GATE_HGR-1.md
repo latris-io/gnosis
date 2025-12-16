@@ -51,7 +51,7 @@ Before requesting HGR-1 review, confirm:
 |--------|----------|--------|----------|
 | E01 Epic | 65 | ______ | [ ] |
 | E02 Story | 351 | ______ | [ ] |
-| E03 AcceptanceCriterion | 2,901 | ______ | [ ] |
+| E03 AcceptanceCriterion | 2,849 | ______ | [ ] |
 | E04 Constraint | ≥1 | ______ | [ ] |
 | E06 TechnicalDesign | ≥0 | ______ | [ ] |
 | E08 DataSchema | ≥1 | ______ | [ ] |
@@ -76,7 +76,7 @@ Before requesting HGR-1 review, confirm:
 | Relationship | Expected | Actual | Verified |
 |--------------|----------|--------|----------|
 | R01 CONTAINS (Epic→Story) | 351 | ______ | [ ] |
-| R02 CONTAINS (Story→AC) | 2,901 | ______ | [ ] |
+| R02 CONTAINS (Story→AC) | 2,849 | ______ | [ ] |
 | R03-R05 Requirement relationships | ≥0 | ______ | [ ] |
 | R10-R11 Design relationships | ≥0 | ______ | [ ] |
 | R21-R26 Implementation relationships | ≥10 | ______ | [ ] |
@@ -141,7 +141,7 @@ Before requesting HGR-1 review, confirm:
 | All relationships reference valid entities | [ ] PASS |
 | All entity IDs unique | [ ] PASS |
 | All required entity types present | [ ] PASS |
-| BRD counts match (65/351/2901) | [ ] PASS |
+| BRD counts match (65/351/2849) | [ ] PASS |
 | No orphan files | [ ] PASS |
 | Graph connected (Epic→Function paths) | [ ] PASS |
 

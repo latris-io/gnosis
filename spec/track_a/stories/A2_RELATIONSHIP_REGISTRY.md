@@ -44,8 +44,8 @@
 | AC-64.2.16 | Extract DEPENDS_ON (Module→Module) | Shadow Ledger | VERIFY-R26 |
 | AC-64.2.17 | Extract TESTED_BY (Func/Class→TestCase) | Shadow Ledger | VERIFY-R36 |
 | AC-64.2.18 | Extract VERIFIED_BY (AC→TestCase) | Shadow Ledger | VERIFY-R37 |
-| AC-64.2.19 | Extract INTRODUCED_IN (Entity→Commit) | Shadow Ledger | VERIFY-R63 |
-| AC-64.2.20 | Extract MODIFIED_IN (Entity→Commit) | Shadow Ledger | VERIFY-R67 |
+| AC-64.2.19 | Extract INTRODUCED_IN (SourceFile→Commit) | Shadow Ledger | VERIFY-R63 |
+| AC-64.2.20 | Extract MODIFIED_IN (SourceFile→Commit) | Shadow Ledger | VERIFY-R67 |
 | AC-64.2.21 | Extract GROUPS (ChangeSet→Commit) | Shadow Ledger | VERIFY-R70 |
 | AC-64.2.22 | All relationships logged to shadow ledger | Shadow Ledger | RULE-LEDGER-002 |
 | AC-64.2.23 | All relationships have provenance fields | Evidence | SANITY-044 |
@@ -404,8 +404,8 @@ export class GitRelationshipProvider implements ExtractionProvider {
   async extract(snapshot: RepoSnapshot): Promise<ExtractionResult> {
     const relationships: ExtractedRelationship[] = [];
     
-    // R63: INTRODUCED_IN (Entity → Commit) - first commit that adds the entity
-    // R67: MODIFIED_IN (Entity → Commit) - commits that modify the entity
+    // R63: INTRODUCED_IN (SourceFile → Commit) - first commit introducing the file (Track A-scoped deviation from global canon)
+    // R67: MODIFIED_IN (SourceFile → Commit) - commits modifying the file (canonical alignment)
     // (Implementation for R63/R67 based on git blame/log analysis)
     
     // R70: GROUPS (ChangeSet → Commit)
@@ -525,7 +525,7 @@ describe('Relationship Registry', () => {
   // VERIFY-R02: Story HAS_AC AC
   it('extracts Story→AC relationships', async () => {
     const rels = await queryRelationships('R02');  // HAS_AC
-    expect(rels.length).toBe(2901); // One per AC
+    expect(rels.length).toBe(2849); // One per AC
   });
   
   // VERIFY-R21: IMPORTS
@@ -580,7 +580,7 @@ describe('Relationship Registry', () => {
 - [ ] All 21 relationship types extractable (using R-codes)
 - [ ] Relationship counts validate against entities:
   - [ ] 351 Epic→Story HAS_STORY (R01)
-  - [ ] 2,901 Story→AC HAS_AC (R02)
+  - [ ] 2,849 Story→AC HAS_AC (R02)
 - [ ] All tests pass
 - [ ] Neo4j traversal operational
 - [ ] Shadow ledger contains entries for all relationships

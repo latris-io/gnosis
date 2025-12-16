@@ -143,9 +143,14 @@
 | R26 | DEPENDS_ON | Module → Module |
 | R36 | TESTED_BY | Function/Class → TestCase |
 | R37 | VERIFIED_BY | AcceptanceCriterion → TestCase |
-| R63 | INTRODUCED_IN | Entity → Commit |
-| R67 | MODIFIED_IN | Entity → Commit |
+| R63 | INTRODUCED_IN | SourceFile → Commit |
+| R67 | MODIFIED_IN | SourceFile → Commit |
 | R70 | GROUPS | ChangeSet → Commit |
+
+> **Provenance Relationship Note:** R63 INTRODUCED_IN is a Track A-scoped deviation from global canon.
+> Global canon defines R63 as Story → ReleaseVersion, but Track A restricts it
+> to SourceFile → Commit to avoid heuristic provenance claims. R67 MODIFIED_IN
+> is SourceFile → Commit in both global canon and Track A (error correction only).
 
 ### Gates to Pass
 
