@@ -112,7 +112,17 @@ describe('Entity Registry - Story A.1', () => {
     await fs.mkdir('semantic-corpus', { recursive: true });
     await fs.writeFile('shadow-ledger/ledger.jsonl', '');
     await fs.writeFile('semantic-corpus/signals.jsonl', '');
-    
+
+    // VERIFY reset worked - files must be empty
+    const ledgerAfterReset = await fs.readFile('shadow-ledger/ledger.jsonl', 'utf8');
+    const corpusAfterReset = await fs.readFile('semantic-corpus/signals.jsonl', 'utf8');
+    if (ledgerAfterReset.trim() !== '') {
+      throw new Error('Ledger reset failed - file not empty after write');
+    }
+    if (corpusAfterReset.trim() !== '') {
+      throw new Error('Corpus reset failed - file not empty after write');
+    }
+
     // Create temp directory for test outputs
     tempDir = path.join(os.tmpdir(), 'gnosis-test-output-' + Date.now());
     await fs.mkdir(tempDir, { recursive: true });
@@ -565,53 +575,57 @@ describe('Entity Registry - Story A.1', () => {
   // ============================================================
   // VERIFY-LEDGER: Integration Test with DB Persistence
   // Per AC-64.1.16: All extractions logged to shadow ledger
+  // NO SKIPS - test MUST pass or fail
   // ============================================================
 
   describe('VERIFY-LEDGER: Shadow Ledger with DB Persistence', () => {
     // Must be valid UUID per schema: project_id UUID NOT NULL
     const DB_TEST_PROJECT_ID = randomUUID();
-    let dbAvailable = false;
 
     beforeAll(async () => {
-      // Check if DB is available and schema is ready
+      // Hard fail if no DB configured - report which var to use
+      const dbUrl = process.env.TEST_DATABASE_URL || process.env.DATABASE_URL;
+      if (!dbUrl) {
+        throw new Error('DATABASE_URL or TEST_DATABASE_URL must be set for VERIFY-LEDGER');
+      }
+      const dbEnvVar = process.env.TEST_DATABASE_URL ? 'TEST_DATABASE_URL' : 'DATABASE_URL';
+
+      const client = await pool.connect();
       try {
-        const client = await pool.connect();
-        try {
-          // Verify schema exists and has required constraint
-          await client.query('SELECT 1 FROM entities LIMIT 0');
-          await client.query('SELECT 1 FROM projects LIMIT 0');
-          
-          // Verify the unique constraint exists (required for ON CONFLICT)
-          const constraintCheck = await client.query(`
-            SELECT 1 FROM pg_constraint 
-            WHERE conname = 'entities_project_instance_unique'
-          `);
-          if (constraintCheck.rows.length === 0) {
-            console.warn('DB schema missing entities_project_instance_unique constraint');
-            dbAvailable = false;
-            return;
-          }
-          
-          // Create test project row (required by FK constraint)
-          await client.query(`
-            INSERT INTO projects (id, name, created_at)
-            VALUES ($1, 'VERIFY-LEDGER Test Project', NOW())
-            ON CONFLICT (id) DO NOTHING
-          `, [DB_TEST_PROJECT_ID]);
-          
-          dbAvailable = true;
-        } finally {
-          client.release();
+        // Check constraint SEMANTICS (columns), not name
+        const result = await client.query(`
+          SELECT pg_get_constraintdef(c.oid) as def
+          FROM pg_constraint c
+          JOIN pg_class t ON c.conrelid = t.oid
+          WHERE t.relname = 'entities'
+            AND c.contype IN ('u', 'p')
+        `);
+
+        const hasUpsertSupport = result.rows.some((r: { def: string }) =>
+          r.def.includes('project_id') && r.def.includes('instance_id')
+        );
+
+        if (!hasUpsertSupport) {
+          throw new Error(
+            'Migration not applied: entities table missing unique constraint on (project_id, instance_id). ' +
+            `Run: psql $${dbEnvVar} -f migrations/003_reset_schema_to_cursor_plan.sql`
+          );
         }
-      } catch (err) {
-        console.warn('DB not available for VERIFY-LEDGER test:', err);
-        dbAvailable = false;
+
+        // Create test project - use only required columns (id, name)
+        // Schema: migrations/000_init.sql defines projects(id UUID, name TEXT, created_at TIMESTAMPTZ)
+        // created_at has DEFAULT NOW(), so omit it
+        await client.query(`
+          INSERT INTO projects (id, name)
+          VALUES ($1, 'VERIFY-LEDGER Test Project')
+          ON CONFLICT (id) DO NOTHING
+        `, [DB_TEST_PROJECT_ID]);
+      } finally {
+        client.release();
       }
     });
 
     afterAll(async () => {
-      if (!dbAvailable) return;
-      
       // Clean up test data (do NOT call pool.end() - breaks other tests)
       try {
         const client = await pool.connect();
@@ -626,34 +640,48 @@ describe('Entity Registry - Story A.1', () => {
       }
     });
 
-    it('VERIFY-LEDGER: shadow ledger has entries after entityService.upsert()', async ({ skip }) => {
-      if (!dbAvailable) {
-        skip();
-        return;
-      }
+    it('VERIFY-LEDGER: shadow ledger has entries after entityService.upsert()', async () => {
+      // NO SKIP - this test MUST pass or fail
 
       // Reset global ledger for deterministic state
       await fs.writeFile('shadow-ledger/ledger.jsonl', '');
       await shadowLedger.initialize();
-      
+
       // Extract entities
       const result = await brdProvider.extract(snapshot);
       expect(result.entities.length).toBeGreaterThan(0);
-      
+
       // Persist a small subset to trigger ledger writes via entityService
       const entitiesToPersist = result.entities.slice(0, 10);
       for (const entity of entitiesToPersist) {
         await entityService.upsert(DB_TEST_PROJECT_ID, entity);
       }
-      
+
       // Assert ledger FILE is non-empty (prevents "memory-only" loophole)
       const raw = await fs.readFile('shadow-ledger/ledger.jsonl', 'utf8');
       expect(raw.trim().length).toBeGreaterThan(0);
-      
-      // Assert ledger has entries with correct semantics
+
+      // Assert ledger has entries
       const entries = await shadowLedger.getEntries();
       expect(entries.length).toBeGreaterThan(0);
+
+      // Assert ALL entries are valid operations (no garbage)
+      expect(entries.every(e =>
+        ['CREATE', 'UPDATE'].includes(e.operation)
+      )).toBe(true);
+
+      // Assert at least one CREATE (proves new entities were persisted)
       expect(entries.some(e => e.operation === 'CREATE')).toBe(true);
+
+      // Assert corpus growth is bounded (proves determinism)
+      // Corpus starts at 0 (reset by outer beforeAll), then tests write signals.
+      // BRD extraction alone produces ~3265 signals (65 + 351 + 2849).
+      // Multiple extractions in test run produce ~10000 signals.
+      // Bound of 15000 allows for test variance while catching accumulation bugs.
+      const corpusRaw = await fs.readFile('semantic-corpus/signals.jsonl', 'utf8');
+      const corpusLines = corpusRaw.split('\n').filter(Boolean).length;
+      expect(corpusLines).toBeGreaterThan(0); // Must have captured signals
+      expect(corpusLines).toBeLessThan(15000); // Bounded growth per run
     });
   });
 
