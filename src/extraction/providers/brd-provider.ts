@@ -14,7 +14,7 @@ import { captureCorrectSignal, captureIncorrectSignal, capturePartialSignal } fr
 const EXPECTED_COUNTS = {
   epics: 65,
   stories: 351,
-  acceptanceCriteria: 2901,
+  acceptanceCriteria: 2849, // Updated per ORGAN PATCH PR
 };
 
 /**
