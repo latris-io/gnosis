@@ -290,7 +290,7 @@ Architecture:
 Constraints:
 - Entity types: reference src/schema/track-a/entities.ts (ENTITY_TYPE_CODES export is authoritative)
 - Extraction types: use src/extraction/types.ts (ExtractedEntity, EvidenceAnchor)
-- Do NOT reference migrations/001_entities.sql or migrations/002_relationships.sql (schema established by 001-003)
+- Schema is defined in migrations/000_init.sql and migrations/003_reset_schema_to_cursor_plan.sql; do NOT create new migrations unless the story card explicitly requires it
 - Do not create new migrations unless the story card explicitly requires a schema change; if it does, use migrations/004+
 - Do NOT duplicate type definitions
 - Providers must NOT import from src/db/* or src/services/*
@@ -350,7 +350,7 @@ Architecture:
 Constraints:
 - Relationship types: reference src/schema/track-a/relationships.ts (RELATIONSHIP_TYPE_CODES export is authoritative)
 - Extraction types: use src/extraction/types.ts (ExtractedRelationship uses from_instance_id/to_instance_id)
-- Do NOT reference migrations/001_entities.sql or migrations/002_relationships.sql (schema established by 001-003)
+- Schema is defined in migrations/000_init.sql and migrations/003_reset_schema_to_cursor_plan.sql; do NOT create new migrations unless the story card explicitly requires it
 - Do not create new migrations unless the story card explicitly requires a schema change; if it does, use migrations/004+
 - Do NOT duplicate type definitions
 - Providers must NOT import from src/db/* or src/services/*
