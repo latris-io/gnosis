@@ -1,10 +1,11 @@
 # Track A Entry Criteria
 
-**Version:** 1.2.0  
+**Version:** 1.3.0  
 **Implements:** Roadmap V20.6.4 Track A Entry  
 **Purpose:** Prerequisites that must be satisfied before Track A implementation begins  
 **Canonical Source:** GNOSIS_TO_SOPHIA_MASTER_ROADMAP_V20_6_4.md §Track A
 
+> **v1.3.0:** Added SANITY model note, range 020-024, relationship endpoint deviation notice  
 > **v1.2.0:** Multi-tenant identity fix: composite uniqueness ON CONFLICT (project_id, instance_id)  
 > **v1.1.0:** Added instance_id patterns reference section
 
@@ -54,11 +55,13 @@
 - [ ] `docs/CURSOR_IMPLEMENTATION_PLAN_V20_8_5.md` exists
 - [ ] `docs/integrations/EP-D-002_RUNTIME_RECONCILIATION_V20_6_1.md` exists
 
-### SANITY Suite
+### SANITY Suite (Entry Gate)
+
+> **Model:** ENTRY.md lists minimum required tests for Track A entry. EXIT.md uses broader category ranges to accommodate future test additions within each category.
 
 - [ ] All SANITY-001 to 005 tests pass (Environment)
 - [ ] All SANITY-010 to 016 tests pass (Canonical)
-- [ ] All SANITY-020 to 022 tests pass (Schema)
+- [ ] All SANITY-020 to 024 tests pass (Schema)
 - [ ] All SANITY-030 to 033 tests pass (Markers)
 - [ ] All SANITY-040 to 044 tests pass (Extraction)
 - [ ] All SANITY-055 to 057 tests pass (BRD)
@@ -101,6 +104,22 @@
 | E49 | ReleaseVersion | Provenance | Git analysis |
 | E50 | Commit | Provenance | Git analysis |
 | E52 | ChangeSet | Provenance | Derived |
+
+### Relationship Endpoint Deviation Notice
+
+> **Track A Deviation:** The relationship endpoints below differ from BRD V20.6.3 Appendix I.
+> 
+> **Rationale:** BRD canonical definitions use design-layer entities (TechnicalDesign, DataSchema) as relationship sources for R14/R16. Track A uses marker-based extraction where code entities (SourceFile, Function/Class) are the known anchor points. This is an intentional simplification.
+>
+> **Affected Relationships:**
+> - R03: Track A uses `AC → Constraint` (BRD: `Story → Constraint`)
+> - R04: Track A uses `SourceFile → SourceFile` (BRD: `Module → SourceFile`)
+> - R14: Track A uses `Story → Function/Class` (BRD: `TechnicalDesign → SourceFile`)
+> - R16: Track A uses `Function/Class → SourceFile` (BRD: `DataSchema → SourceFile`)
+> - R18: Track A uses `Function/Class → Story` (BRD: `SourceFile → Story`)
+> - R36: Track A uses `Function/Class → TestCase` (BRD: `Story → TestSuite`)
+>
+> **Future Alignment:** When E06/E08 extraction is fully implemented, a reconciliation migration will align these relationships to BRD canonical form.
 
 ### Relationships to Implement (21)
 

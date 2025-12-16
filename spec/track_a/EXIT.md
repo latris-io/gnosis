@@ -1,10 +1,11 @@
 # Track A Exit Criteria
 
-**Version:** 1.2.0  
+**Version:** 1.2.1  
 **Implements:** Roadmap V20.6.4 Track A Exit  
 **Purpose:** Verification checklist before HGR-1 (Human Gate Review 1)  
 **Canonical Source:** GNOSIS_TO_SOPHIA_MASTER_ROADMAP_V20_6_4.md §Track A
 
+> **v1.2.1:** Added SANITY model clarification note  
 > **v1.2.0:** Entity count consistency: "16 in scope, 15 extractable (E14 deferred)"  
 > **v1.1.0:** Added script reference note
 
@@ -123,6 +124,8 @@ npm run test:sanity
 #
 # Total: 58 tests (54 passed, 4 skipped)
 ```
+
+> **Model:** EXIT.md uses broad category ranges (e.g., 001-009) to accommodate future test additions within each category. ENTRY.md specifies the minimum subset required for Track A entry.
 
 - [ ] All 54 active SANITY tests pass
 - [ ] All 4 dormant SANITY tests return `{skipped: true}`

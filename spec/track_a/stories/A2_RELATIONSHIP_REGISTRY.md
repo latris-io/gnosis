@@ -1,6 +1,6 @@
 # Story A.2: Relationship Registry
 
-**Version:** 1.3.0  
+**Version:** 1.4.0  
 **Implements:** STORY-64.2 (UTG Relationship Extraction)  
 **Track:** A  
 **Duration:** 2-3 days  
@@ -9,6 +9,7 @@
 - UTG Schema V20.6.1 §Relationship Registry
 - Verification Spec V20.6.4 §Part IX
 
+> **v1.4.0:** Added R70 GROUPS extraction logic, endpoint deviation note  
 > **v1.3.0:** Multi-tenant identity fix: ON CONFLICT (project_id, instance_id)  
 > **v1.2.0:** Entity count consistency: "16 in scope, 15 extractable (E14 deferred)"  
 > **v1.1.0:** Added service-layer architecture per PROMPTS.md alignment
@@ -50,6 +51,8 @@
 | AC-64.2.23 | All relationships have provenance fields | Evidence | SANITY-044 |
 
 > **Note on Interface Targets:** R05 (CONTAINS_ENTITY) and R24 (IMPLEMENTS_INTERFACE) may reference E14 Interface as a target entity type. Interface extraction is deferred to post-Track A; relationships with Interface targets will have `confidence < 1.0` until Interface entities are extracted in a later track.
+
+> **Endpoint Deviation:** See ENTRY.md §Relationship Endpoint Deviation Notice. Track A uses simplified endpoints optimized for marker-based extraction. This is documented and intentional.
 
 ---
 
@@ -382,6 +385,56 @@ export async function upsert(projectId: string, extracted: ExtractedRelationship
   }
   
   return result.rows[0];
+}
+```
+
+### Step 4c: Implement Git Relationship Extraction (R63, R67, R70)
+
+```typescript
+// src/extraction/providers/git-relationship-provider.ts
+// @implements STORY-64.2
+// @satisfies AC-64.2.19, AC-64.2.20, AC-64.2.21
+
+import type { ExtractedRelationship } from '../types';
+import * as entityService from '../../services/entities/entity-service';
+
+export class GitRelationshipProvider implements ExtractionProvider {
+  name = 'git-relationship-provider';
+  
+  async extract(snapshot: RepoSnapshot): Promise<ExtractionResult> {
+    const relationships: ExtractedRelationship[] = [];
+    
+    // R63: INTRODUCED_IN (Entity → Commit) - first commit that adds the entity
+    // R67: MODIFIED_IN (Entity → Commit) - commits that modify the entity
+    // (Implementation for R63/R67 based on git blame/log analysis)
+    
+    // R70: GROUPS (ChangeSet → Commit)
+    const changesets = await entityService.queryByType(snapshot.project_id, 'E52');
+    
+    for (const changeset of changesets) {
+      const commitShas = changeset.attributes.commit_shas as string[];
+      
+      for (const sha of commitShas) {
+        const commitEntity = await entityService.getByInstanceId(
+          snapshot.project_id, 
+          `COMMIT-${sha.slice(0, 12)}`
+        );
+        
+        if (commitEntity) {
+          relationships.push({
+            relationship_type: 'R70',
+            instance_id: `R70:${changeset.instance_id}:${commitEntity.instance_id}`,
+            name: 'GROUPS',
+            from_instance_id: changeset.instance_id,
+            to_instance_id: commitEntity.instance_id,
+            confidence: 1.0
+          });
+        }
+      }
+    }
+    
+    return { entities: [], relationships, evidence: [] };
+  }
 }
 ```
 

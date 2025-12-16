@@ -12,6 +12,7 @@
     "verify:integrity": "vitest run test/verification/integrity/",
     "verify:env": "npx tsx scripts/verify-env.ts",
     "verify:infrastructure": "npx tsx scripts/verify-infrastructure.ts",
+    "verify:track-a-entry": "npx tsx scripts/verify-track-a-entry.ts",
     "report:coverage": "vitest run --coverage",
     "build": "tsc",
     "migrate": "npx tsx src/db/migrate.ts",

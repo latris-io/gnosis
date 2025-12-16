@@ -1,8 +1,10 @@
 # Track A Cursor Prompts
 
-**Version:** 1.1.0  
+**Version:** 1.2.0  
 **Purpose:** Verbatim prompts for Cursor execution  
 **Rule:** Use these prompts exactly as written. Do not paraphrase or summarize.
+
+> **v1.2.0:** Added verify:track-a-entry script, Phase 0.7
 
 **Schema Authority:** `src/schema/track-a/entities.ts` and `src/schema/track-a/relationships.ts` are authoritative. Do not hardcode type lists.
 
@@ -46,7 +48,7 @@ Initialize the Gnosis project with the following structure:
 1. Create package.json with:
    - name: "@gnosis/core"
    - type: "module"
-   - scripts: test, test:sanity, verify:gates, verify:integrity, report:coverage
+   - scripts: test, test:sanity, verify:track-a-entry, verify:gates, verify:integrity, report:coverage
    - dependencies: pg, neo4j-driver, ts-morph, unified, remark-parse
    - devDependencies: typescript, vitest, @types/node, @types/pg
 
@@ -245,6 +247,29 @@ Run these commands and show output:
    Expected: DATABASE_URL, NEO4J_URL, NODE_ENV set
 
 If all pass, Phase 0 is complete. Proceed to Story A.1.
+```
+
+### 0.7: Track A Entry Verification Script
+
+```
+Create the Track A entry verification script:
+
+1. Create scripts/verify-track-a-entry.ts:
+   - Check all ENTRY.md prerequisites programmatically
+   - Verify environment variables (DATABASE_URL, NEO4J_URL, NODE_ENV)
+   - Verify canonical documents exist in docs/
+   - Verify SANITY-001 through SANITY-024 pass
+   - Output pass/fail status for each check
+
+2. Expected output format:
+   ✓ Environment prerequisites met
+   ✓ Canonical documents present (6/6)
+   ✓ SANITY suite passes
+   ✓ Project structure valid
+   
+   TRACK A ENTRY: APPROVED
+
+Mark code with @implements INFRASTRUCTURE.
 ```
 
 ---

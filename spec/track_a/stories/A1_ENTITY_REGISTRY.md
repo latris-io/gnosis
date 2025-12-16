@@ -1,6 +1,6 @@
 # Story A.1: Entity Registry
 
-**Version:** 1.5.0  
+**Version:** 1.6.0  
 **Implements:** STORY-64.1 (UTG Entity Extraction)  
 **Track:** A  
 **Duration:** 2-3 days  
@@ -9,6 +9,7 @@
 - UTG Schema V20.6.1 §Entity Registry
 - Verification Spec V20.6.4 §Part IX
 
+> **v1.6.0:** Added AC-64.1.19 for E52 ChangeSet, ChangeSetProvider, signal count 50, AC marker fix  
 > **v1.5.0:** Multi-tenant identity fix: ON CONFLICT (project_id, instance_id)  
 > **v1.4.0:** Entity count consistency: "16 in scope, 15 extractable (E14 deferred)"  
 > **v1.3.0:** Fixed incomplete service delegation in API snippet; added service interface requirements  
@@ -46,6 +47,7 @@
 | AC-64.1.16 | All extractions logged to shadow ledger | Shadow Ledger | RULE-LEDGER-001 |
 | AC-64.1.17 | All entities have evidence anchors | Evidence | SANITY-044 |
 | AC-64.1.18 | Semantic corpus initialized for Track C | Semantic Learning | VERIFY-CORPUS-01 |
+| AC-64.1.19 | Derive ChangeSet entities from commit groupings | Shadow Ledger | VERIFY-E52 |
 
 ---
 
@@ -333,7 +335,7 @@ export const shadowLedger = new ShadowLedger();
 ```typescript
 // src/ledger/semantic-corpus.ts
 // @implements STORY-64.1
-// @satisfies AC-64.1.19
+// @satisfies AC-64.1.18
 
 import * as fs from 'fs/promises';
 import * as path from 'path';
@@ -481,6 +483,82 @@ export async function queryByType(projectId: string, entityType: EntityTypeCode)
 }
 ```
 
+### Step 5d: Implement ChangeSet Derivation (E52)
+
+> **Note:** E52 ChangeSet is DERIVED, not directly extracted. ChangeSets group commits by story reference. R70 GROUPS relationships are created in A2.
+
+```typescript
+// src/extraction/providers/changeset-provider.ts
+// @implements STORY-64.1
+// @satisfies AC-64.1.19
+
+import { ExtractionProvider, RepoSnapshot, ExtractionResult, ExtractedEntity } from '../types';
+import { execSync } from 'child_process';
+
+export class ChangeSetProvider implements ExtractionProvider {
+  name = 'changeset-provider';
+  
+  supports(fileType: string): boolean {
+    return fileType === 'git';
+  }
+  
+  async extract(snapshot: RepoSnapshot): Promise<ExtractionResult> {
+    const entities: ExtractedEntity[] = [];
+    const upperBound = snapshot.commit_sha || 'HEAD';
+    
+    let stdout: string;
+    try {
+      stdout = execSync(
+        `git log --format="%H|%s" ${upperBound}`,
+        { cwd: snapshot.root_path, encoding: 'utf8', maxBuffer: 10 * 1024 * 1024 }
+      );
+    } catch {
+      return { entities: [], relationships: [], evidence: [] };
+    }
+    
+    // Group commits by story reference
+    const commitsByStory = new Map<string, string[]>();
+    
+    for (const line of stdout.split('\n').filter(Boolean)) {
+      const pipeIndex = line.indexOf('|');
+      if (pipeIndex === -1) continue;
+      
+      const sha = line.slice(0, pipeIndex);
+      const message = line.slice(pipeIndex + 1);
+      const storyMatch = message.match(/STORY-(\d+\.\d+)/);
+      
+      if (storyMatch) {
+        const storyId = storyMatch[1];
+        if (!commitsByStory.has(storyId)) {
+          commitsByStory.set(storyId, []);
+        }
+        commitsByStory.get(storyId)!.push(sha);
+      }
+    }
+    
+    // Create ChangeSet entity for each story grouping (deterministic order)
+    for (const storyId of Array.from(commitsByStory.keys()).sort()) {
+      const commits = commitsByStory.get(storyId)!;
+      entities.push({
+        entity_type: 'E52',
+        instance_id: `CHGSET-STORY-${storyId}`,
+        name: `ChangeSet for STORY-${storyId}`,
+        attributes: {
+          story_id: `STORY-${storyId}`,
+          commit_count: commits.length,
+          commit_shas: commits.sort()
+        },
+        source_file: '.git',
+        line_start: 0,
+        line_end: 0
+      });
+    }
+    
+    return { entities, relationships: [], evidence: [] };
+  }
+}
+```
+
 ### Step 6: Create Graph API v1 Entity Operations
 
 > **Architecture:** API routes delegate to services; they do NOT import from `src/db/*` directly.
@@ -523,6 +601,7 @@ export async function queryEntities(projectId: string, entityType: EntityTypeCod
 | `src/extraction/providers/brd-provider.ts` | BRD parsing | ~150 |
 | `src/extraction/providers/ast-provider.ts` | AST extraction | ~200 |
 | `src/extraction/providers/git-provider.ts` | Git analysis | ~100 |
+| `src/extraction/providers/changeset-provider.ts` | ChangeSet derivation (E52) | ~70 |
 | `src/extraction/providers/filesystem-provider.ts` | File enumeration | ~80 |
 | `src/extraction/parsers/brd-parser.ts` | BRD markdown parsing | ~200 |
 | `src/extraction/evidence.ts` | Evidence anchor creation | ~30 |
@@ -625,7 +704,7 @@ describe('Entity Registry', () => {
 - [ ] Semantic corpus file created at `semantic-corpus/signals.jsonl`
 - [ ] `captureSemanticSignal()` function exported
 - [ ] Signal types defined: CORRECT, INCORRECT, PARTIAL, ORPHAN_MARKER, AMBIGUOUS
-- [ ] Minimum 10 signals captured during this story (from extraction validation)
+- [ ] Minimum 50 signals captured during this story (from extraction validation)
 
 ### API Boundary
 - [ ] No direct database imports in extraction code
