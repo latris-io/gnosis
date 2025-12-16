@@ -22,7 +22,7 @@ This version establishes **Organ Alignment** — synchronizing companion documen
 | Change | Description | Impact |
 |--------|-------------|--------|
 | **Version Matrix** | All companion refs synchronized to V20.6.x | Suite consistency |
-| **G-REGISTRY Fix** | Counts updated to 65/351/2901 | Gate correctness |
+| **G-REGISTRY Fix** | Counts updated to 65/351/2849 | Gate correctness |
 | **Track C Closure** | Operational semantics for autonomy boundary | Implementation determinism |
 
 **Note:** No new entities, relationships, or gates. This is alignment + closure specification.
@@ -723,7 +723,7 @@ test('SANITY-044c: Evidence anchors immutable within snapshot', () => {
 | SANITY-052 | Track A graph exists | ≥16 entities |
 | SANITY-053 | All Track A gates pass | 5/5 green |
 | SANITY-054 | Git history available | ≥1 commit |
-| SANITY-055 | BRD registry populated | 65/351/2901 |
+| SANITY-055 | BRD registry populated | 65/351/2849 |
 
 ### Track C Pre-Checks (SANITY-060 to SANITY-065)
 
@@ -1016,7 +1016,7 @@ Track B establishes **self-consistency**. The system must prove its memory is so
 |------|-----------|-------------|------|
 | G01-G06, G-API | (same) | Track A gates | No |
 | G-HEALTH | Pass | Manifest matches disk | Yes |
-| G-REGISTRY | Pass | BRD counts match (65/351/2901) | Yes |
+| G-REGISTRY | Pass | BRD counts match (65/351/2849) | Yes |
 | G-DRIFT | 0 changes | Zero unexpected state changes | Yes |
 | G-CLOSURE | Identical | Re-ingestion produces same graph | Yes |
 
@@ -3909,7 +3909,7 @@ SHADOW LEDGER MIGRATION:
 GATES (9):
 [ ] All 5 Track A gates still pass
 [ ] G-HEALTH: Pass
-[ ] G-REGISTRY: Pass (65/351/2901)
+[ ] G-REGISTRY: Pass (65/351/2849)
 [ ] G-DRIFT: 0 changes
 [ ] G-CLOSURE: Identical
 
@@ -4636,7 +4636,7 @@ Legend: ✅ Complete | ⚠️ Outlined (needs expansion)
 
 ### V20.6.4 (Organ Alignment Edition)
 1. Synchronized all companion document references
-2. Fixed G-REGISTRY counts: 64/347/2873 → 65/351/2901
+2. Fixed G-REGISTRY counts: 64/347/2873 → 65/351/2849 (canonical). Note: 2901 was a metadata/header artifact, not a BRD-content count.
 3. Added Track C Operational Closure (§5.6)
 4. Specified "≥80% agreement" operational definition
 5. Specified reject behavior for autonomy boundary

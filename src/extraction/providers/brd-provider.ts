@@ -1,174 +1,166 @@
 // src/extraction/providers/brd-provider.ts
 // @implements STORY-64.1
 // @satisfies AC-64.1.1, AC-64.1.2, AC-64.1.3, AC-64.1.4
-// BRD extraction provider - extracts E01 Epic, E02 Story, E03 AcceptanceCriterion, E04 Constraint
+// BRD Provider - extracts E01 Epic, E02 Story, E03 AcceptanceCriterion from BRD
 
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import type { ExtractionProvider, RepoSnapshot, ExtractionResult, ExtractedEntity } from '../types.js';
-import { parseBRD, getParseStats } from '../parsers/brd-parser.js';
-import { createEvidenceAnchor } from '../evidence.js';
-import { captureCorrectSignal, captureIncorrectSignal, capturePartialSignal } from '../../ledger/semantic-corpus.js';
-
-// Expected counts from BRD V20.6.3 (per .cursorrules)
-const EXPECTED_COUNTS = {
-  epics: 65,
-  stories: 351,
-  acceptanceCriteria: 2849, // Updated per ORGAN PATCH PR
-};
+import { parseBRD, getExpectedCounts } from '../parsers/brd-parser.js';
+import { captureCorrectSignal, captureIncorrectSignal } from '../../ledger/semantic-corpus.js';
 
 /**
- * BRD Provider - extracts entities from the Business Requirements Document.
+ * BRD Provider - extracts requirement entities from BRD markdown.
  * 
  * Entities extracted:
- * - E01 Epic: from Epic headings and summary tables
- * - E02 Story: from Story headings
- * - E03 AcceptanceCriterion: from AC tables and lists
- * - E04 Constraint: from constraint tables
+ * - E01 Epic: High-level feature groupings
+ * - E02 Story: User stories within epics
+ * - E03 AcceptanceCriterion: Acceptance criteria for stories
+ * - E04 Constraint: Constraints (expected 0 in current BRD)
  */
 export class BRDProvider implements ExtractionProvider {
   name = 'brd-provider';
 
   supports(fileType: string): boolean {
-    return fileType === 'brd' || fileType === 'md';
+    return fileType === 'md' || fileType === 'brd';
   }
 
   async extract(snapshot: RepoSnapshot): Promise<ExtractionResult> {
-    const brdPath = path.join(snapshot.root_path, 'docs', 'BRD_V20_6_3_COMPLETE.md');
-    
+    const brdPath = path.join(snapshot.root_path, 'docs/BRD_V20_6_3_COMPLETE.md');
+    const relativePath = 'docs/BRD_V20_6_3_COMPLETE.md';
+    const entities: ExtractedEntity[] = [];
+
+    // Emit start signal
+    await captureCorrectSignal('MILESTONE', 'brd-parse-start', {
+      path: relativePath,
+    });
+
+    // Read BRD file (hard-fail if not found)
     let content: string;
     try {
       content = await fs.readFile(brdPath, 'utf8');
     } catch (error) {
-      // Capture semantic signal for extraction failure
-      await captureIncorrectSignal('E01', 'BRD', 'BRD file not found', {
+      await captureIncorrectSignal('BRD', 'brd-file', `Failed to read BRD file: ${error}`, {
         path: brdPath,
-        error: String(error),
       });
-      return { entities: [], relationships: [], evidence: [] };
+      throw new Error(`BRD FILE NOT FOUND: Cannot read ${brdPath}`);
     }
 
-    const parsed = parseBRD(content);
-    const stats = getParseStats(parsed);
-    const entities: ExtractedEntity[] = [];
+    // Parse BRD (hard-fail on count mismatch unless ALLOW_BRD_COUNT_DRIFT=1)
+    const parsed = parseBRD(content, relativePath);
 
-    // Extract Epics (E01)
+    // Convert E01 Epics - emit signal for EACH entity per .cursorrules Rule 5 (≥50 signals)
     for (const epic of parsed.epics) {
       const instanceId = `EPIC-${epic.number}`;
+      
       entities.push({
         entity_type: 'E01',
         instance_id: instanceId,
-        name: epic.title,
+        name: `Epic ${epic.number}: ${epic.title}`,
         attributes: {
           number: epic.number,
-          description: epic.description,
+          title: epic.title,
         },
-        source_file: brdPath,
+        source_file: relativePath,
         line_start: epic.lineStart,
         line_end: epic.lineEnd,
       });
 
-      // Capture semantic signal for successful extraction
+      // Signal per entity extraction
       await captureCorrectSignal('E01', instanceId, {
         title: epic.title,
       });
     }
 
-    // Extract Stories (E02)
+    // Convert E02 Stories - emit signal for EACH entity
     for (const story of parsed.stories) {
       const instanceId = `STORY-${story.epicNumber}.${story.storyNumber}`;
+      
       entities.push({
         entity_type: 'E02',
         instance_id: instanceId,
-        name: story.title,
+        name: `Story ${story.epicNumber}.${story.storyNumber}: ${story.title}`,
         attributes: {
-          epic_number: story.epicNumber,
-          story_number: story.storyNumber,
-          user_story: story.userStory,
           epic_id: `EPIC-${story.epicNumber}`,
+          number: story.storyNumber,
+          title: story.title,
         },
-        source_file: brdPath,
+        source_file: relativePath,
         line_start: story.lineStart,
         line_end: story.lineEnd,
       });
 
+      // Signal per entity extraction
       await captureCorrectSignal('E02', instanceId, {
         title: story.title,
         epic: story.epicNumber,
       });
     }
 
-    // Extract Acceptance Criteria (E03)
+    // Convert E03 AcceptanceCriteria - emit signal for EACH entity
     for (const ac of parsed.acceptanceCriteria) {
       const instanceId = `AC-${ac.epicNumber}.${ac.storyNumber}.${ac.acNumber}`;
+      
       entities.push({
         entity_type: 'E03',
         instance_id: instanceId,
         name: instanceId,
         attributes: {
           story_id: `STORY-${ac.epicNumber}.${ac.storyNumber}`,
+          number: ac.acNumber,
           description: ac.description,
-          priority: ac.priority,
-          epic_number: ac.epicNumber,
-          story_number: ac.storyNumber,
-          ac_number: ac.acNumber,
         },
-        source_file: brdPath,
+        source_file: relativePath,
         line_start: ac.lineStart,
         line_end: ac.lineEnd,
       });
 
+      // Signal per entity extraction
       await captureCorrectSignal('E03', instanceId, {
         description: ac.description.substring(0, 100),
       });
     }
 
-    // Extract Constraints (E04)
-    for (const constraint of parsed.constraints) {
-      entities.push({
-        entity_type: 'E04',
-        instance_id: constraint.id,
-        name: constraint.id,
-        attributes: {
-          type: constraint.type,
-          description: constraint.description,
-        },
-        source_file: brdPath,
-        line_start: constraint.lineStart,
-        line_end: constraint.lineEnd,
-      });
+    // Signal counts validated
+    const expected = getExpectedCounts();
+    await captureCorrectSignal('MILESTONE', 'brd-counts-validated', {
+      epics: parsed.epics.length,
+      stories: parsed.stories.length,
+      acceptanceCriteria: parsed.acceptanceCriteria.length,
+      expected_epics: expected.epics,
+      expected_stories: expected.stories,
+      expected_acs: expected.acceptanceCriteria,
+    });
 
-      await captureCorrectSignal('E04', constraint.id, {
-        type: constraint.type,
-      });
-    }
-
-    // Validate counts and capture partial signals if mismatch
-    if (stats.epicCount !== EXPECTED_COUNTS.epics) {
-      await capturePartialSignal('E01', 'EPIC-COUNT', 
-        (stats.epicCount / EXPECTED_COUNTS.epics) * 100, {
-          expected: EXPECTED_COUNTS.epics,
-          actual: stats.epicCount,
-        });
-    }
-
-    if (stats.storyCount !== EXPECTED_COUNTS.stories) {
-      await capturePartialSignal('E02', 'STORY-COUNT',
-        (stats.storyCount / EXPECTED_COUNTS.stories) * 100, {
-          expected: EXPECTED_COUNTS.stories,
-          actual: stats.storyCount,
-        });
-    }
-
-    if (stats.acCount !== EXPECTED_COUNTS.acceptanceCriteria) {
-      await capturePartialSignal('E03', 'AC-COUNT',
-        (stats.acCount / EXPECTED_COUNTS.acceptanceCriteria) * 100, {
-          expected: EXPECTED_COUNTS.acceptanceCriteria,
-          actual: stats.acCount,
-        });
-    }
+    // Signal parse complete
+    await captureCorrectSignal('MILESTONE', 'brd-parse-complete', {
+      total_entities: entities.length,
+      e01_count: parsed.epics.length,
+      e02_count: parsed.stories.length,
+      e03_count: parsed.acceptanceCriteria.length,
+    });
 
     return { entities, relationships: [], evidence: [] };
+  }
+
+  /**
+   * Get entity counts by type from a parse result.
+   */
+  getEntityCounts(entities: ExtractedEntity[]): Record<string, number> {
+    const counts: Record<string, number> = {
+      E01: 0,
+      E02: 0,
+      E03: 0,
+      E04: 0,
+    };
+
+    for (const entity of entities) {
+      if (entity.entity_type in counts) {
+        counts[entity.entity_type]++;
+      }
+    }
+
+    return counts;
   }
 }
 

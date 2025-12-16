@@ -573,7 +573,7 @@ Include:
 3. Gate verification status (6 gates)
 4. SANITY test results (58 tests)
 5. Pillar compliance status
-6. BRD count verification (65/351/2901)
+6. BRD count verification (65/351/2849)
 7. Integrity check results
 8. Coverage report
 

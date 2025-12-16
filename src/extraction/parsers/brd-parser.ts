@@ -1,6 +1,7 @@
 // src/extraction/parsers/brd-parser.ts
 // @implements STORY-64.1
-// BRD markdown parser - extracts Epic, Story, AC, and Constraint entities
+// @satisfies AC-64.1.1, AC-64.1.2, AC-64.1.3, AC-64.1.4
+// BRD Parser - extracts Epics, Stories, and Acceptance Criteria from BRD markdown
 
 /**
  * Parsed Epic from BRD.
@@ -8,7 +9,6 @@
 export interface ParsedEpic {
   number: number;
   title: string;
-  description: string;
   lineStart: number;
   lineEnd: number;
 }
@@ -20,7 +20,6 @@ export interface ParsedStory {
   epicNumber: number;
   storyNumber: number;
   title: string;
-  userStory: string;
   lineStart: number;
   lineEnd: number;
 }
@@ -33,253 +32,275 @@ export interface ParsedAC {
   storyNumber: number;
   acNumber: number;
   description: string;
-  priority: string;
   lineStart: number;
   lineEnd: number;
 }
 
 /**
- * Parsed Constraint from BRD.
- */
-export interface ParsedConstraint {
-  id: string;
-  type: string;
-  description: string;
-  lineStart: number;
-  lineEnd: number;
-}
-
-/**
- * Result of parsing a BRD document.
+ * Result of parsing the BRD document.
  */
 export interface BRDParseResult {
   epics: ParsedEpic[];
   stories: ParsedStory[];
   acceptanceCriteria: ParsedAC[];
-  constraints: ParsedConstraint[];
 }
 
+// Canonical counts for BRD V20.6.3
+const EXPECTED_COUNTS = {
+  epics: 65,
+  stories: 351,
+  acceptanceCriteria: 2849,
+};
+
+// Regex patterns (whitespace-tolerant)
+// Epic: 2+ hashes (## or ###)
+const EPIC_PATTERN = /^#{2,}\s+Epic\s+(\d+)\s*:(.*)$/i;
+// Story: 3+ hashes (### or ####)
+const STORY_PATTERN = /^#{3,}\s+Story\s+(\d+)\.(\d+)\s*:(.*)$/i;
+// Bullet AC: - ACN: description
+const BULLET_AC_PATTERN = /^\s*-\s*AC(\d+)\s*:(.*)$/i;
+// Table AC: | AC-X.Y.Z | description |
+const TABLE_AC_PATTERN = /^\|\s*AC-(\d+)\.(\d+)\.(\d+)\s*\|(.*)$/i;
+
 /**
- * Parse a BRD markdown document.
+ * Parse BRD markdown content to extract Epics, Stories, and ACs.
  * 
- * Handles multiple formats:
- * - Epic headings: `## Epic 64:` or `### Epic 64:`
- * - Story headings: `### Story 64.1:` or `#### Story 64.1:`
- * - AC tables: `| AC-64.1.1 | Description | Priority |`
- * - AC lists: `- AC1: Description`
+ * @param content - The BRD markdown content
+ * @param sourcePath - The relative path to the BRD file (for error messages)
+ * @returns Parsed BRD result with epics, stories, and acceptance criteria
+ * @throws Error if parsing fails or counts don't match (unless ALLOW_BRD_COUNT_DRIFT=1)
  */
-export function parseBRD(content: string): BRDParseResult {
+export function parseBRD(content: string, sourcePath: string): BRDParseResult {
   const lines = content.split('\n');
-  const result: BRDParseResult = {
-    epics: [],
-    stories: [],
-    acceptanceCriteria: [],
-    constraints: [],
-  };
-
-  // Track current context for AC parsing
-  let currentEpic: number | null = null;
-  let currentStory: { epic: number; story: number } | null = null;
-
+  
+  const epics: ParsedEpic[] = [];
+  const stories: ParsedStory[] = [];
+  const acceptanceCriteria: ParsedAC[] = [];
+  
+  // Track context for bullet ACs
+  let currentEpicNumber: number | null = null;
+  let currentStoryNumber: number | null = null;
+  let currentStoryLineStart: number | null = null;
+  
+  // Track epic line endings
+  const epicLineEnds: Map<number, number> = new Map();
+  
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
-    const lineNum = i + 1; // 1-indexed
-
-    // Parse Epic headings: ## Epic 64: Title or ### Epic 64: Title
-    const epicMatch = line.match(/^#{2,3}\s+Epic\s+(\d+):\s*(.+?)(?:\s*\(.*\))?$/);
+    const lineNumber = i + 1; // 1-indexed
+    
+    // Check for Epic
+    const epicMatch = line.match(EPIC_PATTERN);
     if (epicMatch) {
-      const epicNumber = parseInt(epicMatch[1], 10);
+      const epicNum = parseInt(epicMatch[1], 10);
       const title = epicMatch[2].trim();
       
-      // Find epic description (lines until next heading or ---)
-      let description = '';
-      let endLine = lineNum;
-      for (let j = i + 1; j < lines.length; j++) {
-        const nextLine = lines[j];
-        if (nextLine.startsWith('#') || nextLine.startsWith('---')) {
-          endLine = j;
-          break;
-        }
-        if (nextLine.trim() && !nextLine.startsWith('**')) {
-          description += nextLine + '\n';
-        }
-        endLine = j + 1;
+      // Close previous story if any
+      if (currentStoryLineStart !== null && stories.length > 0) {
+        stories[stories.length - 1].lineEnd = lineNumber - 1;
       }
-
-      result.epics.push({
-        number: epicNumber,
-        title,
-        description: description.trim(),
-        lineStart: lineNum,
-        lineEnd: endLine,
-      });
-
-      currentEpic = epicNumber;
-      continue;
-    }
-
-    // Parse Story headings: ### Story 64.1: Title or #### Story 64.1:
-    const storyMatch = line.match(/^#{3,4}\s+Story\s+(\d+)\.(\d+):\s*(.+)$/);
-    if (storyMatch) {
-      const epicNumber = parseInt(storyMatch[1], 10);
-      const storyNumber = parseInt(storyMatch[2], 10);
-      const title = storyMatch[3].trim();
-
-      // Extract user story (As a/I want/So that)
-      let userStory = '';
-      let endLine = lineNum;
-      for (let j = i + 1; j < lines.length && j < i + 10; j++) {
-        const nextLine = lines[j];
-        if (nextLine.includes('**As a**') || nextLine.includes('**As**') ||
-            nextLine.includes('**I want**') || nextLine.includes('**So that**')) {
-          userStory += nextLine + '\n';
-          endLine = j + 1;
-        }
-        if (nextLine.startsWith('#') || nextLine.startsWith('---')) {
-          break;
-        }
-      }
-
-      // Find story end (next story or epic heading)
-      for (let j = i + 1; j < lines.length; j++) {
-        const nextLine = lines[j];
-        if (nextLine.match(/^#{2,4}\s+(Story|Epic)/)) {
-          endLine = j;
-          break;
-        }
-        endLine = j + 1;
-      }
-
-      result.stories.push({
-        epicNumber,
-        storyNumber,
-        title,
-        userStory: userStory.trim(),
-        lineStart: lineNum,
-        lineEnd: endLine,
-      });
-
-      currentEpic = epicNumber;
-      currentStory = { epic: epicNumber, story: storyNumber };
-      continue;
-    }
-
-    // Parse AC table rows: 
-    // Format 1: | AC-64.1.1 | Description | Priority |
-    // Format 2: | AC-65.1.1 | Criterion | Verification |
-    const acTableMatch = line.match(/^\|\s*AC-?(\d+)\.(\d+)\.(\d+)\s*\|\s*(.+?)\s*\|/);
-    if (acTableMatch) {
-      const epicNumber = parseInt(acTableMatch[1], 10);
-      const storyNumber = parseInt(acTableMatch[2], 10);
-      const acNumber = parseInt(acTableMatch[3], 10);
-      const description = acTableMatch[4].trim();
       
-      // Extract priority if present (look for P0, P1, P2 pattern in remaining columns)
-      const priorityMatch = line.match(/\|\s*(P[0-2])\s*\|/);
-      const priority = priorityMatch ? priorityMatch[1] : 'P0';
-
-      result.acceptanceCriteria.push({
-        epicNumber,
-        storyNumber,
-        acNumber,
-        description,
-        priority,
-        lineStart: lineNum,
-        lineEnd: lineNum,
-      });
-      continue;
-    }
-
-    // Parse AC list items: - AC1: Description (uses current story context)
-    const acListMatch = line.match(/^-\s*AC(\d+):\s*(.+)$/);
-    if (acListMatch && currentStory) {
-      const acNumber = parseInt(acListMatch[1], 10);
-      const description = acListMatch[2].trim();
-
-      result.acceptanceCriteria.push({
-        epicNumber: currentStory.epic,
-        storyNumber: currentStory.story,
-        acNumber,
-        description,
-        priority: 'P0',
-        lineStart: lineNum,
-        lineEnd: lineNum,
-      });
-      continue;
-    }
-
-    // Parse constraints from tables: | CNST-SEC-001 | Description |
-    const constraintMatch = line.match(/^\|\s*(CNST-\w+-\d+)\s*\|\s*(.+?)\s*\|/);
-    if (constraintMatch) {
-      const id = constraintMatch[1];
-      const description = constraintMatch[2].trim();
-      const typeMatch = id.match(/CNST-(\w+)-/);
-      const type = typeMatch ? typeMatch[1] : 'UNKNOWN';
-
-      result.constraints.push({
-        id,
-        type,
-        description,
-        lineStart: lineNum,
-        lineEnd: lineNum,
-      });
-      continue;
-    }
-  }
-
-  // Parse epics from summary tables: | 64 | Unified Traceability Graph | 15 | 123 |
-  const epicTablePattern = /^\|\s*(\d+)\s*\|\s*([^|]+)\s*\|\s*(\d+)\s*\|\s*(\d+|✅|⚠️|Complete|Partial)/;
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    const lineNum = i + 1;
-
-    const match = line.match(epicTablePattern);
-    if (match) {
-      const epicNumber = parseInt(match[1], 10);
-      const title = match[2].trim();
-
-      // Check if we already have this epic from heading parsing
-      const existingEpic = result.epics.find(e => e.number === epicNumber);
-      if (!existingEpic) {
-        result.epics.push({
-          number: epicNumber,
-          title,
-          description: '',
-          lineStart: lineNum,
-          lineEnd: lineNum,
-        });
+      // Close previous epic if any
+      if (currentEpicNumber !== null) {
+        epicLineEnds.set(currentEpicNumber, lineNumber - 1);
       }
+      
+      epics.push({
+        number: epicNum,
+        title,
+        lineStart: lineNumber,
+        lineEnd: lineNumber, // Will be updated when next epic starts or EOF
+      });
+      
+      currentEpicNumber = epicNum;
+      currentStoryNumber = null;
+      currentStoryLineStart = null;
+      continue;
+    }
+    
+    // Check for Story
+    const storyMatch = line.match(STORY_PATTERN);
+    if (storyMatch) {
+      const epicNum = parseInt(storyMatch[1], 10);
+      const storyNum = parseInt(storyMatch[2], 10);
+      const title = storyMatch[3].trim();
+      
+      // Close previous story if any
+      if (currentStoryLineStart !== null && stories.length > 0) {
+        stories[stories.length - 1].lineEnd = lineNumber - 1;
+      }
+      
+      stories.push({
+        epicNumber: epicNum,
+        storyNumber: storyNum,
+        title,
+        lineStart: lineNumber,
+        lineEnd: lineNumber, // Will be updated when next story/epic starts or EOF
+      });
+      
+      currentEpicNumber = epicNum;
+      currentStoryNumber = storyNum;
+      currentStoryLineStart = lineNumber;
+      continue;
+    }
+    
+    // Check for Table AC (explicit numbering)
+    const tableAcMatch = line.match(TABLE_AC_PATTERN);
+    if (tableAcMatch) {
+      const epicNum = parseInt(tableAcMatch[1], 10);
+      const storyNum = parseInt(tableAcMatch[2], 10);
+      const acNum = parseInt(tableAcMatch[3], 10);
+      const description = tableAcMatch[4].trim();
+      
+      // Clean up description - remove trailing pipe and content after
+      const cleanDesc = description.split('|')[0].trim();
+      
+      acceptanceCriteria.push({
+        epicNumber: epicNum,
+        storyNumber: storyNum,
+        acNumber: acNum,
+        description: cleanDesc,
+        lineStart: lineNumber,
+        lineEnd: lineNumber,
+      });
+      continue;
+    }
+    
+    // Check for Bullet AC (context-dependent)
+    const bulletAcMatch = line.match(BULLET_AC_PATTERN);
+    if (bulletAcMatch) {
+      const acNum = parseInt(bulletAcMatch[1], 10);
+      const description = bulletAcMatch[2].trim();
+      
+      // CRITICAL: Bullet ACs are only valid inside a story context
+      if (currentEpicNumber === null || currentStoryNumber === null) {
+        throw new Error(
+          `PARSE DRIFT: Bullet AC found outside story context at ${sourcePath}:${lineNumber}\n` +
+          `Line: "${line}"\n` +
+          `No story context established. This indicates BRD format drift.`
+        );
+      }
+      
+      acceptanceCriteria.push({
+        epicNumber: currentEpicNumber,
+        storyNumber: currentStoryNumber,
+        acNumber: acNum,
+        description,
+        lineStart: lineNumber,
+        lineEnd: lineNumber,
+      });
+      continue;
     }
   }
-
-  // Sort results for consistency
-  result.epics.sort((a, b) => a.number - b.number);
-  result.stories.sort((a, b) => {
-    if (a.epicNumber !== b.epicNumber) return a.epicNumber - b.epicNumber;
-    return a.storyNumber - b.storyNumber;
-  });
-  result.acceptanceCriteria.sort((a, b) => {
-    if (a.epicNumber !== b.epicNumber) return a.epicNumber - b.epicNumber;
-    if (a.storyNumber !== b.storyNumber) return a.storyNumber - b.storyNumber;
-    return a.acNumber - b.acNumber;
-  });
-
+  
+  // Close final story
+  if (stories.length > 0 && currentStoryLineStart !== null) {
+    stories[stories.length - 1].lineEnd = lines.length;
+  }
+  
+  // Close final epic
+  if (epics.length > 0) {
+    epics[epics.length - 1].lineEnd = lines.length;
+  }
+  
+  // Update epic line ends for non-final epics
+  for (const [epicNum, lineEnd] of epicLineEnds) {
+    const epic = epics.find(e => e.number === epicNum);
+    if (epic) {
+      epic.lineEnd = lineEnd;
+    }
+  }
+  
+  // Validate we parsed something
+  if (epics.length === 0) {
+    throw new Error(`BRD PARSE ERROR: No epics found in ${sourcePath}`);
+  }
+  if (stories.length === 0) {
+    throw new Error(`BRD PARSE ERROR: No stories found in ${sourcePath}`);
+  }
+  
+  // Detect table AC format drift (hyphen-less rows like "| AC65.1.1 |" instead of "| AC-65.1.1 |")
+  // This check runs BEFORE count validation for better error messages
+  detectTableACFormatDrift(content, sourcePath);
+  
+  // Validate counts
+  const result: BRDParseResult = { epics, stories, acceptanceCriteria };
+  validateCounts(result, sourcePath);
+  
   return result;
 }
 
 /**
- * Get statistics from a parse result.
+ * Detect table AC format drift (hyphen-less rows).
+ * Hard-fails unless ALLOW_BRD_FORMAT_DRIFT=1 is set.
+ * 
+ * Expected format: `| AC-X.Y.Z |` (with hyphen)
+ * Drift format: `| ACX.Y.Z |` (without hyphen)
  */
-export function getParseStats(result: BRDParseResult): {
-  epicCount: number;
-  storyCount: number;
-  acCount: number;
-  constraintCount: number;
-} {
-  return {
-    epicCount: result.epics.length,
-    storyCount: result.stories.length,
-    acCount: result.acceptanceCriteria.length,
-    constraintCount: result.constraints.length,
-  };
+function detectTableACFormatDrift(content: string, sourcePath: string): void {
+  const allowFormatDrift = process.env.ALLOW_BRD_FORMAT_DRIFT === '1';
+  
+  // Match table rows with AC followed by digits.digits.digits WITHOUT a hyphen
+  // Negative lookbehind (?<!-) ensures we don't match "AC-" 
+  // Pattern: | AC123.456.789 | (no hyphen after AC)
+  const hyphenLessPattern = /^\|\s*AC(\d+\.\d+\.\d+)/gm;
+  const matches = content.match(hyphenLessPattern);
+  
+  if (matches && matches.length > 0) {
+    const message = 
+      `TABLE AC FORMAT DRIFT: Found ${matches.length} table row(s) using 'AC' without hyphen in ${sourcePath}.\n` +
+      `  Expected format: '| AC-X.Y.Z |'\n` +
+      `  Found format: '| ACX.Y.Z |'\n` +
+      `  Examples: ${matches.slice(0, 3).map(m => m.trim()).join(', ')}${matches.length > 3 ? '...' : ''}\n` +
+      `  Normalize BRD format or set ALLOW_BRD_FORMAT_DRIFT=1 to proceed.`;
+    
+    if (allowFormatDrift) {
+      console.warn('\x1b[33m[WARN]\x1b[0m ' + message.split('\n')[0]);
+      console.warn(`\x1b[33m[WARN]\x1b[0m Proceeding due to ALLOW_BRD_FORMAT_DRIFT=1 - these ACs will NOT be extracted`);
+      return;
+    }
+    
+    throw new Error(message);
+  }
+}
+
+/**
+ * Validate parsed counts against expected values.
+ * Hard-fails unless ALLOW_BRD_COUNT_DRIFT=1 is set.
+ */
+function validateCounts(result: BRDParseResult, sourcePath: string): void {
+  const allowDrift = process.env.ALLOW_BRD_COUNT_DRIFT === '1';
+  
+  const epicCount = result.epics.length;
+  const storyCount = result.stories.length;
+  const acCount = result.acceptanceCriteria.length;
+  
+  const epicMatch = epicCount === EXPECTED_COUNTS.epics;
+  const storyMatch = storyCount === EXPECTED_COUNTS.stories;
+  const acMatch = acCount === EXPECTED_COUNTS.acceptanceCriteria;
+  
+  if (epicMatch && storyMatch && acMatch) {
+    return; // All counts match
+  }
+  
+  const message = 
+    `BRD COUNT MISMATCH in ${sourcePath}:\n` +
+    `  Epics: expected ${EXPECTED_COUNTS.epics}, got ${epicCount} ${epicMatch ? '✓' : '✗'}\n` +
+    `  Stories: expected ${EXPECTED_COUNTS.stories}, got ${storyCount} ${storyMatch ? '✓' : '✗'}\n` +
+    `  ACs: expected ${EXPECTED_COUNTS.acceptanceCriteria}, got ${acCount} ${acMatch ? '✓' : '✗'}`;
+  
+  if (allowDrift) {
+    console.warn('\x1b[33m[WARN]\x1b[0m BRD count drift detected - extraction proceeding due to ALLOW_BRD_COUNT_DRIFT=1');
+    console.warn(`\x1b[33m[WARN]\x1b[0m Expected: ${EXPECTED_COUNTS.epics}/${EXPECTED_COUNTS.stories}/${EXPECTED_COUNTS.acceptanceCriteria}, Got: ${epicCount}/${storyCount}/${acCount}`);
+    return;
+  }
+  
+  throw new Error(message);
+}
+
+/**
+ * Get expected counts for validation.
+ */
+export function getExpectedCounts(): typeof EXPECTED_COUNTS {
+  return { ...EXPECTED_COUNTS };
 }

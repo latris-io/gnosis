@@ -17,7 +17,10 @@
     "build": "tsc",
     "migrate": "npx tsx src/db/migrate.ts",
     "migrate:neo4j": "npx tsx src/db/neo4j-migrate.ts",
-    "validate:a1": "npx tsx scripts/validate-a1-exit.ts"
+    "validate:a1": "npx tsx scripts/validate-a1-exit.ts",
+    "validate:a2": "npx tsx scripts/validate-a2-exit.ts",
+    "extract:a1": "npx tsx scripts/run-a1-extraction.ts",
+    "sync:neo4j": "npx tsx scripts/sync-to-neo4j.ts"
   },
   "dependencies": {
     "dotenv": "^16.4.1",
