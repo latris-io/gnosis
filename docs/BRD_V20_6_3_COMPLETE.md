@@ -136,7 +136,7 @@ TOTAL: 67 base + 16 extensions = 83 entities
 |--------|-------|
 | **Epics** | 65 |
 | **Stories** | 351 (+1 D.9) |
-| **Acceptance Criteria** | 2,901 (+7 D.9) |
+| **Acceptance Criteria** | 2,849 (+7 D.9) |
 | **Entity Types** | 83 (67 base + 16 extensions) |
 | **Relationship Types** | 114 (100 base + 14 extensions) |
 | **Layers** | 14 |
@@ -12235,7 +12235,7 @@ The remaining entities, relationships, and gates are added progressively through
 |--------|-------|--------------|
 | **Total Epics** | 65 | Enumerated in Appendix E |
 | **Total Stories** | 351 | Enumerated in Appendix A |
-| **Total Acceptance Criteria** | 2,901 | Enumerated in Appendix B |
+| **Total Acceptance Criteria** | 2,849 | Enumerated in Appendix B |
 | **Entity Types** | 83 (67 base + 16 extensions) | Enumerated in Appendix F |
 | **Relationship Types** | 114 (100 base + 14 extensions) | Enumerated in Appendix G |
 | **Coverage Gates** | 21 (20 active + 1 dormant) | G01, G03, G04, G06, G-API, G-HEALTH, G-REGISTRY, G-DRIFT, G-CLOSURE, G-COMPATIBILITY, G-SEMANTIC, G-ALIGNMENT, G-CONFIDENCE, G-POLICY, G-AUTONOMY, G-COMPLIANCE, G-AUDIT, G-SIMULATION, G-COGNITIVE, G-OPS, G-RUNTIME (dormant) |

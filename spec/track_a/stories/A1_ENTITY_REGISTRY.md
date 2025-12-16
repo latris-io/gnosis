@@ -641,7 +641,7 @@ describe('Entity Registry', () => {
   it('extracts all acceptance criteria from BRD', async () => {
     const result = await brdProvider.extract(snapshot);
     const acs = result.entities.filter(e => e.entity_type === 'E03');
-    expect(acs.length).toBe(2901);
+    expect(acs.length).toBe(2849);
     expect(acs[0].instance_id).toMatch(/^AC-\d+\.\d+\.\d+$/);
   });
   
@@ -735,7 +735,7 @@ describe('Entity Registry', () => {
 - [ ] Entity counts match external verification:
   - [ ] 65 Epics
   - [ ] 351 Stories
-  - [ ] 2,901 Acceptance Criteria
+  - [ ] 2,849 Acceptance Criteria
 - [ ] All tests pass
 - [ ] Shadow ledger contains entries for all extractions
 - [ ] Code reviewed (semantic signal captured)

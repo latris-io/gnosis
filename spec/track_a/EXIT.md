@@ -172,7 +172,7 @@ npm run test:sanity
 |--------|----------|--------|--------|
 | Epics | 65 | ___ *(record actual)* | [ ] Match |
 | Stories | 351 | ___ *(record actual)* | [ ] Match |
-| Acceptance Criteria | 2,901 | ___ *(record actual)* | [ ] Match |
+| Acceptance Criteria | 2,849 | ___ *(record actual)* | [ ] Match |
 
 **Note:** These counts MUST match exactly. Any mismatch indicates extraction error.
 
