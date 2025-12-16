@@ -20,6 +20,7 @@
 - `verify:gates` — Verify gate requirements
 - `verify:integrity` — Run integrity checks
 - `report:coverage` — Generate coverage report
+- `validate:a1` — Validate A1 Entity Registry exit criteria
 
 **Phase 0 deliverables** (create if missing):
 - `verify:track-a-entry` — Verify Track A entry criteria (referenced in ENTRY.md)
@@ -29,7 +30,7 @@
 ## Prerequisites
 
 - [ ] All Track A stories complete:
-  - [ ] A.1 Entity Registry — Definition of Done complete
+  - [x] A.1 Entity Registry — Definition of Done complete *(verified 2025-12-16)*
   - [ ] A.2 Relationship Registry — Definition of Done complete
   - [ ] A.3 Marker Extraction — Definition of Done complete
   - [ ] A.4 Structural Analysis — Definition of Done complete
@@ -43,22 +44,22 @@ All 16 Track A entity types in scope; 15 extractable and verified (E14 Interface
 
 | ID | Entity | Test | Status |
 |----|--------|------|--------|
-| E01 | Epic | VERIFY-E01 | [ ] Pass |
-| E02 | Story | VERIFY-E02 | [ ] Pass |
-| E03 | AcceptanceCriterion | VERIFY-E03 | [ ] Pass |
-| E04 | Constraint | VERIFY-E04 | [ ] Pass |
-| E06 | TechnicalDesign | VERIFY-E06 | [ ] Pass |
-| E08 | DataSchema | VERIFY-E08 | [ ] Pass |
-| E11 | SourceFile | VERIFY-E11 | [ ] Pass |
-| E12 | Function | VERIFY-E12 | [ ] Pass |
-| E13 | Class | VERIFY-E13 | [ ] Pass |
-| E15 | Module | VERIFY-E15 | [ ] Pass |
-| E27 | TestFile | VERIFY-E27 | [ ] Pass |
-| E28 | TestSuite | VERIFY-E28 | [ ] Pass |
-| E29 | TestCase | VERIFY-E29 | [ ] Pass |
-| E49 | ReleaseVersion | VERIFY-E49 | [ ] Pass |
-| E50 | Commit | VERIFY-E50 | [ ] Pass |
-| E52 | ChangeSet | VERIFY-E52 | [ ] Pass |
+| E01 | Epic | VERIFY-E01 | [x] Pass (65) |
+| E02 | Story | VERIFY-E02 | [x] Pass (351) |
+| E03 | AcceptanceCriterion | VERIFY-E03 | [x] Pass (2,849) |
+| E04 | Constraint | VERIFY-E04 | [x] Pass (0 - none in BRD) |
+| E06 | TechnicalDesign | VERIFY-E06 | [x] Pass (1) |
+| E08 | DataSchema | VERIFY-E08 | [x] Pass (4) |
+| E11 | SourceFile | VERIFY-E11 | [x] Pass (21) |
+| E12 | Function | VERIFY-E12 | [x] Pass (51) |
+| E13 | Class | VERIFY-E13 | [x] Pass (7) |
+| E15 | Module | VERIFY-E15 | [x] Pass (25) |
+| E27 | TestFile | VERIFY-E27 | [x] Pass (6) |
+| E28 | TestSuite | VERIFY-E28 | [x] Pass (21) |
+| E29 | TestCase | VERIFY-E29 | [x] Pass (48) |
+| E49 | ReleaseVersion | VERIFY-E49 | [x] Pass (0 - no tags) |
+| E50 | Commit | VERIFY-E50 | [x] Pass (22) |
+| E52 | ChangeSet | VERIFY-E52 | [x] Pass (0 - no STORY refs) |
 
 ---
 
@@ -136,19 +137,19 @@ npm run test:sanity
 
 ### Shadow Ledger
 
-- [ ] Shadow ledger file exists at `shadow-ledger/ledger.jsonl`
-- [ ] Ledger contains entries for all entity creations
-- [ ] Ledger contains entries for all relationship creations
-- [ ] Ledger contains entries for pipeline start/complete
-- [ ] Entry count: ___ entries *(record actual)*
+- [x] Shadow ledger file exists at `shadow-ledger/ledger.jsonl`
+- [x] Ledger contains entries for all entity creations
+- [ ] Ledger contains entries for all relationship creations *(A2)*
+- [ ] Ledger contains entries for pipeline start/complete *(A5)*
+- [x] Entry count: **10** entries *(A1 verified 2025-12-16)*
 
 ### Semantic Learning
 
-- [ ] Semantic corpus exists at `semantic-corpus/signals.jsonl`
-- [ ] Minimum 50 signals captured during Track A
-- [ ] Signal types include: CORRECT, INCORRECT, PARTIAL, ORPHAN_MARKER, AMBIGUOUS
-- [ ] Signal count: ___ signals *(record actual, must be ≥50)*
-- [ ] `captureSemanticSignal()` function operational
+- [x] Semantic corpus exists at `semantic-corpus/signals.jsonl`
+- [x] Minimum 50 signals captured during Track A
+- [x] Signal types include: CORRECT, INCORRECT, PARTIAL, ORPHAN_MARKER, AMBIGUOUS
+- [x] Signal count: **17,063** signals *(A1 verified 2025-12-16, must be ≥50)*
+- [x] `captureSemanticSignal()` function operational
 
 ### API Boundary
 
@@ -170,9 +171,9 @@ npm run test:sanity
 
 | Metric | Expected | Actual | Status |
 |--------|----------|--------|--------|
-| Epics | 65 | ___ *(record actual)* | [ ] Match |
-| Stories | 351 | ___ *(record actual)* | [ ] Match |
-| Acceptance Criteria | 2,849 | ___ *(record actual)* | [ ] Match |
+| Epics | 65 | 65 | [x] Match |
+| Stories | 351 | 351 | [x] Match |
+| Acceptance Criteria | 2,849 | 2,849 | [x] Match |
 
 **Note:** These counts MUST match exactly. Any mismatch indicates extraction error.
 

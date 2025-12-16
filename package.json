@@ -16,7 +16,8 @@
     "report:coverage": "vitest run --coverage",
     "build": "tsc",
     "migrate": "npx tsx src/db/migrate.ts",
-    "migrate:neo4j": "npx tsx src/db/neo4j-migrate.ts"
+    "migrate:neo4j": "npx tsx src/db/neo4j-migrate.ts",
+    "validate:a1": "npx tsx scripts/validate-a1-exit.ts"
   },
   "dependencies": {
     "dotenv": "^16.4.1",
