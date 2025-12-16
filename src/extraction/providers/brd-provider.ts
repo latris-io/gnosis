@@ -1,7 +1,7 @@
 // src/extraction/providers/brd-provider.ts
 // @implements STORY-64.1
 // @satisfies AC-64.1.1, AC-64.1.2, AC-64.1.3, AC-64.1.4
-// BRD Provider - extracts E01 Epic, E02 Story, E03 AcceptanceCriterion from BRD
+// BRD Provider - extracts E01 Epic, E02 Story, E03 AcceptanceCriterion, E04 Constraint from BRD
 
 import * as fs from 'fs/promises';
 import * as path from 'path';
@@ -50,6 +50,7 @@ export class BRDProvider implements ExtractionProvider {
     const parsed = parseBRD(content, relativePath);
 
     // Convert E01 Epics - emit signal for EACH entity per .cursorrules Rule 5 (≥50 signals)
+    // Attributes per A1_ENTITY_REGISTRY.md lines 153-156: number, description
     for (const epic of parsed.epics) {
       const instanceId = `EPIC-${epic.number}`;
       
@@ -59,7 +60,7 @@ export class BRDProvider implements ExtractionProvider {
         name: `Epic ${epic.number}: ${epic.title}`,
         attributes: {
           number: epic.number,
-          title: epic.title,
+          description: epic.description,  // Per A1_ENTITY_REGISTRY.md line 155
         },
         source_file: relativePath,
         line_start: epic.lineStart,
@@ -73,6 +74,7 @@ export class BRDProvider implements ExtractionProvider {
     }
 
     // Convert E02 Stories - emit signal for EACH entity
+    // Attributes per A1_ENTITY_REGISTRY.md lines 169-173: epic_number, story_number, user_story
     for (const story of parsed.stories) {
       const instanceId = `STORY-${story.epicNumber}.${story.storyNumber}`;
       
@@ -81,9 +83,9 @@ export class BRDProvider implements ExtractionProvider {
         instance_id: instanceId,
         name: `Story ${story.epicNumber}.${story.storyNumber}: ${story.title}`,
         attributes: {
-          epic_id: `EPIC-${story.epicNumber}`,
-          number: story.storyNumber,
-          title: story.title,
+          epic_number: story.epicNumber,    // Per A1_ENTITY_REGISTRY.md line 170
+          story_number: story.storyNumber,  // Per A1_ENTITY_REGISTRY.md line 171
+          user_story: story.userStory,      // Per A1_ENTITY_REGISTRY.md line 172
         },
         source_file: relativePath,
         line_start: story.lineStart,
@@ -121,6 +123,33 @@ export class BRDProvider implements ExtractionProvider {
       });
     }
 
+    // Convert E04 Constraints - per A1_ENTITY_REGISTRY.md AC-64.1.4
+    // BRD V20.6.3 expected: 0 constraints
+    for (const constraint of parsed.constraints) {
+      // Provider constructs instance_id per ENTRY.md rule
+      const typeUpper = (constraint.type || 'UNKNOWN').toUpperCase();
+      const instanceId = `CNST-${typeUpper}-${constraint.number}`;
+      
+      entities.push({
+        entity_type: 'E04',
+        instance_id: instanceId,
+        name: instanceId,
+        attributes: {
+          type: constraint.type,
+          number: constraint.number,
+          description: constraint.description,
+        },
+        source_file: relativePath,
+        line_start: constraint.lineStart,
+        line_end: constraint.lineEnd,
+      });
+
+      // Fire-and-forget signal (consistent with ast-provider pattern)
+      captureCorrectSignal('E04', instanceId, {
+        type: constraint.type,
+      }).catch(() => {});
+    }
+
     // Signal counts validated
     const expected = getExpectedCounts();
     await captureCorrectSignal('MILESTONE', 'brd-counts-validated', {
@@ -138,6 +167,7 @@ export class BRDProvider implements ExtractionProvider {
       e01_count: parsed.epics.length,
       e02_count: parsed.stories.length,
       e03_count: parsed.acceptanceCriteria.length,
+      e04_count: parsed.constraints.length,
     });
 
     return { entities, relationships: [], evidence: [] };

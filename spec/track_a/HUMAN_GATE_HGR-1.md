@@ -52,7 +52,7 @@ Before requesting HGR-1 review, confirm:
 | E01 Epic | 65 | ______ | [ ] |
 | E02 Story | 351 | ______ | [ ] |
 | E03 AcceptanceCriterion | 2,849 | ______ | [ ] |
-| E04 Constraint | ≥1 | ______ | [ ] |
+| E04 Constraint | ≥0 | ______ | [ ] |
 | E06 TechnicalDesign | ≥0 | ______ | [ ] |
 | E08 DataSchema | ≥1 | ______ | [ ] |
 | E11 SourceFile | ≥10 | ______ | [ ] |
@@ -64,6 +64,8 @@ Before requesting HGR-1 review, confirm:
 | E29 TestCase | ≥20 | ______ | [ ] |
 | E49 ReleaseVersion | ≥0 | ______ | [ ] |
 | E50 Commit | ≥1 | ______ | [ ] |
+
+> **Note:** BRD may contain constraints; E04 extraction exists and produces 0..n depending on BRD content.
 
 **Section 1 Status:** [ ] PASS  [ ] FAIL
 

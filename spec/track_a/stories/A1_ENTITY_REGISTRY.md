@@ -9,6 +9,7 @@
 - UTG Schema V20.6.1 §Entity Registry
 - Verification Spec V20.6.4 §Part IX
 
+> **v1.7.0:** Added AC Deviation Note clarifying Track A acceptance IDs vs BRD semantics  
 > **v1.6.0:** Added AC-64.1.19 for E52 ChangeSet, ChangeSetProvider, signal count 50, AC marker fix  
 > **v1.5.0:** Multi-tenant identity fix: ON CONFLICT (project_id, instance_id)  
 > **v1.4.0:** Entity count consistency: "16 in scope, 15 extractable (E14 deferred)"  
@@ -23,31 +24,36 @@
 
 > **Note:** 16 entity types are in Track A scope. 15 are extractable; E14 Interface extraction is deferred to a later track. Relationships referencing E14 (e.g., R24 IMPLEMENTS_INTERFACE) will carry reduced confidence until E14 is populated.
 
+> **DEVIATION NOTE (Track A Acceptance IDs):**
+> Track A uses identifiers in the form `AC-64.1.x` as **Track A implementation acceptance IDs** for extraction and validation tasks in this packet.
+> These identifiers support `@satisfies AC-64.1.x` marker extraction and do **not** redefine or override the BRD's semantic meaning for similarly numbered acceptance criteria.
+> When interpreting BRD semantics, the BRD remains authoritative.
+
 ---
 
 ## Acceptance Criteria
 
 | AC | Description | Pillar | Verification (REQUIRED) |
 |----|-------------|--------|-------------------------|
-| AC-64.1.1 | Extract Epic entities from BRD | Shadow Ledger | VERIFY-E01 |
-| AC-64.1.2 | Extract Story entities from BRD | Shadow Ledger | VERIFY-E02 |
-| AC-64.1.3 | Extract AcceptanceCriterion entities from BRD | Shadow Ledger | VERIFY-E03 |
-| AC-64.1.4 | Extract Constraint entities from BRD | Shadow Ledger | VERIFY-E04 |
-| AC-64.1.5 | Extract TechnicalDesign entities from ADRs | Shadow Ledger | VERIFY-E06 |
-| AC-64.1.6 | Extract DataSchema entities from module analysis | Shadow Ledger | VERIFY-E08 |
-| AC-64.1.7 | Extract SourceFile entities from filesystem | Shadow Ledger | VERIFY-E11 |
-| AC-64.1.8 | Extract Function entities from AST | Shadow Ledger | VERIFY-E12 |
-| AC-64.1.9 | Extract Class entities from AST | Shadow Ledger | VERIFY-E13 |
-| AC-64.1.10 | Extract Module entities from imports | Shadow Ledger | VERIFY-E15 |
-| AC-64.1.11 | Extract TestFile entities from test directory | Shadow Ledger | VERIFY-E27 |
-| AC-64.1.12 | Extract TestSuite entities from describe blocks | Shadow Ledger | VERIFY-E28 |
-| AC-64.1.13 | Extract TestCase entities from it blocks | Shadow Ledger | VERIFY-E29 |
-| AC-64.1.14 | Extract ReleaseVersion entities from git tags | Shadow Ledger | VERIFY-E49 |
-| AC-64.1.15 | Extract Commit entities from git log | Shadow Ledger | VERIFY-E50 |
-| AC-64.1.16 | All extractions logged to shadow ledger | Shadow Ledger | RULE-LEDGER-001 |
-| AC-64.1.17 | All entities have evidence anchors | Evidence | SANITY-044 |
-| AC-64.1.18 | Semantic corpus initialized for Track C | Semantic Learning | VERIFY-CORPUS-01 |
-| AC-64.1.19 | Derive ChangeSet entities from commit groupings | Shadow Ledger | VERIFY-E52 |
+| AC-64.1.1 | Track A: Extract Epic entities (E01) from BRD | Shadow Ledger | VERIFY-E01 |
+| AC-64.1.2 | Track A: Extract Story entities (E02) from BRD | Shadow Ledger | VERIFY-E02 |
+| AC-64.1.3 | Track A: Extract AcceptanceCriterion entities (E03) from BRD | Shadow Ledger | VERIFY-E03 |
+| AC-64.1.4 | Track A: Extract Constraint entities (E04) from BRD content when present | Shadow Ledger | VERIFY-E04 |
+| AC-64.1.5 | Track A: Extract TechnicalDesign entities (E06) from ADRs | Shadow Ledger | VERIFY-E06 |
+| AC-64.1.6 | Track A: Extract DataSchema entities (E08) from module analysis | Shadow Ledger | VERIFY-E08 |
+| AC-64.1.7 | Track A: Extract SourceFile entities (E11) from filesystem | Shadow Ledger | VERIFY-E11 |
+| AC-64.1.8 | Track A: Extract Function entities (E12) from AST | Shadow Ledger | VERIFY-E12 |
+| AC-64.1.9 | Track A: Extract Class entities (E13) from AST | Shadow Ledger | VERIFY-E13 |
+| AC-64.1.10 | Track A: Extract Module entities (E15) from imports | Shadow Ledger | VERIFY-E15 |
+| AC-64.1.11 | Track A: Extract TestFile entities (E27) from test directory | Shadow Ledger | VERIFY-E27 |
+| AC-64.1.12 | Track A: Extract TestSuite entities (E28) from describe blocks | Shadow Ledger | VERIFY-E28 |
+| AC-64.1.13 | Track A: Extract TestCase entities (E29) from it blocks | Shadow Ledger | VERIFY-E29 |
+| AC-64.1.14 | Track A: Extract ReleaseVersion entities (E49) from git tags | Shadow Ledger | VERIFY-E49 |
+| AC-64.1.15 | Track A: Extract Commit entities (E50) from git log | Shadow Ledger | VERIFY-E50 |
+| AC-64.1.16 | Track A: All extractions logged to shadow ledger | Shadow Ledger | RULE-LEDGER-001 |
+| AC-64.1.17 | Track A: All entities have evidence anchors | Evidence | SANITY-044 |
+| AC-64.1.18 | Track A: Semantic corpus initialized for Track C | Semantic Learning | VERIFY-CORPUS-01 |
+| AC-64.1.19 | Track A: Derive ChangeSet entities (E52) from commit groupings | Shadow Ledger | VERIFY-E52 |
 
 ---
 

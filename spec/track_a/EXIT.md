@@ -47,7 +47,7 @@ All 16 Track A entity types in scope; 15 extractable and verified (E14 Interface
 | E01 | Epic | VERIFY-E01 | [x] Pass (65) |
 | E02 | Story | VERIFY-E02 | [x] Pass (351) |
 | E03 | AcceptanceCriterion | VERIFY-E03 | [x] Pass (2,849) |
-| E04 | Constraint | VERIFY-E04 | [x] Pass (0 - none in BRD) |
+| E04 | Constraint | VERIFY-E04 | [x] Pass (0..n; BRD-dependent) |
 | E06 | TechnicalDesign | VERIFY-E06 | [x] Pass (1) |
 | E08 | DataSchema | VERIFY-E08 | [x] Pass (4) |
 | E11 | SourceFile | VERIFY-E11 | [x] Pass (21) |

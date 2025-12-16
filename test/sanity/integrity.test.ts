@@ -179,13 +179,51 @@ describe('INTEGRITY Tests', () => {
       expect(result.rows[0].relrowsecurity).toBe(true);
     });
 
-    it('graph is connected (empty graph)', async () => {
-      const result = await pool.query(`SELECT COUNT(*) as count FROM entities`);
-      const entityCount = parseInt(result.rows[0].count);
+    it('graph population matches phase (SANITY_PHASE required)', async () => {
+      const phase = process.env.SANITY_PHASE;
       
-      // EMPTY_GRAPH: Structural invariant verified
-      expect(entityCount).toBe(0);
-      console.log('EMPTY_GRAPH: Structural invariant verified, 0 entities to validate');
+      // Hard-fail if phase is not specified
+      if (!phase || (phase !== 'pre' && phase !== 'post_a1')) {
+        throw new Error(
+          `SANITY_PHASE must be 'pre' or 'post_a1', got: '${phase || '(undefined)'}'\n` +
+          `Usage:\n` +
+          `  SANITY_PHASE=pre npm run test:sanity        # Before A1 extraction\n` +
+          `  SANITY_PHASE=post_a1 npm run test:sanity    # After A1 extraction`
+        );
+      }
+
+      // Get entity counts by type
+      const result = await pool.query(`
+        SELECT entity_type, COUNT(*) as count
+        FROM entities
+        GROUP BY entity_type
+        ORDER BY entity_type
+      `);
+      
+      const counts: Record<string, number> = {};
+      for (const row of result.rows) {
+        counts[row.entity_type] = parseInt(row.count);
+      }
+      const totalEntities = Object.values(counts).reduce((a, b) => a + b, 0);
+
+      if (phase === 'pre') {
+        // Pre-A1: Graph must be empty
+        expect(totalEntities).toBe(0);
+        console.log('SANITY_PHASE=pre: Graph is empty as expected (0 entities)');
+      } else if (phase === 'post_a1') {
+        // Post-A1: Graph must have minimum A1 entities
+        // Per Track A EXIT.md: E01=65, E02=351, E03=2849, E04>=0
+        expect(counts['E01'] || 0).toBeGreaterThanOrEqual(65);
+        expect(counts['E02'] || 0).toBeGreaterThanOrEqual(351);
+        expect(counts['E03'] || 0).toBeGreaterThanOrEqual(2849);
+        expect(counts['E04'] || 0).toBeGreaterThanOrEqual(0); // BRD-dependent
+        
+        console.log(`SANITY_PHASE=post_a1: Graph has ${totalEntities} entities`);
+        console.log(`  E01: ${counts['E01'] || 0} (expected >=65)`);
+        console.log(`  E02: ${counts['E02'] || 0} (expected >=351)`);
+        console.log(`  E03: ${counts['E03'] || 0} (expected >=2849)`);
+        console.log(`  E04: ${counts['E04'] || 0} (expected >=0)`);
+      }
     });
   });
 });

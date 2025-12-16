@@ -9,6 +9,7 @@
 export interface ParsedEpic {
   number: number;
   title: string;
+  description: string;  // Per A1_ENTITY_REGISTRY.md line 155
   lineStart: number;
   lineEnd: number;
 }
@@ -20,6 +21,7 @@ export interface ParsedStory {
   epicNumber: number;
   storyNumber: number;
   title: string;
+  userStory: string;  // Per A1_ENTITY_REGISTRY.md line 172
   lineStart: number;
   lineEnd: number;
 }
@@ -37,12 +39,26 @@ export interface ParsedAC {
 }
 
 /**
+ * Parsed Constraint from BRD.
+ * Provider constructs instance_id as CNST-{type}-{number}.
+ * Per AC-64.1.4 - BRD V20.6.3 expected: 0 constraints.
+ */
+export interface ParsedConstraint {
+  type: string;        // e.g., "SEC", "PERF", "DATA" (or "UNKNOWN" if not specified)
+  number: number;      // Sequential within file (1, 2, 3...)
+  description: string;
+  lineStart: number;
+  lineEnd: number;
+}
+
+/**
  * Result of parsing the BRD document.
  */
 export interface BRDParseResult {
   epics: ParsedEpic[];
   stories: ParsedStory[];
   acceptanceCriteria: ParsedAC[];
+  constraints: ParsedConstraint[];
 }
 
 // Canonical counts for BRD V20.6.3
@@ -62,6 +78,23 @@ const BULLET_AC_PATTERN = /^\s*-\s*AC(\d+)\s*:(.*)$/i;
 // Table AC: | AC-X.Y.Z | description |
 const TABLE_AC_PATTERN = /^\|\s*AC-(\d+)\.(\d+)\.(\d+)\s*\|(.*)$/i;
 
+// Conservative constraint detection - explicit heading/label patterns
+// Examples: "### Constraint: ..." or "**Constraint:** ..." or "## Constraints"
+// Per AC-64.1.4 - BRD V20.6.3 expected: 0 constraints
+const CONSTRAINT_HEADING_PATTERN = /^#{2,}\s+Constraint[s]?\s*:?\s*(.*)$/i;
+const CONSTRAINT_LABEL_PATTERN = /^\*\*Constraint[s]?\*\*\s*:?\s*(.*)$/i;
+
+// User story triad patterns (anchored at start of line to avoid false positives)
+// Must match: "**As a** ...", "**As an** ...", "**I want** ...", "**So that** ..."
+// Must NOT match: "**Asynchronous**", "**Aspect**", or mid-line occurrences
+const USER_STORY_AS_PATTERN = /^\*\*As (a|an)\*\*/i;
+const USER_STORY_I_WANT_PATTERN = /^\*\*I want\*\*/i;
+const USER_STORY_SO_THAT_PATTERN = /^\*\*So that\*\*/i;
+// Plain text fallbacks (some BRDs use unbolded format)
+const USER_STORY_AS_PLAIN = /^As (a|an)\s+/i;
+const USER_STORY_I_WANT_PLAIN = /^I want\s+/i;
+const USER_STORY_SO_THAT_PLAIN = /^So that\s+/i;
+
 /**
  * Parse BRD markdown content to extract Epics, Stories, and ACs.
  * 
@@ -76,14 +109,21 @@ export function parseBRD(content: string, sourcePath: string): BRDParseResult {
   const epics: ParsedEpic[] = [];
   const stories: ParsedStory[] = [];
   const acceptanceCriteria: ParsedAC[] = [];
+  const constraints: ParsedConstraint[] = [];
+  let constraintCounter = 0;
   
   // Track context for bullet ACs
   let currentEpicNumber: number | null = null;
   let currentStoryNumber: number | null = null;
   let currentStoryLineStart: number | null = null;
   
-  // Track epic line endings
+  // Track epic line endings and description extraction
   const epicLineEnds: Map<number, number> = new Map();
+  const epicDescriptions: Map<number, string[]> = new Map();
+  const storyUserStories: Map<string, string[]> = new Map();
+  
+  // Helper to get story key
+  const storyKey = (epicNum: number, storyNum: number) => `${epicNum}.${storyNum}`;
   
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
@@ -108,10 +148,12 @@ export function parseBRD(content: string, sourcePath: string): BRDParseResult {
       epics.push({
         number: epicNum,
         title,
+        description: '',  // Will be populated after parsing
         lineStart: lineNumber,
         lineEnd: lineNumber, // Will be updated when next epic starts or EOF
       });
       
+      epicDescriptions.set(epicNum, []);
       currentEpicNumber = epicNum;
       currentStoryNumber = null;
       currentStoryLineStart = null;
@@ -134,14 +176,53 @@ export function parseBRD(content: string, sourcePath: string): BRDParseResult {
         epicNumber: epicNum,
         storyNumber: storyNum,
         title,
+        userStory: '',  // Will be populated after parsing
         lineStart: lineNumber,
         lineEnd: lineNumber, // Will be updated when next story/epic starts or EOF
       });
       
+      storyUserStories.set(storyKey(epicNum, storyNum), []);
       currentEpicNumber = epicNum;
       currentStoryNumber = storyNum;
       currentStoryLineStart = lineNumber;
       continue;
+    }
+    
+    // Collect epic description (text before first story, not a heading)
+    if (currentEpicNumber !== null && currentStoryNumber === null) {
+      const trimmed = line.trim();
+      if (
+        trimmed &&
+        !trimmed.startsWith('#') &&
+        !trimmed.startsWith('|') &&
+        !BULLET_AC_PATTERN.test(trimmed)
+      ) {
+        const descLines = epicDescriptions.get(currentEpicNumber);
+        if (descLines) {
+          descLines.push(trimmed);
+        }
+      }
+    }
+    
+    // Collect user story (As a / I want / So that patterns)
+    // Uses anchored patterns to avoid false positives like "**Asynchronous**"
+    if (currentEpicNumber !== null && currentStoryNumber !== null) {
+      const trimmed = line.trim();
+      const isUserStoryLine = 
+        USER_STORY_AS_PATTERN.test(trimmed) ||
+        USER_STORY_I_WANT_PATTERN.test(trimmed) ||
+        USER_STORY_SO_THAT_PATTERN.test(trimmed) ||
+        USER_STORY_AS_PLAIN.test(trimmed) ||
+        USER_STORY_I_WANT_PLAIN.test(trimmed) ||
+        USER_STORY_SO_THAT_PLAIN.test(trimmed);
+      
+      if (isUserStoryLine) {
+        const key = storyKey(currentEpicNumber, currentStoryNumber);
+        const userStoryLines = storyUserStories.get(key);
+        if (userStoryLines) {
+          userStoryLines.push(trimmed);
+        }
+      }
     }
     
     // Check for Table AC (explicit numbering)
@@ -191,6 +272,34 @@ export function parseBRD(content: string, sourcePath: string): BRDParseResult {
       });
       continue;
     }
+    
+    // Check for Constraint heading (### Constraint: ... or ## Constraints)
+    const constraintHeadingMatch = line.match(CONSTRAINT_HEADING_PATTERN);
+    if (constraintHeadingMatch) {
+      constraintCounter++;
+      constraints.push({
+        type: 'UNKNOWN',  // BRD doesn't specify type in heading
+        number: constraintCounter,
+        description: constraintHeadingMatch[1].trim() || '',
+        lineStart: lineNumber,
+        lineEnd: lineNumber,
+      });
+      continue;
+    }
+    
+    // Check for Constraint label (**Constraint:** ...)
+    const constraintLabelMatch = line.match(CONSTRAINT_LABEL_PATTERN);
+    if (constraintLabelMatch) {
+      constraintCounter++;
+      constraints.push({
+        type: 'UNKNOWN',  // BRD doesn't specify type in label
+        number: constraintCounter,
+        description: constraintLabelMatch[1].trim() || '',
+        lineStart: lineNumber,
+        lineEnd: lineNumber,
+      });
+      continue;
+    }
   }
   
   // Close final story
@@ -211,6 +320,19 @@ export function parseBRD(content: string, sourcePath: string): BRDParseResult {
     }
   }
   
+  // Populate epic descriptions from collected lines
+  for (const epic of epics) {
+    const descLines = epicDescriptions.get(epic.number);
+    epic.description = descLines ? descLines.join('\n').trim() : '';
+  }
+  
+  // Populate story userStory from collected lines
+  for (const story of stories) {
+    const key = storyKey(story.epicNumber, story.storyNumber);
+    const userStoryLines = storyUserStories.get(key);
+    story.userStory = userStoryLines ? userStoryLines.join('\n').trim() : '';
+  }
+  
   // Validate we parsed something
   if (epics.length === 0) {
     throw new Error(`BRD PARSE ERROR: No epics found in ${sourcePath}`);
@@ -224,7 +346,7 @@ export function parseBRD(content: string, sourcePath: string): BRDParseResult {
   detectTableACFormatDrift(content, sourcePath);
   
   // Validate counts
-  const result: BRDParseResult = { epics, stories, acceptanceCriteria };
+  const result: BRDParseResult = { epics, stories, acceptanceCriteria, constraints };
   validateCounts(result, sourcePath);
   
   return result;
