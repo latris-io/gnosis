@@ -16,15 +16,22 @@ import type { EvidenceAnchor } from '../extraction/types.js';
 export type LedgerOperation = 'CREATE' | 'UPDATE';
 
 /**
+ * Entry kind distinguishes entity vs relationship mutations.
+ * Added in Pre-A2 Hardening to support relationship logging.
+ */
+export type LedgerEntryKind = 'entity' | 'relationship';
+
+/**
  * A shadow ledger entry captures the provenance of an entity mutation.
  */
 export interface LedgerEntry {
   timestamp: string;          // ISO 8601 timestamp
   operation: LedgerOperation;
-  entity_type: string;        // E-code (E01, E02, etc.)
-  entity_id: string;          // UUID of the entity
-  instance_id: string;        // Business key (EPIC-1, STORY-1.1, etc.)
-  content_hash: string;       // SHA-256 hash of entity content
+  kind?: LedgerEntryKind;     // 'entity' | 'relationship' (undefined = entity for backwards compat)
+  entity_type: string;        // E-code (E01, E02, etc.) or R-code for relationships
+  entity_id: string;          // UUID of the entity or relationship
+  instance_id: string;        // Business key (EPIC-1, STORY-1.1, R01:..., etc.)
+  content_hash: string;       // SHA-256 hash of content
   evidence: EvidenceAnchor;
   project_id: string;
 }
@@ -120,6 +127,54 @@ export class ShadowLedger {
   }
 
   /**
+   * Log a relationship CREATE operation.
+   * Added in Pre-A2 Hardening for relationship tracking.
+   */
+  async logRelationshipCreate(
+    relationshipType: string,
+    relationshipId: string,
+    instanceId: string,
+    contentHash: string,
+    evidence: EvidenceAnchor,
+    projectId: string
+  ): Promise<void> {
+    await this.append({
+      operation: 'CREATE',
+      kind: 'relationship',
+      entity_type: relationshipType, // R-code
+      entity_id: relationshipId,
+      instance_id: instanceId,
+      content_hash: contentHash,
+      evidence,
+      project_id: projectId,
+    });
+  }
+
+  /**
+   * Log a relationship UPDATE operation.
+   * Added in Pre-A2 Hardening for relationship tracking.
+   */
+  async logRelationshipUpdate(
+    relationshipType: string,
+    relationshipId: string,
+    instanceId: string,
+    contentHash: string,
+    evidence: EvidenceAnchor,
+    projectId: string
+  ): Promise<void> {
+    await this.append({
+      operation: 'UPDATE',
+      kind: 'relationship',
+      entity_type: relationshipType, // R-code
+      entity_id: relationshipId,
+      instance_id: instanceId,
+      content_hash: contentHash,
+      evidence,
+      project_id: projectId,
+    });
+  }
+
+  /**
    * Get all entries from the ledger.
    */
   async getEntries(): Promise<LedgerEntry[]> {
@@ -166,3 +221,5 @@ export class ShadowLedger {
 
 // Singleton instance for convenience
 export const shadowLedger = new ShadowLedger();
+
+

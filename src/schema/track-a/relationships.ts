@@ -38,15 +38,21 @@ export type RelationshipTypeCode =
 
 /**
  * Relationship interface matching Cursor Plan PostgreSQL schema
+ * Updated in Pre-A2 Hardening to include evidence anchor fields
  */
 export interface Relationship {
   id: string;                              // UUID
   relationship_type: RelationshipTypeCode; // 'R01', 'R02', etc.
-  instance_id: string;                     // Unique identifier
+  instance_id: string;                     // Unique identifier (pattern: R{XX}:{from}:{to})
   name: string;                            // Human-readable name (e.g., 'HAS_STORY')
   from_entity_id: string;                  // UUID (NOT source_id)
   to_entity_id: string;                    // UUID (NOT target_id)
   confidence: number;                      // 0.00 to 1.00
+  // Evidence anchor fields (added in Pre-A2 Hardening per Constraint A.2)
+  source_file: string;                     // File where relationship was extracted
+  line_start: number;                      // Starting line (1-indexed, > 0)
+  line_end: number;                        // Ending line (>= line_start)
+  content_hash: string | null;             // SHA-256 hash for change detection
   extracted_at: Date;
   project_id: string;                      // UUID
 }
@@ -102,3 +108,5 @@ export function isRelationshipTypeCode(code: string): code is RelationshipTypeCo
 export function getRelationshipTypeName(code: RelationshipTypeCode): string {
   return RELATIONSHIP_TYPE_NAMES[code];
 }
+
+

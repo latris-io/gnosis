@@ -1,10 +1,11 @@
 # SANITY Test Suite Specification
 
-**Version:** 1.2.0  
+**Version:** 1.3.0  
 **Implements:** Verification Spec V20.6.4 Part II  
 **Purpose:** Foundational tests that must pass before any track begins  
 **Canonical Source:** UNIFIED_VERIFICATION_SPECIFICATION_V20_6_4.md §Part II
 
+> **v1.3.0:** Pre-A2 Hardening - Added SANITY-017 (relationship evidence schema) and SANITY-045 (relationship evidence anchors)  
 > **v1.2.0:** Added SANITY-023/024 for composite uniqueness constraint verification (multi-tenant isolation)  
 > **v1.1.0:** Aligned entity/relationship lists with Track A scope (E14 deferred, R-codes per ENTRY.md); fixed ID format patterns to use canonical uppercase prefixes
 
@@ -24,7 +25,7 @@ The SANITY suite validates that the development environment, canonical documents
 | CANONICAL | SANITY-010 to 019 | Document presence, version, hash validation |
 | SCHEMA | SANITY-020 to 029 | Entity/relationship definitions parseable |
 | MARKERS | SANITY-030 to 039 | Marker patterns valid |
-| EXTRACTION | SANITY-040 to 044 | Provider interface, evidence anchors |
+| EXTRACTION | SANITY-040 to 045 | Provider interface, evidence anchors |
 | BRD | SANITY-050 to 059 | BRD parseable, counts match |
 | DORMANT | SANITY-080 to 083 | EP-D-002 stubs (return `{pass: true, skipped: true}`) |
 
@@ -175,6 +176,44 @@ test('SANITY-016: All canonical docs have valid version headers', () => {
     expect(versionMatch).not.toBeNull();
     expect(versionMatch[1]).toBe(doc.expected);
   }
+});
+```
+
+### SANITY-017: Relationship Evidence Schema
+```typescript
+// @implements SANITY-017
+// @satisfies Constraint A.2
+// Added in Pre-A2 Hardening
+
+test('SANITY-017: Relationships table has evidence columns', async () => {
+  const result = await pool.query(`
+    SELECT column_name, is_nullable
+    FROM information_schema.columns 
+    WHERE table_name = 'relationships' 
+    AND column_name IN ('source_file', 'line_start', 'line_end', 'content_hash')
+  `);
+  
+  const columns = new Map(result.rows.map(r => [r.column_name, r]));
+  
+  // source_file: NOT NULL
+  expect(columns.has('source_file')).toBe(true);
+  expect(columns.get('source_file')?.is_nullable).toBe('NO');
+  
+  // line_start: NOT NULL
+  expect(columns.has('line_start')).toBe(true);
+  expect(columns.get('line_start')?.is_nullable).toBe('NO');
+  
+  // line_end: NOT NULL
+  expect(columns.has('line_end')).toBe(true);
+  expect(columns.get('line_end')?.is_nullable).toBe('NO');
+  
+  // valid_line_range constraint
+  const constraintResult = await pool.query(`
+    SELECT conname FROM pg_constraint 
+    WHERE conrelid = 'relationships'::regclass 
+    AND conname = 'valid_line_range'
+  `);
+  expect(constraintResult.rows.length).toBe(1);
 });
 ```
 
@@ -430,6 +469,51 @@ test('SANITY-044: Evidence anchor fields in entity schema', () => {
 });
 ```
 
+### SANITY-045: Relationship Evidence Anchors
+```typescript
+// @implements SANITY-045
+// @satisfies Constraint A.2, AC-64.2.23
+// Added in Pre-A2 Hardening
+
+test('SANITY-045: All relationships have evidence anchors', async () => {
+  // ANTI-VACUITY: Hard fail if PROJECT_ID missing
+  if (!PROJECT_ID) {
+    throw new Error('[SANITY-045] PROJECT_ID required - cannot skip evidence validation');
+  }
+
+  const result = await pool.query(
+    'SELECT instance_id, source_file, line_start, line_end FROM relationships WHERE project_id = $1',
+    [PROJECT_ID]
+  );
+  
+  const relationships = result.rows;
+  const trackPhase = process.env.TRACK_PHASE || 'pre_a2';
+  
+  // Phase-aware expectation
+  if (relationships.length === 0) {
+    if (trackPhase === 'post_a2' || trackPhase === 'post_a3') {
+      throw new Error(`[SANITY-045] TRACK_PHASE=${trackPhase} but no relationships found.`);
+    }
+    // Pre-A2: 0 relationships is a phase-valid pass
+    console.log(`[SANITY-045] No relationships to validate (TRACK_PHASE=${trackPhase}, phase-valid pass)`);
+    return;
+  }
+  
+  // Validate evidence anchors
+  for (const rel of relationships) {
+    expect(rel.source_file).toBeDefined();
+    expect(rel.source_file.length).toBeGreaterThan(0);
+    expect(rel.line_start).toBeGreaterThan(0);
+    expect(rel.line_end).toBeGreaterThanOrEqual(rel.line_start);
+  }
+});
+```
+
+**Semantics (phase-valid, not vacuous):**
+- Pre-A2: Zero relationships is a phase-valid pass; test logs and returns
+- Post-A2 (TRACK_PHASE=post_a2): Relationships MUST exist; hard fail if empty
+- PROJECT_ID missing: Hard fail (test cannot run without context)
+
 ---
 
 ## BRD Tests (SANITY-050 to 059)
@@ -543,14 +627,16 @@ npm run test:sanity -- --grep "SANITY-05[0-9]"      # BRD
 All SANITY tests must pass before any track begins:
 
 - [ ] SANITY-001 to 005: Environment ✓
-- [ ] SANITY-010 to 016: Canonical documents ✓
-- [ ] SANITY-020 to 022: Schema definitions ✓
+- [ ] SANITY-010 to 017: Canonical documents + schema conformance ✓
+- [ ] SANITY-020 to 024: Schema definitions + uniqueness ✓
 - [ ] SANITY-030 to 033: Marker patterns ✓
-- [ ] SANITY-040 to 044: Extraction infrastructure ✓
+- [ ] SANITY-040 to 045: Extraction infrastructure + evidence anchors ✓
 - [ ] SANITY-055 to 057: BRD parseable ✓
 - [ ] SANITY-080 to 083: Dormant tests return skipped ✓
 
-**Total: 56 active tests + 4 dormant = 60 tests**
+**Total: 58 active tests + 4 dormant = 62 tests**
+
+> **v1.3.0 (Pre-A2 Hardening):** Added SANITY-017 (relationship evidence schema) and SANITY-045 (relationship evidence anchors)
 
 ---
 

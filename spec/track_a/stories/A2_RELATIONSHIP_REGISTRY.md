@@ -1,6 +1,6 @@
 # Story A.2: Relationship Registry
 
-**Version:** 1.4.0  
+**Version:** 1.5.0  
 **Implements:** STORY-64.2 (UTG Relationship Extraction)  
 **Track:** A  
 **Duration:** 2-3 days  
@@ -9,6 +9,7 @@
 - UTG Schema V20.6.1 §Relationship Registry
 - Verification Spec V20.6.4 §Part IX
 
+> **v1.5.0:** Pre-A2 Hardening - Added Evidence Fields section, R36/R37 deferral to A3, instance_id format validation  
 > **v1.4.0:** Added R70 GROUPS extraction logic, endpoint deviation note  
 > **v1.3.0:** Multi-tenant identity fix: ON CONFLICT (project_id, instance_id)  
 > **v1.2.0:** Entity count consistency: "16 in scope, 15 extractable (E14 deferred)"  
@@ -42,8 +43,8 @@
 | AC-64.2.14 | Extract EXTENDS (Class→Class) | Shadow Ledger | VERIFY-R23 |
 | AC-64.2.15 | Extract IMPLEMENTS_INTERFACE (Class→Interface) | Shadow Ledger | VERIFY-R24 |
 | AC-64.2.16 | Extract DEPENDS_ON (Module→Module) | Shadow Ledger | VERIFY-R26 |
-| AC-64.2.17 | Extract TESTED_BY (Func/Class→TestCase) | Shadow Ledger | VERIFY-R36 |
-| AC-64.2.18 | Extract VERIFIED_BY (AC→TestCase) | Shadow Ledger | VERIFY-R37 |
+| AC-64.2.17 | Extract TESTED_BY (Func/Class→TestCase) | Shadow Ledger | VERIFY-R36 | **DEFERRED TO A3** |
+| AC-64.2.18 | Extract VERIFIED_BY (AC→TestCase) | Shadow Ledger | VERIFY-R37 | **DEFERRED TO A3** |
 | AC-64.2.19 | Extract INTRODUCED_IN (SourceFile→Commit) | Shadow Ledger | VERIFY-R63 |
 | AC-64.2.20 | Extract MODIFIED_IN (SourceFile→Commit) | Shadow Ledger | VERIFY-R67 |
 | AC-64.2.21 | Extract GROUPS (ChangeSet→Commit) | Shadow Ledger | VERIFY-R70 |
@@ -62,6 +63,37 @@
 - [ ] All 16 entity types in scope (15 extractable; E14 deferred)
 - [ ] Entity extraction tests pass
 - [ ] Shadow ledger operational
+
+---
+
+## Evidence Fields (Required)
+
+> **Added in Pre-A2 Hardening per Constraint A.2**
+
+Every relationship row MUST include evidence anchor fields:
+
+| Column | Type | Constraint | Description |
+|--------|------|------------|-------------|
+| source_file | VARCHAR(500) | NOT NULL, non-empty | File where relationship was extracted |
+| line_start | INTEGER | NOT NULL, > 0 | Starting line of evidence |
+| line_end | INTEGER | NOT NULL, >= line_start | Ending line of evidence |
+| extracted_at | TIMESTAMPTZ | NOT NULL (auto) | Extraction timestamp |
+
+**Validation:** SANITY-045 enforces evidence presence on all relationship rows.
+
+**Instance ID Format:** All relationship instance_ids must match pattern: `^R\d{2}:.+:.+$`
+
+Example: `R01:EPIC-64:STORY-64.1`
+
+The service layer validates this format before upsert and rejects malformed IDs.
+
+---
+
+## R36/R37 Deferral (ORGAN PATCH - Deliberate Change)
+
+> **AC-64.2.17 (TESTED_BY)** and **AC-64.2.18 (VERIFIED_BY)** are explicitly deferred to Story A3 (Marker Extraction).
+>
+> These relationships require marker-based extraction (`@implements`, `@satisfies`) which is not implemented until A3. This is a deliberate scope change recorded per organ patch rules, not an implementation shortcut. A2 exit criteria do NOT require R36/R37 extraction.
 
 ---
 

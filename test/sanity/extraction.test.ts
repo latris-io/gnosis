@@ -1,14 +1,20 @@
 // @implements INFRASTRUCTURE
-// SANITY tests: EXTRACTION category (SANITY-040 to SANITY-044)
+// SANITY tests: EXTRACTION category (SANITY-040 to SANITY-045)
 // Track A - extraction validation
 // Authority: ENTRY.md:66, EXIT.md:122, ENTRY.md:199 (SANITY-043), ENTRY.md:216 (SANITY-044)
+// SANITY-045 added in Pre-A2 Hardening per Constraint A.2
 
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { Pool } from 'pg';
 import { getEntityCounts, getAllEntities } from '../../src/api/v1/entities.js';
 import type { EntityTypeCode } from '../../src/schema/track-a/entities.js';
+import 'dotenv/config';
 
 // Get project ID from environment (set by extraction run)
 const PROJECT_ID = process.env.PROJECT_ID;
+
+// Track phase for phase-aware tests (pre_a2, post_a2, post_a3)
+const TRACK_PHASE = process.env.TRACK_PHASE || 'pre_a2';
 
 // Expected BRD counts (from BRD V20.6.3)
 const EXPECTED_BRD_COUNTS = {
@@ -17,11 +23,23 @@ const EXPECTED_BRD_COUNTS = {
   E03: 2849,    // Acceptance Criteria
 };
 
+// Pool for direct DB access (SANITY-045)
+let pool: Pool;
+
 describe('EXTRACTION (Track A)', () => {
-  beforeAll(() => {
+  beforeAll(async () => {
+    pool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: { rejectUnauthorized: false },
+    });
+
     if (!PROJECT_ID) {
       console.warn('[SANITY-04x] PROJECT_ID not set - extraction tests will use fallback assertions');
     }
+  });
+
+  afterAll(async () => {
+    await pool.end();
   });
 
   // SANITY-040: BRD entities extracted
@@ -154,4 +172,67 @@ describe('EXTRACTION (Track A)', () => {
     // All entities must have evidence anchors
     expect(entitiesWithMissingEvidence.length).toBe(0);
   });
+
+  // SANITY-045: All relationships have valid evidence anchors
+  // Added in Pre-A2 Hardening per Constraint A.2
+  // Authority: ENTRY.md Constraint A.2, AC-64.2.23
+  // Semantics (phase-valid, not vacuous):
+  //   - Pre-A2: Zero relationships is a phase-valid pass
+  //   - Post-A2: Relationships MUST exist; hard fail if empty
+  //   - PROJECT_ID missing in post_a2: Hard fail; in pre_a2: skip (no relationships to validate)
+  it('SANITY-045: Relationship Evidence Anchors (Track A)', async () => {
+    // Pre-A2: If PROJECT_ID not set, this is expected (no relationships yet)
+    // Post-A2: PROJECT_ID is required since relationships should exist
+    if (!PROJECT_ID) {
+      if (TRACK_PHASE === 'post_a2' || TRACK_PHASE === 'post_a3') {
+        throw new Error('[SANITY-045] PROJECT_ID required in post-A2 phase - cannot skip evidence validation');
+      }
+      console.log('[SANITY-045] PROJECT_ID not set (pre-A2 phase, no relationships expected)');
+      return;
+    }
+
+    const result = await pool.query(
+      'SELECT instance_id, source_file, line_start, line_end FROM relationships WHERE project_id = $1',
+      [PROJECT_ID]
+    );
+    
+    const relationships = result.rows;
+    
+    // Phase-aware expectation
+    if (relationships.length === 0) {
+      if (TRACK_PHASE === 'post_a2' || TRACK_PHASE === 'post_a3') {
+        // After A2, relationships MUST exist
+        throw new Error(
+          `[SANITY-045] TRACK_PHASE=${TRACK_PHASE} but no relationships found. ` +
+          `A2+ requires relationship extraction.`
+        );
+      }
+      // Pre-A2: 0 relationships is a phase-valid pass
+      console.log(`[SANITY-045] No relationships to validate (TRACK_PHASE=${TRACK_PHASE}, phase-valid pass)`);
+      return;
+    }
+    
+    // Validate evidence anchors on all existing relationships
+    const invalid: string[] = [];
+    for (const rel of relationships) {
+      const hasSourceFile = rel.source_file && rel.source_file.length > 0;
+      const hasLineStart = typeof rel.line_start === 'number' && rel.line_start > 0;
+      const hasLineEnd = typeof rel.line_end === 'number' && rel.line_end >= rel.line_start;
+      
+      if (!hasSourceFile || !hasLineStart || !hasLineEnd) {
+        invalid.push(rel.instance_id);
+      }
+    }
+    
+    // Report any relationships missing evidence
+    if (invalid.length > 0) {
+      console.warn(`[SANITY-045] Relationships missing evidence: ${invalid.slice(0, 10).join(', ')}${invalid.length > 10 ? '...' : ''}`);
+      throw new Error(`[SANITY-045] ${invalid.length} relationships missing evidence: ${invalid.slice(0, 5).join(', ')}${invalid.length > 5 ? '...' : ''}`);
+    }
+    
+    console.log(`[SANITY-045] Validated ${relationships.length} relationships (all have evidence)`);
+    expect(invalid.length).toBe(0);
+  });
 });
+
+

@@ -200,20 +200,25 @@ export interface ExtractionResult {
 
 ### Constraint A.2: Evidence Anchors
 
-Every extracted entity/relationship MUST capture provenance in `attributes` JSONB:
+Every extracted entity/relationship MUST capture provenance in **flat columns**:
 
 ```typescript
-interface EvidenceAnchor {
-  source_file: string;
-  line_start: number;
-  line_end: number;
-  commit_sha: string;
-  extraction_timestamp: Date;
-  extractor_version: string;
+// For entities: stored in entity row columns
+// For relationships: stored in relationship row columns
+interface EvidenceFields {
+  source_file: string;   // File where extraction occurred
+  line_start: number;    // Starting line (1-indexed, > 0)
+  line_end: number;      // Ending line (>= line_start)
+  extracted_at: Date;    // Timestamp (auto-populated)
 }
 ```
 
-**Verification:** SANITY-044
+**Storage model:**
+- Entities: `source_file`, `line_start`, `line_end`, `extracted_at` columns
+- Relationships: `source_file`, `line_start`, `line_end`, `extracted_at` columns (added in Pre-A2 Hardening)
+- Additional context may be stored in `attributes` JSONB (entities only)
+
+**Verification:** SANITY-044 (entities), SANITY-045 (relationships)
 
 ---
 

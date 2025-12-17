@@ -712,6 +712,38 @@ test('SANITY-044c: Evidence anchors immutable within snapshot', () => {
 **Pass Criteria:** All extracted entities AND relationships have valid, persistent evidence anchors.
 **Fail Action:** BLOCK
 
+> **Track A Implementation Note (Pre-A2 Hardening):** Track A stores evidence anchors in flat columns (`source_file`, `line_start`, `line_end`, `extracted_at`) rather than nested `attributes.evidence_anchor` JSONB. This is documented in ENTRY.md Constraint A.2. Schema conformance is verified by SANITY-017. Relationship-specific evidence is verified by SANITY-045.
+
+### SANITY-017: Relationship Evidence Schema (Track A)
+
+**Purpose:** Verify `relationships` table has required evidence columns per Constraint A.2.
+
+**Checks:**
+1. `source_file` column exists and is NOT NULL
+2. `line_start` column exists and is NOT NULL  
+3. `line_end` column exists and is NOT NULL
+4. `valid_line_range` constraint exists (line_end >= line_start)
+
+**Pass Criteria:** Schema supports evidence anchor storage for relationships.
+**Fail Action:** BLOCK
+
+### SANITY-045: Relationship Evidence Anchors (Track A)
+
+**Purpose:** Verify all relationship rows have valid evidence anchors per Constraint A.2.
+
+**Checks:**
+1. All relationships have non-empty `source_file`
+2. All relationships have `line_start > 0`
+3. All relationships have `line_end >= line_start`
+
+**Semantics (phase-valid):**
+- Pre-A2: Zero relationships is acceptable; test logs and returns
+- Post-A2 (TRACK_PHASE=post_a2): Relationships MUST exist; hard fail if empty
+- PROJECT_ID missing: Hard fail (test cannot run without context)
+
+**Pass Criteria:** All existing relationships have valid evidence anchors.
+**Fail Action:** BLOCK
+
 ## 2.7 TRACK-SPECIFIC Tests (SANITY-050 to SANITY-072)
 
 ### Track B Pre-Checks (SANITY-050 to SANITY-055)

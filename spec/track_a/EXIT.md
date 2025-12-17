@@ -1,10 +1,11 @@
 # Track A Exit Criteria
 
-**Version:** 1.2.2  
+**Version:** 1.3.0  
 **Implements:** Roadmap V20.6.4 Track A Exit  
 **Purpose:** Verification checklist before HGR-1 (Human Gate Review 1)  
 **Canonical Source:** GNOSIS_TO_SOPHIA_MASTER_ROADMAP_V20_6_4.md §Track A
 
+> **v1.3.0:** Pre-A2 Hardening - Added SANITY-017/045, R36/R37 deferral to A3, relationship evidence requirement  
 > **v1.2.2:** Added semantic signal diversity governance note  
 > **v1.2.1:** Added SANITY model clarification note  
 > **v1.2.0:** Entity count consistency: "16 in scope, 15 extractable (E14 deferred)"  
@@ -86,8 +87,8 @@ All 21 Track A relationship types extractable and verified:
 | R23 | EXTENDS | VERIFY-R23 | [ ] Pass |
 | R24 | IMPLEMENTS_INTERFACE | VERIFY-R24 | [ ] Pass |
 | R26 | DEPENDS_ON | VERIFY-R26 | [ ] Pass |
-| R36 | TESTED_BY | VERIFY-R36 | [ ] Pass |
-| R37 | VERIFIED_BY | VERIFY-R37 | [ ] Pass |
+| R36 | TESTED_BY | VERIFY-R36 | [ ] Deferred to A3 |
+| R37 | VERIFIED_BY | VERIFY-R37 | [ ] Deferred to A3 |
 | R63 | INTRODUCED_IN | VERIFY-R63 | [ ] Pass |
 | R67 | MODIFIED_IN | VERIFY-R67 | [ ] Pass |
 | R70 | GROUPS | VERIFY-R70 | [ ] Pass |
@@ -117,10 +118,10 @@ npm run test:sanity
 
 # Expected output:
 # SANITY-001 to 009: Environment ✓
-# SANITY-010 to 019: Canonical ✓
+# SANITY-010 to 019: Canonical (includes 017 schema conformance) ✓
 # SANITY-020 to 029: Schema ✓
 # SANITY-030 to 039: Markers ✓
-# SANITY-040 to 044: Extraction ✓
+# SANITY-040 to 045: Extraction (includes 045 relationship evidence) ✓
 # SANITY-050 to 059: BRD ✓
 # SANITY-080 to 083: Dormant (skipped) ✓
 #
@@ -129,7 +130,7 @@ npm run test:sanity
 
 > **Model:** EXIT.md uses broad category ranges (e.g., 001-009) to accommodate future test additions within each category. ENTRY.md specifies the minimum subset required for Track A entry.
 
-- [ ] All gate-critical SANITY tests pass (001-005, 010-016, 020-024, 030-033, 040-044, 055-057)
+- [ ] All gate-critical SANITY tests pass (001-005, 010-017, 020-024, 030-033, 040-045, 055-057)
 - [ ] All 4 dormant SANITY tests return `{skipped: true}`
 
 ---
@@ -141,6 +142,7 @@ npm run test:sanity
 - [x] Shadow ledger file exists at `shadow-ledger/ledger.jsonl`
 - [x] Ledger contains entries for all entity creations
 - [ ] Ledger contains entries for all relationship creations *(A2)*
+- [ ] All relationship rows have evidence anchors (SANITY-045) *(A2)*
 - [ ] Ledger contains entries for pipeline start/complete *(A5)*
 - [x] Entry count: **10** entries *(A1 verified 2025-12-16)*
 

@@ -268,4 +268,47 @@ describe('INTEGRITY Tests', () => {
       });
     }
   });
+
+  // SANITY-017: Relationship Evidence Schema
+  // Added in Pre-A2 Hardening per Constraint A.2
+  // Authority: ENTRY.md Constraint A.2, migration 004
+  describe('SANITY-017: Relationship Evidence Schema', () => {
+    it('relationships table has required evidence columns', async () => {
+      const result = await pool.query(`
+        SELECT column_name, is_nullable, data_type
+        FROM information_schema.columns 
+        WHERE table_name = 'relationships' 
+        AND column_name IN ('source_file', 'line_start', 'line_end', 'content_hash')
+        ORDER BY column_name
+      `);
+      
+      const columns = new Map(result.rows.map(r => [r.column_name, r]));
+      
+      // content_hash: NULLABLE VARCHAR (optional, for change detection)
+      expect(columns.has('content_hash')).toBe(true);
+      
+      // line_end: NOT NULL INTEGER
+      expect(columns.has('line_end')).toBe(true);
+      expect(columns.get('line_end')?.is_nullable).toBe('NO');
+      
+      // line_start: NOT NULL INTEGER
+      expect(columns.has('line_start')).toBe(true);
+      expect(columns.get('line_start')?.is_nullable).toBe('NO');
+      
+      // source_file: NOT NULL VARCHAR
+      expect(columns.has('source_file')).toBe(true);
+      expect(columns.get('source_file')?.is_nullable).toBe('NO');
+    });
+
+    it('relationships table has valid_line_range constraint', async () => {
+      const result = await pool.query(`
+        SELECT conname FROM pg_constraint 
+        WHERE conrelid = 'relationships'::regclass 
+        AND conname = 'valid_line_range'
+      `);
+      expect(result.rows.length).toBe(1);
+    });
+  });
 });
+
+

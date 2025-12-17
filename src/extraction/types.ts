@@ -53,6 +53,9 @@ export interface ExtractedEntity {
  * A relationship as extracted from source, before persistence.
  * Uses instance_id references (not UUIDs).
  * UUIDs are resolved during persistence after entity upsert.
+ * 
+ * Per Pre-A2 Hardening: Evidence fields are REQUIRED for all relationships.
+ * Instance ID must match pattern: ^R\d{2}:.+:.+$
  */
 export interface ExtractedRelationship {
   relationship_type: RelationshipTypeCode;
@@ -61,6 +64,10 @@ export interface ExtractedRelationship {
   from_instance_id: string;  // e.g., "EPIC-64" (resolved to UUID during persistence)
   to_instance_id: string;    // e.g., "STORY-64.1" (resolved to UUID during persistence)
   confidence?: number;
+  // Evidence fields (required per Constraint A.2)
+  source_file: string;
+  line_start: number;
+  line_end: number;
 }
 
 /**
@@ -75,3 +82,5 @@ export interface EvidenceAnchor {
   extraction_timestamp: Date;
   extractor_version: string;
 }
+
+
