@@ -71,9 +71,10 @@ export class GitProvider implements ExtractionProvider {
             created_at: dateStr || undefined,
             is_semver: this.isSemver(tagName),
           },
+          // Git entities use synthetic .git anchor per AMB-5 resolution
           source_file: '.git',
-          line_start: 0,
-          line_end: 0,
+          line_start: 1,
+          line_end: 1,
         });
 
         await captureCorrectSignal('E49', instanceId, {
@@ -135,9 +136,10 @@ export class GitProvider implements ExtractionProvider {
             message,
             story_ref: storyRef,
           },
+          // Git entities use synthetic .git anchor per AMB-5 resolution
           source_file: '.git',
-          line_start: 0,
-          line_end: 0,
+          line_start: 1,
+          line_end: 1,
         });
 
         await captureCorrectSignal('E50', instanceId, {
@@ -176,3 +178,5 @@ export class GitProvider implements ExtractionProvider {
 
 // Export singleton instance
 export const gitProvider = new GitProvider();
+
+

@@ -1,10 +1,11 @@
 # SANITY Test Suite Specification
 
-**Version:** 1.5.1  
+**Version:** 1.5.2  
 **Implements:** Verification Spec V20.6.4 Part II  
 **Purpose:** Foundational tests that must pass before any track begins  
 **Canonical Source:** UNIFIED_VERIFICATION_SPECIFICATION_V20_6_4.md §Part II
 
+> **v1.5.2:** Fix E49/E50 evidence anchors (line_start=1, not 0) + document AMB-5 git entity strategy
 > **v1.5.1:** SANITY-044 anti-vacuity + RLS helper (PROJECT_ID required, rlsQuery, 0 entities = hard fail)
 > **v1.5.0:** RLS structural enforcement - Two-level allowlist in forbidden-actions-harness, test helpers (rls.ts, db-meta.ts), SANITY-018 now diagnostic backstop
 > **v1.4.0:** Bugfix - SANITY-045 anti-vacuity (PROJECT_ID always required) + RLS context on same client; added SANITY-018 (RLS context guardrail)
@@ -549,11 +550,19 @@ test('SANITY-044: All entities have evidence anchors', async () => {
 });
 ```
 
-**Semantics (v1.5.1):**
+**Semantics (v1.5.2):**
 - PROJECT_ID is ALWAYS required (no skip/fallback)
 - Track A1 complete: entities MUST exist (0 entities = hard fail)
 - Uses RLS via `rlsQuery()` helper from `test/utils/rls.ts`
 - Evidence fields: `source_file` (non-empty), `line_start` (> 0), `line_end` (>= line_start), `extracted_at` (present)
+
+**Git Entity Evidence Strategy (E49/E50):**
+Git-derived entities (E49 ReleaseVersion, E50 Commit) use synthetic evidence anchors since they don't have a literal source file location:
+- `source_file = '.git'` (synthetic repo anchor)
+- `line_start = 1`
+- `line_end = 1`
+
+This follows the AMB-5 resolution for git-derived entities and relationships (R63/R67/R70).
 
 ### SANITY-045: Relationship Evidence Anchors
 ```typescript
