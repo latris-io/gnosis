@@ -127,25 +127,41 @@ describe('EXTRACTION (Track A)', () => {
   // SANITY-044: All entities have valid evidence anchors
   // Authority: ENTRY.md:216 "Verification: SANITY-044" (Constraint A.2: Evidence Anchors)
   // Also: AC-64.1.17, AC-64.2.23
+  // Semantics:
+  //   - PROJECT_ID is ALWAYS required (no phase bypass)
+  //   - Track A1 complete: entities MUST exist; hard fail if empty
+  //   - Uses RLS via rlsQuery() helper (verifies context is set)
   it('SANITY-044: No Extraction Errors (Track A)', async () => {
+    // ANTI-VACUITY: PROJECT_ID is always required to run this test
     if (!PROJECT_ID) {
-      expect(true).toBe(true);
-      return;
+      throw new Error('[SANITY-044] PROJECT_ID required - cannot skip evidence validation');
     }
 
-    const allEntities = await getAllEntities(PROJECT_ID);
+    // Use RLS helper - it sets context and verifies it's actually set
+    const entities = await rlsQuery<{
+      instance_id: string;
+      source_file: string;
+      line_start: number;
+      line_end: number;
+      extracted_at: string;
+    }>(
+      PROJECT_ID,
+      'SELECT instance_id, source_file, line_start, line_end, extracted_at FROM entities'
+    );
     
-    // Must have entities to validate
-    expect(allEntities.length).toBeGreaterThan(0);
+    // Track A1 is complete - entities MUST exist
+    if (entities.length === 0) {
+      throw new Error('[SANITY-044] Track A1 complete - entities MUST exist but found 0');
+    }
     
     // Check each entity has valid evidence fields
     const entitiesWithMissingEvidence: string[] = [];
     
-    for (const entity of allEntities) {
+    for (const entity of entities) {
       const hasSourceFile = entity.source_file && entity.source_file.length > 0;
       const hasLineStart = typeof entity.line_start === 'number' && entity.line_start > 0;
-      const hasLineEnd = typeof entity.line_end === 'number' && entity.line_end >= (entity.line_start ?? 0);
-      const hasExtractedAt = entity.extracted_at instanceof Date || typeof entity.extracted_at === 'string';
+      const hasLineEnd = typeof entity.line_end === 'number' && entity.line_end >= entity.line_start;
+      const hasExtractedAt = !!entity.extracted_at;
       
       if (!hasSourceFile || !hasLineStart || !hasLineEnd || !hasExtractedAt) {
         entitiesWithMissingEvidence.push(entity.instance_id);
@@ -155,9 +171,10 @@ describe('EXTRACTION (Track A)', () => {
     // Report any entities missing evidence
     if (entitiesWithMissingEvidence.length > 0) {
       console.warn(`[SANITY-044] Entities missing evidence: ${entitiesWithMissingEvidence.slice(0, 10).join(', ')}${entitiesWithMissingEvidence.length > 10 ? '...' : ''}`);
+      throw new Error(`[SANITY-044] ${entitiesWithMissingEvidence.length} entities missing evidence: ${entitiesWithMissingEvidence.slice(0, 5).join(', ')}${entitiesWithMissingEvidence.length > 5 ? '...' : ''}`);
     }
     
-    // All entities must have evidence anchors
+    console.log(`[SANITY-044] Validated ${entities.length} entities (all have evidence)`);
     expect(entitiesWithMissingEvidence.length).toBe(0);
   });
 

@@ -1,10 +1,11 @@
 # SANITY Test Suite Specification
 
-**Version:** 1.5.0  
+**Version:** 1.5.1  
 **Implements:** Verification Spec V20.6.4 Part II  
 **Purpose:** Foundational tests that must pass before any track begins  
 **Canonical Source:** UNIFIED_VERIFICATION_SPECIFICATION_V20_6_4.md §Part II
 
+> **v1.5.1:** SANITY-044 anti-vacuity + RLS helper (PROJECT_ID required, rlsQuery, 0 entities = hard fail)
 > **v1.5.0:** RLS structural enforcement - Two-level allowlist in forbidden-actions-harness, test helpers (rls.ts, db-meta.ts), SANITY-018 now diagnostic backstop
 > **v1.4.0:** Bugfix - SANITY-045 anti-vacuity (PROJECT_ID always required) + RLS context on same client; added SANITY-018 (RLS context guardrail)
 > **v1.3.0:** Pre-A2 Hardening - Added SANITY-017 (relationship evidence schema) and SANITY-045 (relationship evidence anchors)
@@ -509,20 +510,50 @@ test('SANITY-043: Extraction provider interface defined', () => {
 });
 ```
 
-### SANITY-044: Evidence Anchor Schema Exists
+### SANITY-044: Entity Evidence Anchors
 ```typescript
 // @implements SANITY-044
-// @satisfies Cursor Plan V20.8.5 Constraint A.2
+// @satisfies Constraint A.2, AC-64.1.17, AC-64.2.23
+// Updated in v1.5.1 for RLS context and anti-vacuity
 
-test('SANITY-044: Evidence anchor fields in entity schema', () => {
-  const schemaPath = 'src/db/schema.ts';
-  const content = fs.readFileSync(schemaPath, 'utf8');
-  
-  // Check JSONB attributes field exists for evidence
-  expect(content).toContain('attributes');
-  expect(content).toContain('jsonb');
+test('SANITY-044: All entities have evidence anchors', async () => {
+  // ANTI-VACUITY: PROJECT_ID is ALWAYS required (no phase bypass)
+  if (!PROJECT_ID) {
+    throw new Error('[SANITY-044] PROJECT_ID required - cannot skip evidence validation');
+  }
+
+  // Use RLS helper - it sets context and verifies it's actually set
+  const entities = await rlsQuery(PROJECT_ID,
+    'SELECT instance_id, source_file, line_start, line_end, extracted_at FROM entities'
+  );
+
+  // Track A1 is complete - entities MUST exist
+  if (entities.length === 0) {
+    throw new Error('[SANITY-044] Track A1 complete - entities MUST exist but found 0');
+  }
+
+  // Validate evidence anchors on all entities
+  const invalid = [];
+  for (const entity of entities) {
+    const hasSourceFile = entity.source_file && entity.source_file.length > 0;
+    const hasLineStart = typeof entity.line_start === 'number' && entity.line_start > 0;
+    const hasLineEnd = typeof entity.line_end === 'number' && entity.line_end >= entity.line_start;
+    const hasExtractedAt = !!entity.extracted_at;
+
+    if (!hasSourceFile || !hasLineStart || !hasLineEnd || !hasExtractedAt) {
+      invalid.push(entity.instance_id);
+    }
+  }
+
+  expect(invalid.length).toBe(0);
 });
 ```
+
+**Semantics (v1.5.1):**
+- PROJECT_ID is ALWAYS required (no skip/fallback)
+- Track A1 complete: entities MUST exist (0 entities = hard fail)
+- Uses RLS via `rlsQuery()` helper from `test/utils/rls.ts`
+- Evidence fields: `source_file` (non-empty), `line_start` (> 0), `line_end` (>= line_start), `extracted_at` (present)
 
 ### SANITY-045: Relationship Evidence Anchors
 ```typescript
