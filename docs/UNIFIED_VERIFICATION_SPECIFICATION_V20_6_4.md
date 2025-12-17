@@ -1083,6 +1083,7 @@ This is **meta-verification**—validating that alignment signals correlate with
 [ ] Ingestion #2 complete
 [ ] All 9 gates pass
 [ ] Semantic corpus exported (≥100 signals)
+[ ] Semantic corpus includes ≥2 signal types (must include at least one contrast class: INCORRECT, PARTIAL, ORPHAN_MARKER, or AMBIGUOUS), sufficient to support contrastive semantic learning
 [ ] Graph API v2 operational
 [ ] EP-C-001 approved
 ```

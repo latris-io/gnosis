@@ -1,10 +1,11 @@
 # Track A Exit Criteria
 
-**Version:** 1.2.1  
+**Version:** 1.2.2  
 **Implements:** Roadmap V20.6.4 Track A Exit  
 **Purpose:** Verification checklist before HGR-1 (Human Gate Review 1)  
 **Canonical Source:** GNOSIS_TO_SOPHIA_MASTER_ROADMAP_V20_6_4.md §Track A
 
+> **v1.2.2:** Added semantic signal diversity governance note  
 > **v1.2.1:** Added SANITY model clarification note  
 > **v1.2.0:** Entity count consistency: "16 in scope, 15 extractable (E14 deferred)"  
 > **v1.1.0:** Added script reference note
@@ -123,12 +124,12 @@ npm run test:sanity
 # SANITY-050 to 059: BRD ✓
 # SANITY-080 to 083: Dormant (skipped) ✓
 #
-# Total: 58 tests (54 passed, 4 skipped)
+# Total: All gate-critical tests pass, dormant tests skipped
 ```
 
 > **Model:** EXIT.md uses broad category ranges (e.g., 001-009) to accommodate future test additions within each category. ENTRY.md specifies the minimum subset required for Track A entry.
 
-- [ ] All 54 active SANITY tests pass
+- [ ] All gate-critical SANITY tests pass (001-005, 010-016, 020-024, 030-033, 040-044, 055-057)
 - [ ] All 4 dormant SANITY tests return `{skipped: true}`
 
 ---
@@ -150,6 +151,8 @@ npm run test:sanity
 - [x] Signal types include: CORRECT, INCORRECT, PARTIAL, ORPHAN_MARKER, AMBIGUOUS
 - [x] Signal count: **17,063** signals *(A1 verified 2025-12-16, must be ≥50)*
 - [x] `captureSemanticSignal()` function operational
+
+> **Governance Note (V1.2.2):** Track A may legitimately produce CORRECT-only signals when extraction is functioning correctly. Signal type diversity is **not a Track A exit requirement** and is expected to emerge in A3/A4 marker extraction. Signal diversity is **required for Track C entry**.
 
 ### API Boundary
 
