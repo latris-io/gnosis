@@ -174,9 +174,16 @@ async function validateA1Exit(): Promise<number> {
   checkCount('Acceptance Criteria (E03)', acs.length, EXPECTED.acceptanceCriteria, results);
   printResult(results.passed.at(-1) || results.failed.at(-1)!, '');
   
-  // E04 Constraint: 0 is valid (documented in test)
-  check('Constraints (E04)', true, results, constraints.length, 0, 'None in BRD V20.6.3 (documented)');
-  printResult(results.passed.at(-1)!, '');
+  // E04 Constraint: BRD V20.6.3 contains no CNST-formatted constraints
+  check(
+    'Constraints (E04)',
+    constraints.length === 0,
+    results,
+    constraints.length,
+    0,
+    'BRD V20.6.3 contains no CNST-formatted constraints'
+  );
+  printResult(results.passed.at(-1) || results.failed.at(-1)!, '');
 
   // ============================================================
   // 2. OTHER ENTITY TYPES

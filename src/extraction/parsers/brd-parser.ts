@@ -84,11 +84,32 @@ const BULLET_AC_PATTERN = /^\s*-\s*AC(\d+)\s*:(.*)$/i;
 // Table AC: | AC-X.Y.Z | description |
 const TABLE_AC_PATTERN = /^\|\s*AC-(\d+)\.(\d+)\.(\d+)\s*\|(.*)$/i;
 
-// Conservative constraint detection - explicit heading/label patterns
-// Examples: "### Constraint: ..." or "**Constraint:** ..." or "## Constraints"
-// Per AC-64.1.4 - BRD V20.6.3 expected: 0 constraints
-const CONSTRAINT_HEADING_PATTERN = /^#{2,}\s+Constraint[s]?\s*:?\s*(.*)$/i;
-const CONSTRAINT_LABEL_PATTERN = /^\*\*Constraint[s]?\*\*\s*:?\s*(.*)$/i;
+// CNST-formatted constraint detection - explicit entity definitions only
+// Only extract constraints with explicit CNST-{TYPE}-{N} identifiers
+// Acceptable formats:
+//   ### Constraint CNST-SEC-1: Description
+//   ### CNST-ARCH-2: Architectural limitation
+//   **CNST-PERF-3:** Performance constraint
+// Per AC-64.1.4 - BRD V20.6.3 expected: 0 CNST-formatted constraints
+// Section headings like "## Constraints" are NOT entity definitions
+const CONSTRAINT_ENTITY_PATTERN = /^#{2,}\s+(?:Constraint\s+)?(CNST-[A-Z]+-\d+)\s*:\s*(.+)$/i;
+const CONSTRAINT_INLINE_CNST_PATTERN = /^\*\*(CNST-[A-Z]+-\d+)\*\*\s*:\s*(.*)$/i;
+
+/**
+ * Parse a CNST ID into type and number components.
+ * @param cnstId - e.g., "CNST-SEC-1" or "CNST-ARCH-2"
+ * @returns { type: string, number: number } - e.g., { type: "SEC", number: 1 }
+ */
+function parseCnstId(cnstId: string): { type: string; number: number } {
+  const match = cnstId.match(/^CNST-([A-Z]+)-(\d+)$/i);
+  if (!match) {
+    return { type: 'UNKNOWN', number: 0 };
+  }
+  return {
+    type: match[1].toUpperCase(),
+    number: parseInt(match[2], 10),
+  };
+}
 
 // User story triad patterns (anchored at start of line to avoid false positives)
 // Must match: "**As a** ...", "**As an** ...", "**I want** ...", "**So that** ..."
@@ -116,7 +137,6 @@ export function parseBRD(content: string, sourcePath: string): BRDParseResult {
   const stories: ParsedStory[] = [];
   const acceptanceCriteria: ParsedAC[] = [];
   const constraints: ParsedConstraint[] = [];
-  let constraintCounter = 0;
   
   // Track context for bullet ACs
   let currentEpicNumber: number | null = null;
@@ -283,28 +303,30 @@ export function parseBRD(content: string, sourcePath: string): BRDParseResult {
       continue;
     }
     
-    // Check for Constraint heading (### Constraint: ... or ## Constraints)
-    const constraintHeadingMatch = line.match(CONSTRAINT_HEADING_PATTERN);
-    if (constraintHeadingMatch) {
-      constraintCounter++;
+    // Check for CNST-formatted constraint heading (### Constraint CNST-SEC-1: ... or ### CNST-ARCH-2: ...)
+    const constraintEntityMatch = line.match(CONSTRAINT_ENTITY_PATTERN);
+    if (constraintEntityMatch) {
+      const cnstId = constraintEntityMatch[1].toUpperCase(); // e.g., CNST-SEC-1
+      const { type, number } = parseCnstId(cnstId);
       constraints.push({
-        type: 'UNKNOWN',  // BRD doesn't specify type in heading
-        number: constraintCounter,
-        description: constraintHeadingMatch[1].trim() || '',
+        type,
+        number,
+        description: constraintEntityMatch[2].trim(),
         lineStart: lineNumber,
         lineEnd: lineNumber,
       });
       continue;
     }
     
-    // Check for Constraint label (**Constraint:** ...)
-    const constraintLabelMatch = line.match(CONSTRAINT_LABEL_PATTERN);
-    if (constraintLabelMatch) {
-      constraintCounter++;
+    // Check for inline CNST definition (**CNST-PERF-3:** ...)
+    const constraintInlineMatch = line.match(CONSTRAINT_INLINE_CNST_PATTERN);
+    if (constraintInlineMatch) {
+      const cnstId = constraintInlineMatch[1].toUpperCase(); // e.g., CNST-PERF-3
+      const { type, number } = parseCnstId(cnstId);
       constraints.push({
-        type: 'UNKNOWN',  // BRD doesn't specify type in label
-        number: constraintCounter,
-        description: constraintLabelMatch[1].trim() || '',
+        type,
+        number,
+        description: constraintInlineMatch[2].trim(),
         lineStart: lineNumber,
         lineEnd: lineNumber,
       });
