@@ -7,6 +7,7 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { Pool } from 'pg';
 import { getEntityCounts, getAllEntities } from '../../src/api/v1/entities.js';
+import { getClient, setProjectContext } from '../../src/db/postgres.js';
 import type { EntityTypeCode } from '../../src/schema/track-a/entities.js';
 import 'dotenv/config';
 
@@ -176,62 +177,61 @@ describe('EXTRACTION (Track A)', () => {
   // SANITY-045: All relationships have valid evidence anchors
   // Added in Pre-A2 Hardening per Constraint A.2
   // Authority: ENTRY.md Constraint A.2, AC-64.2.23
-  // Semantics (phase-valid, not vacuous):
+  // Semantics:
+  //   - PROJECT_ID is ALWAYS required (no phase bypass)
   //   - Pre-A2: Zero relationships is a phase-valid pass
-  //   - Post-A2: Relationships MUST exist; hard fail if empty
-  //   - PROJECT_ID missing in post_a2: Hard fail; in pre_a2: skip (no relationships to validate)
+  //   - Post-A2+: Relationships MUST exist; hard fail if empty
+  //   - Uses RLS via setProjectContext() on same client (no WHERE filter)
   it('SANITY-045: Relationship Evidence Anchors (Track A)', async () => {
-    // Pre-A2: If PROJECT_ID not set, this is expected (no relationships yet)
-    // Post-A2: PROJECT_ID is required since relationships should exist
+    // ANTI-VACUITY: PROJECT_ID is always required to run this test
     if (!PROJECT_ID) {
-      if (TRACK_PHASE === 'post_a2' || TRACK_PHASE === 'post_a3') {
-        throw new Error('[SANITY-045] PROJECT_ID required in post-A2 phase - cannot skip evidence validation');
-      }
-      console.log('[SANITY-045] PROJECT_ID not set (pre-A2 phase, no relationships expected)');
-      return;
+      throw new Error('[SANITY-045] PROJECT_ID required - cannot skip evidence validation');
     }
 
-    const result = await pool.query(
-      'SELECT instance_id, source_file, line_start, line_end FROM relationships WHERE project_id = $1',
-      [PROJECT_ID]
-    );
-    
-    const relationships = result.rows;
-    
-    // Phase-aware expectation
-    if (relationships.length === 0) {
-      if (TRACK_PHASE === 'post_a2' || TRACK_PHASE === 'post_a3') {
-        // After A2, relationships MUST exist
-        throw new Error(
-          `[SANITY-045] TRACK_PHASE=${TRACK_PHASE} but no relationships found. ` +
-          `A2+ requires relationship extraction.`
-        );
-      }
-      // Pre-A2: 0 relationships is a phase-valid pass
-      console.log(`[SANITY-045] No relationships to validate (TRACK_PHASE=${TRACK_PHASE}, phase-valid pass)`);
-      return;
-    }
-    
-    // Validate evidence anchors on all existing relationships
-    const invalid: string[] = [];
-    for (const rel of relationships) {
-      const hasSourceFile = rel.source_file && rel.source_file.length > 0;
-      const hasLineStart = typeof rel.line_start === 'number' && rel.line_start > 0;
-      const hasLineEnd = typeof rel.line_end === 'number' && rel.line_end >= rel.line_start;
+    // Use RLS context on the SAME client for proper isolation
+    const client = await getClient();
+    try {
+      await setProjectContext(client, PROJECT_ID);
       
-      if (!hasSourceFile || !hasLineStart || !hasLineEnd) {
-        invalid.push(rel.instance_id);
+      // Query WITHOUT project_id filter - RLS is the mechanism
+      const result = await client.query(
+        'SELECT instance_id, source_file, line_start, line_end FROM relationships'
+      );
+      
+      const relationships = result.rows;
+      
+      // Phase-aware expectation for 0 relationships
+      if (relationships.length === 0) {
+        if (TRACK_PHASE === 'post_a2' || TRACK_PHASE === 'post_a3') {
+          throw new Error(`[SANITY-045] TRACK_PHASE=${TRACK_PHASE} requires relationships but found 0`);
+        }
+        console.log('[SANITY-045] No relationships to validate (pre-A2 phase, valid)');
+        return;
       }
+      
+      // Validate evidence anchors on all existing relationships
+      const invalid: string[] = [];
+      for (const rel of relationships) {
+        const hasSourceFile = rel.source_file && rel.source_file.length > 0;
+        const hasLineStart = typeof rel.line_start === 'number' && rel.line_start > 0;
+        const hasLineEnd = typeof rel.line_end === 'number' && rel.line_end >= rel.line_start;
+        
+        if (!hasSourceFile || !hasLineStart || !hasLineEnd) {
+          invalid.push(rel.instance_id);
+        }
+      }
+      
+      // Report any relationships missing evidence
+      if (invalid.length > 0) {
+        console.warn(`[SANITY-045] Relationships missing evidence: ${invalid.slice(0, 10).join(', ')}${invalid.length > 10 ? '...' : ''}`);
+        throw new Error(`[SANITY-045] ${invalid.length} relationships missing evidence: ${invalid.slice(0, 5).join(', ')}${invalid.length > 5 ? '...' : ''}`);
+      }
+      
+      console.log(`[SANITY-045] Validated ${relationships.length} relationships (all have evidence)`);
+      expect(invalid.length).toBe(0);
+    } finally {
+      client.release();
     }
-    
-    // Report any relationships missing evidence
-    if (invalid.length > 0) {
-      console.warn(`[SANITY-045] Relationships missing evidence: ${invalid.slice(0, 10).join(', ')}${invalid.length > 10 ? '...' : ''}`);
-      throw new Error(`[SANITY-045] ${invalid.length} relationships missing evidence: ${invalid.slice(0, 5).join(', ')}${invalid.length > 5 ? '...' : ''}`);
-    }
-    
-    console.log(`[SANITY-045] Validated ${relationships.length} relationships (all have evidence)`);
-    expect(invalid.length).toBe(0);
   });
 });
 

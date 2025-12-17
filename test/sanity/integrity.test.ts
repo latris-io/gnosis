@@ -5,6 +5,7 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { Pool } from 'pg';
 import * as fs from 'fs';
+import * as path from 'path';
 import 'dotenv/config';
 
 let pool: Pool;
@@ -307,6 +308,73 @@ describe('INTEGRITY Tests', () => {
         AND conname = 'valid_line_range'
       `);
       expect(result.rows.length).toBe(1);
+    });
+  });
+
+  // SANITY-018: RLS Context Guardrail
+  // Ensures SANITY tests use setProjectContext() when querying RLS-protected tables FOR PROJECT DATA
+  // Added to prevent SANITY-045-style bugs from recurring
+  // Exception: Database-wide invariant checks (e.g., orphan detection) legitimately query all data
+  describe('SANITY-018: RLS Context Guardrail', () => {
+    it('SANITY tests querying project data must use setProjectContext for RLS tables', () => {
+      const sanityDir = path.join(__dirname, '.');
+      const sanityFiles = fs.readdirSync(sanityDir)
+        .filter(f => f.endsWith('.test.ts'))
+        .map(f => path.join(sanityDir, f));
+      
+      const violations: string[] = [];
+      
+      for (const file of sanityFiles) {
+        const content = fs.readFileSync(file, 'utf-8');
+        const filename = path.basename(file);
+        
+        // Skip integrity.test.ts - it contains database-wide invariant checks
+        // that legitimately need to query all data (orphan detection, etc.)
+        if (filename === 'integrity.test.ts') {
+          continue;
+        }
+        
+        // Check if file uses PROJECT_ID (indicates project-scoped queries)
+        const usesProjectId = content.includes('PROJECT_ID');
+        
+        // Check if file queries RLS-protected tables
+        const queriesRLSTables = 
+          content.includes('FROM relationships') || 
+          content.includes('FROM entities');
+        
+        // If file uses PROJECT_ID AND queries RLS tables, it must use setProjectContext
+        if (usesProjectId && queriesRLSTables) {
+          // Check for pool.query usage on RLS data tables (not information_schema/pg_*)
+          const lines = content.split('\n');
+          for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+            // Skip lines querying metadata tables (information_schema, pg_*)
+            if (line.includes('information_schema') || line.includes('pg_class') || line.includes('pg_constraint')) {
+              continue;
+            }
+            // Detect pool.query on data tables
+            if (line.includes('pool.query') && (line.includes('FROM relationships') || line.includes('FROM entities'))) {
+              violations.push(`${filename}:${i + 1}: pool.query on RLS table without setProjectContext`);
+            }
+          }
+          
+          // Also check: if file queries RLS tables with PROJECT_ID, must import setProjectContext
+          if (!content.includes('setProjectContext')) {
+            violations.push(`${filename}: Uses PROJECT_ID and queries RLS tables but missing setProjectContext`);
+          }
+        }
+      }
+      
+      if (violations.length > 0) {
+        throw new Error(
+          `RLS context violations found:\n${violations.join('\n')}\n\n` +
+          `SANITY tests querying entities/relationships tables with PROJECT_ID must:\n` +
+          `1. Import RLS helpers: import { getClient, setProjectContext } from '../../src/db/postgres.js'\n` +
+          `   (Exception allowed for SANITY tests per forbidden-actions-harness)\n` +
+          `2. Use: const client = await getClient(); await setProjectContext(client, PROJECT_ID);\n` +
+          `3. Query on client (not pool): await client.query('SELECT ... FROM relationships')`
+        );
+      }
     });
   });
 });

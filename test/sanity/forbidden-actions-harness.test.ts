@@ -243,12 +243,23 @@ function checkGAPIViolation(filePath: string, content: string, lines: string[]):
   DB_IMPORT_REGEX.lastIndex = 0;
   let match;
   
+  // Exception: SANITY tests may import RLS context helpers (getClient, setProjectContext) from db/postgres
+  // This is required for SANITY-045 style tests that need to query RLS-protected tables with proper isolation
+  const isSanityTest = filePath.includes('/test/sanity/');
+  const isRLSContextImport = (line: string) => {
+    return line.includes('getClient') && line.includes('setProjectContext') && 
+           line.includes('postgres');
+  };
+  
   while ((match = DB_IMPORT_REGEX.exec(content)) !== null) {
     const lineNumber = content.substring(0, match.index).split('\n').length;
     const lineContent = lines[lineNumber - 1] || '';
     
     // ALLOWED: services and db itself
     if (isService || isDb) continue;
+    
+    // ALLOWED: SANITY tests importing RLS context helpers
+    if (isSanityTest && isRLSContextImport(lineContent)) continue;
     
     // FORBIDDEN: everyone else
     let authority = '.cursorrules Rule 3';
@@ -424,3 +435,5 @@ describe('Forbidden Actions Enforcement Harness', () => {
     expect(allViolations.length, 'Forbidden actions detected').toBe(0);
   });
 });
+
+
