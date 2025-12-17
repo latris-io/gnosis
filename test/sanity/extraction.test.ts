@@ -4,10 +4,9 @@
 // Authority: ENTRY.md:66, EXIT.md:122, ENTRY.md:199 (SANITY-043), ENTRY.md:216 (SANITY-044)
 // SANITY-045 added in Pre-A2 Hardening per Constraint A.2
 
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { Pool } from 'pg';
+import { describe, it, expect, beforeAll } from 'vitest';
 import { getEntityCounts, getAllEntities } from '../../src/api/v1/entities.js';
-import { getClient, setProjectContext } from '../../src/db/postgres.js';
+import { rlsQuery } from '../utils/rls.js';
 import type { EntityTypeCode } from '../../src/schema/track-a/entities.js';
 import 'dotenv/config';
 
@@ -24,23 +23,11 @@ const EXPECTED_BRD_COUNTS = {
   E03: 2849,    // Acceptance Criteria
 };
 
-// Pool for direct DB access (SANITY-045)
-let pool: Pool;
-
 describe('EXTRACTION (Track A)', () => {
   beforeAll(async () => {
-    pool = new Pool({
-      connectionString: process.env.DATABASE_URL,
-      ssl: { rejectUnauthorized: false },
-    });
-
     if (!PROJECT_ID) {
       console.warn('[SANITY-04x] PROJECT_ID not set - extraction tests will use fallback assertions');
     }
-  });
-
-  afterAll(async () => {
-    await pool.end();
   });
 
   // SANITY-040: BRD entities extracted
@@ -181,57 +168,53 @@ describe('EXTRACTION (Track A)', () => {
   //   - PROJECT_ID is ALWAYS required (no phase bypass)
   //   - Pre-A2: Zero relationships is a phase-valid pass
   //   - Post-A2+: Relationships MUST exist; hard fail if empty
-  //   - Uses RLS via setProjectContext() on same client (no WHERE filter)
+  //   - Uses RLS via rlsQuery() helper (verifies context is set)
   it('SANITY-045: Relationship Evidence Anchors (Track A)', async () => {
     // ANTI-VACUITY: PROJECT_ID is always required to run this test
     if (!PROJECT_ID) {
       throw new Error('[SANITY-045] PROJECT_ID required - cannot skip evidence validation');
     }
 
-    // Use RLS context on the SAME client for proper isolation
-    const client = await getClient();
-    try {
-      await setProjectContext(client, PROJECT_ID);
-      
-      // Query WITHOUT project_id filter - RLS is the mechanism
-      const result = await client.query(
-        'SELECT instance_id, source_file, line_start, line_end FROM relationships'
-      );
-      
-      const relationships = result.rows;
-      
-      // Phase-aware expectation for 0 relationships
-      if (relationships.length === 0) {
-        if (TRACK_PHASE === 'post_a2' || TRACK_PHASE === 'post_a3') {
-          throw new Error(`[SANITY-045] TRACK_PHASE=${TRACK_PHASE} requires relationships but found 0`);
-        }
-        console.log('[SANITY-045] No relationships to validate (pre-A2 phase, valid)');
-        return;
+    // Use RLS helper - it sets context and verifies it's actually set
+    const relationships = await rlsQuery<{
+      instance_id: string;
+      source_file: string;
+      line_start: number;
+      line_end: number;
+    }>(
+      PROJECT_ID,
+      'SELECT instance_id, source_file, line_start, line_end FROM relationships'
+    );
+    
+    // Phase-aware expectation for 0 relationships
+    if (relationships.length === 0) {
+      if (TRACK_PHASE === 'post_a2' || TRACK_PHASE === 'post_a3') {
+        throw new Error(`[SANITY-045] TRACK_PHASE=${TRACK_PHASE} requires relationships but found 0`);
       }
-      
-      // Validate evidence anchors on all existing relationships
-      const invalid: string[] = [];
-      for (const rel of relationships) {
-        const hasSourceFile = rel.source_file && rel.source_file.length > 0;
-        const hasLineStart = typeof rel.line_start === 'number' && rel.line_start > 0;
-        const hasLineEnd = typeof rel.line_end === 'number' && rel.line_end >= rel.line_start;
-        
-        if (!hasSourceFile || !hasLineStart || !hasLineEnd) {
-          invalid.push(rel.instance_id);
-        }
-      }
-      
-      // Report any relationships missing evidence
-      if (invalid.length > 0) {
-        console.warn(`[SANITY-045] Relationships missing evidence: ${invalid.slice(0, 10).join(', ')}${invalid.length > 10 ? '...' : ''}`);
-        throw new Error(`[SANITY-045] ${invalid.length} relationships missing evidence: ${invalid.slice(0, 5).join(', ')}${invalid.length > 5 ? '...' : ''}`);
-      }
-      
-      console.log(`[SANITY-045] Validated ${relationships.length} relationships (all have evidence)`);
-      expect(invalid.length).toBe(0);
-    } finally {
-      client.release();
+      console.log('[SANITY-045] No relationships to validate (pre-A2 phase, valid)');
+      return;
     }
+    
+    // Validate evidence anchors on all existing relationships
+    const invalid: string[] = [];
+    for (const rel of relationships) {
+      const hasSourceFile = rel.source_file && rel.source_file.length > 0;
+      const hasLineStart = typeof rel.line_start === 'number' && rel.line_start > 0;
+      const hasLineEnd = typeof rel.line_end === 'number' && rel.line_end >= rel.line_start;
+      
+      if (!hasSourceFile || !hasLineStart || !hasLineEnd) {
+        invalid.push(rel.instance_id);
+      }
+    }
+    
+    // Report any relationships missing evidence
+    if (invalid.length > 0) {
+      console.warn(`[SANITY-045] Relationships missing evidence: ${invalid.slice(0, 10).join(', ')}${invalid.length > 10 ? '...' : ''}`);
+      throw new Error(`[SANITY-045] ${invalid.length} relationships missing evidence: ${invalid.slice(0, 5).join(', ')}${invalid.length > 5 ? '...' : ''}`);
+    }
+    
+    console.log(`[SANITY-045] Validated ${relationships.length} relationships (all have evidence)`);
+    expect(invalid.length).toBe(0);
   });
 });
 

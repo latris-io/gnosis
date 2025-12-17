@@ -1,13 +1,14 @@
 # SANITY Test Suite Specification
 
-**Version:** 1.4.0  
+**Version:** 1.5.0  
 **Implements:** Verification Spec V20.6.4 Part II  
 **Purpose:** Foundational tests that must pass before any track begins  
 **Canonical Source:** UNIFIED_VERIFICATION_SPECIFICATION_V20_6_4.md §Part II
 
-> **v1.4.0:** Bugfix - SANITY-045 anti-vacuity (PROJECT_ID always required) + RLS context on same client; added SANITY-018 (RLS context guardrail)  
-> **v1.3.0:** Pre-A2 Hardening - Added SANITY-017 (relationship evidence schema) and SANITY-045 (relationship evidence anchors)  
-> **v1.2.0:** Added SANITY-023/024 for composite uniqueness constraint verification (multi-tenant isolation)  
+> **v1.5.0:** RLS structural enforcement - Two-level allowlist in forbidden-actions-harness, test helpers (rls.ts, db-meta.ts), SANITY-018 now diagnostic backstop
+> **v1.4.0:** Bugfix - SANITY-045 anti-vacuity (PROJECT_ID always required) + RLS context on same client; added SANITY-018 (RLS context guardrail)
+> **v1.3.0:** Pre-A2 Hardening - Added SANITY-017 (relationship evidence schema) and SANITY-045 (relationship evidence anchors)
+> **v1.2.0:** Added SANITY-023/024 for composite uniqueness constraint verification (multi-tenant isolation)
 > **v1.1.0:** Aligned entity/relationship lists with Track A scope (E14 deferred, R-codes per ENTRY.md); fixed ID format patterns to use canonical uppercase prefixes
 
 ---
@@ -218,52 +219,58 @@ test('SANITY-017: Relationships table has evidence columns', async () => {
 });
 ```
 
-### SANITY-018: RLS Context Guardrail
+### SANITY-018: RLS Context Guardrail (Diagnostic Backstop)
 ```typescript
 // @implements SANITY-018
-// Added in v1.4.0 to prevent SANITY-045-style RLS bypass bugs
+// Role: Secondary safety net for RLS enforcement (diagnostic)
+// Primary enforcement: forbidden-actions-harness + two-level helper allowlists
 
-test('SANITY-018: SANITY tests use setProjectContext for RLS tables', () => {
+test('SANITY-018: SANITY tests querying project data must use RLS helpers', () => {
   const sanityFiles = fs.readdirSync('test/sanity')
     .filter(f => f.endsWith('.test.ts'))
     .map(f => `test/sanity/${f}`);
-  
+
   const violations = [];
-  
+
   for (const file of sanityFiles) {
     const content = fs.readFileSync(file, 'utf-8');
-    
-    // Check if file queries RLS-protected tables (not metadata tables)
-    const queriesRLSTables = 
-      content.includes('FROM relationships') || 
+    const filename = path.basename(file);
+
+    // Skip integrity.test.ts - uses db-meta.ts for database-wide checks
+    if (filename === 'integrity.test.ts') continue;
+
+    // Check if file uses PROJECT_ID and queries RLS tables
+    const usesProjectId = content.includes('PROJECT_ID');
+    const queriesRLSTables =
+      content.includes('FROM relationships') ||
       content.includes('FROM entities');
-    
-    if (queriesRLSTables) {
-      // Must import and use setProjectContext
-      if (content.includes('pool.query') && 
-          !content.includes('information_schema') &&
-          !content.includes('pg_class') &&
-          !content.includes('setProjectContext')) {
-        violations.push(file);
+
+    if (usesProjectId && queriesRLSTables) {
+      // Must import from utils/rls.ts
+      if (!content.includes('utils/rls')) {
+        violations.push(`${filename}: Must use test/utils/rls.ts for project-scoped queries`);
       }
     }
   }
-  
+
   expect(violations.length).toBe(0);
 });
 ```
 
-**Purpose:** Prevents RLS bypass bugs where `pool.query()` is used on RLS-protected tables without `setProjectContext()` on the same client.
+**Role:** Secondary safety net for RLS enforcement.  
+**Primary enforcement:** `forbidden-actions-harness.test.ts` + two-level helper allowlists.
 
-**Exceptions:**
-- `integrity.test.ts` is excluded (database-wide invariant checks need all data)
-- Only flags tests that use `PROJECT_ID` and query RLS tables
+**Test Helpers (v1.5.0):**
+- `test/utils/rls.ts` - Project-scoped queries with RLS context verification
+- `test/utils/db-meta.ts` - Database-wide queries (only for integrity.test.ts)
+
+**Two-Level Allowlist:**
+1. Level 1: Only `rls.ts` and `db-meta.ts` may import from `src/db/*`
+2. Level 2: Only `integrity.test.ts` may import `db-meta.ts`
 
 SANITY tests querying `entities` or `relationships` for project-specific data must:
-1. Import `getClient` and `setProjectContext` from `src/db/postgres` (exception allowed by forbidden-actions-harness for SANITY tests)
-2. Use `getClient()` to obtain a client
-3. Call `setProjectContext(client, PROJECT_ID)` on that client
-4. Query using `client.query()` (not `pool.query()`)
+1. Import from `test/utils/rls.ts`: `import { rlsQuery } from '../utils/rls.js'`
+2. Use: `const rows = await rlsQuery(PROJECT_ID, 'SELECT ... FROM entities')`
 
 ---
 
@@ -692,7 +699,7 @@ All SANITY tests must pass before any track begins:
 
 **Total: 59 active tests + 4 dormant = 63 tests**
 
-> **v1.4.0 (Anti-Vacuity Fix):** SANITY-045 now requires PROJECT_ID always (no phase bypass), uses RLS via setProjectContext; added SANITY-018 (RLS context guardrail)
+> **v1.5.0 (RLS Structural Enforcement):** Primary enforcement via forbidden-actions-harness (two-level allowlist); test helpers rls.ts and db-meta.ts; SANITY-018 is now diagnostic backstop
 
 ---
 

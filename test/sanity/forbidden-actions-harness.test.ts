@@ -148,6 +148,35 @@ const TEST_UTILS_IMPORT_REGEX = /(?:from\s+['"]|require\s*\(\s*['"])[^'"]*test\/
 const RELATIVE_TEST_IMPORT_REGEX = /(?:from\s+['"]|require\s*\(\s*['"])\.\.?\/[^'"]*\/test\/[^'"]*['"]/g;
 
 // ============================================================
+// RLS Structural Enforcement (Two-Level Allowlist)
+// Authority: RLS hardening - prevent false-green RLS bypass in tests
+// ============================================================
+
+// Level 1: Only these files may import from src/db/* or use DB primitives
+const LEVEL1_DB_ALLOWLIST = [
+  'test/utils/rls.ts',
+  'test/utils/db-meta.ts',
+];
+
+// Level 2: Only these files may import from test/utils/db-meta
+const LEVEL2_DB_META_ALLOWLIST = [
+  'test/sanity/integrity.test.ts',
+];
+
+// Forbidden patterns for test files NOT in Level 1 allowlist
+const RLS_FORBIDDEN_PATTERNS = {
+  srcDbImport: /from\s+['"][^'"]*src\/db\/[^'"]*['"]/g,
+  pgImport: /from\s+['"]pg['"]/g,
+  getClientCall: /\bgetClient\s*\(/g,
+  setProjectContextCall: /\bsetProjectContext\s*\(/g,
+  newPool: /new\s+Pool\s*\(/g,
+  poolQuery: /\bpool\.query\s*\(/g,
+};
+
+// Level 2: db-meta import pattern
+const DB_META_IMPORT_REGEX = /from\s+['"][^'"]*\/utils\/db-meta(\.(js|ts))?['"]/g;
+
+// ============================================================
 // Detection Logic
 // ============================================================
 
@@ -239,17 +268,10 @@ function checkGAPIViolation(filePath: string, content: string, lines: string[]):
   const isTest = filePath.includes('/test/');
   const isScript = filePath.includes('/scripts/');
   
-  // Check for db imports
+  // Check for db imports (G-API boundary for src/ files)
+  // Note: Test files have separate RLS enforcement via checkRLSViolation()
   DB_IMPORT_REGEX.lastIndex = 0;
   let match;
-  
-  // Exception: SANITY tests may import RLS context helpers (getClient, setProjectContext) from db/postgres
-  // This is required for SANITY-045 style tests that need to query RLS-protected tables with proper isolation
-  const isSanityTest = filePath.includes('/test/sanity/');
-  const isRLSContextImport = (line: string) => {
-    return line.includes('getClient') && line.includes('setProjectContext') && 
-           line.includes('postgres');
-  };
   
   while ((match = DB_IMPORT_REGEX.exec(content)) !== null) {
     const lineNumber = content.substring(0, match.index).split('\n').length;
@@ -258,10 +280,10 @@ function checkGAPIViolation(filePath: string, content: string, lines: string[]):
     // ALLOWED: services and db itself
     if (isService || isDb) continue;
     
-    // ALLOWED: SANITY tests importing RLS context helpers
-    if (isSanityTest && isRLSContextImport(lineContent)) continue;
+    // Test files are handled by checkRLSViolation() with two-level allowlist
+    if (isTest) continue;
     
-    // FORBIDDEN: everyone else
+    // FORBIDDEN: everyone else in src/
     let authority = '.cursorrules Rule 3';
     if (isApiV1) {
       authority = 'Story A.5 line 64: API MUST NOT import src/db/*';
@@ -269,8 +291,8 @@ function checkGAPIViolation(filePath: string, content: string, lines: string[]):
       authority = '.cursorrules Rule 3: ops MUST NOT import src/db/*';
     } else if (isProvider) {
       authority = 'Story A.3 line 62: Providers MUST NOT import src/db/*';
-    } else if (isTest || isScript) {
-      authority = '.cursorrules Rule 3: Tests/scripts must use @gnosis/api/v1 or src/ops/*';
+    } else if (isScript) {
+      authority = '.cursorrules Rule 3: Scripts must use @gnosis/api/v1 or src/ops/*';
     }
     
     violations.push({
@@ -307,6 +329,77 @@ function checkGAPIViolation(filePath: string, content: string, lines: string[]):
         category: 'G-API',
         snippet: lineContent.trim(),
         authority: '.cursorrules Rule 3: Tests/scripts/providers must use @gnosis/api/v1',
+      });
+    }
+  }
+  
+  return violations;
+}
+
+// ============================================================
+// RLS Structural Enforcement
+// ============================================================
+
+function isInLevel1Allowlist(filePath: string): boolean {
+  return LEVEL1_DB_ALLOWLIST.some(allowed => filePath.endsWith(allowed) || filePath.includes(`/${allowed}`));
+}
+
+function isInLevel2Allowlist(filePath: string): boolean {
+  return LEVEL2_DB_META_ALLOWLIST.some(allowed => filePath.endsWith(allowed) || filePath.includes(`/${allowed}`));
+}
+
+function checkRLSViolation(filePath: string, content: string, lines: string[]): Violation[] {
+  const violations: Violation[] = [];
+  
+  // Only check test files
+  if (!filePath.includes('/test/')) return violations;
+  
+  // Level 1 allowlist files can use DB primitives
+  if (isInLevel1Allowlist(filePath)) return violations;
+  
+  // Check Level 1 forbidden patterns (DB primitives)
+  const forbiddenChecks = [
+    { name: 'src/db import', regex: RLS_FORBIDDEN_PATTERNS.srcDbImport },
+    { name: 'pg import', regex: RLS_FORBIDDEN_PATTERNS.pgImport },
+    { name: 'getClient() call', regex: RLS_FORBIDDEN_PATTERNS.getClientCall },
+    { name: 'setProjectContext() call', regex: RLS_FORBIDDEN_PATTERNS.setProjectContextCall },
+    { name: 'new Pool()', regex: RLS_FORBIDDEN_PATTERNS.newPool },
+    { name: 'pool.query()', regex: RLS_FORBIDDEN_PATTERNS.poolQuery },
+  ];
+  
+  for (const check of forbiddenChecks) {
+    check.regex.lastIndex = 0;
+    let match;
+    while ((match = check.regex.exec(content)) !== null) {
+      const lineNumber = content.substring(0, match.index).split('\n').length;
+      const lineContent = lines[lineNumber - 1] || '';
+      
+      violations.push({
+        file: filePath,
+        line: lineNumber,
+        pattern: check.name,
+        category: 'RLS-ENFORCEMENT',
+        snippet: lineContent.trim(),
+        authority: `RLS Hardening: Use test/utils/rls.ts (rlsQuery) or test/utils/db-meta.ts (metaQuery). Only Level 1 allowlist files may use DB primitives.`,
+      });
+    }
+  }
+  
+  // Level 2 check: db-meta imports restricted to integrity.test.ts
+  DB_META_IMPORT_REGEX.lastIndex = 0;
+  let match;
+  while ((match = DB_META_IMPORT_REGEX.exec(content)) !== null) {
+    if (!isInLevel2Allowlist(filePath)) {
+      const lineNumber = content.substring(0, match.index).split('\n').length;
+      const lineContent = lines[lineNumber - 1] || '';
+      
+      violations.push({
+        file: filePath,
+        line: lineNumber,
+        pattern: 'db-meta import (Level 2 violation)',
+        category: 'RLS-ENFORCEMENT',
+        snippet: lineContent.trim(),
+        authority: `RLS Hardening: Only integrity.test.ts may import db-meta.ts. Use test/utils/rls.ts (rlsQuery) for project-scoped queries.`,
       });
     }
   }
@@ -378,6 +471,9 @@ function scanFile(filePath: string): Violation[] {
 
   // Check test-only module isolation
   violations.push(...checkTestOnlyIsolation(filePath, content, lines));
+
+  // Check RLS structural enforcement (two-level allowlist)
+  violations.push(...checkRLSViolation(filePath, content, lines));
 
   return violations;
 }

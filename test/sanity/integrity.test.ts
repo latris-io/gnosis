@@ -2,37 +2,24 @@
 // @implements INFRASTRUCTURE
 // Per Verification Spec V20.6.4 §2.3
 
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { Pool } from 'pg';
+import { describe, it, expect } from 'vitest';
+import { metaQuery } from '../utils/db-meta.js';
 import * as fs from 'fs';
 import * as path from 'path';
 import 'dotenv/config';
-
-let pool: Pool;
-
-beforeAll(async () => {
-  pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: { rejectUnauthorized: false },
-  });
-});
-
-afterAll(async () => {
-  await pool.end();
-});
 
 describe('INTEGRITY Tests', () => {
   // SANITY-010: Database Schema Matches Cursor Plan
   describe('SANITY-010: Database Schema Matches Cursor Plan', () => {
     it('entities table has correct columns', async () => {
-      const result = await pool.query(`
+      const rows = await metaQuery<{ column_name: string }>(`
         SELECT column_name, data_type, is_nullable
         FROM information_schema.columns 
         WHERE table_name = 'entities'
         ORDER BY ordinal_position
       `);
       
-      const columns = result.rows.map(r => r.column_name);
+      const columns = rows.map(r => r.column_name);
       
       // Required columns per Cursor Plan lines 444-456
       expect(columns).toContain('id');
@@ -49,13 +36,13 @@ describe('INTEGRITY Tests', () => {
     });
 
     it('relationships table has correct columns', async () => {
-      const result = await pool.query(`
+      const rows = await metaQuery<{ column_name: string }>(`
         SELECT column_name
         FROM information_schema.columns 
         WHERE table_name = 'relationships'
       `);
       
-      const columns = result.rows.map(r => r.column_name);
+      const columns = rows.map(r => r.column_name);
       
       // Required columns per Cursor Plan lines 471-480
       expect(columns).toContain('id');
@@ -70,24 +57,24 @@ describe('INTEGRITY Tests', () => {
     });
 
     it('entities has CHECK constraint on entity_type', async () => {
-      const result = await pool.query(`
+      const rows = await metaQuery<{ constraint_name: string }>(`
         SELECT constraint_name
         FROM information_schema.table_constraints
         WHERE table_name = 'entities' AND constraint_type = 'CHECK'
       `);
       
-      const constraints = result.rows.map(r => r.constraint_name);
+      const constraints = rows.map(r => r.constraint_name);
       expect(constraints).toContain('valid_entity_type');
     });
 
     it('relationships has CHECK constraint on relationship_type', async () => {
-      const result = await pool.query(`
+      const rows = await metaQuery<{ constraint_name: string }>(`
         SELECT constraint_name
         FROM information_schema.table_constraints
         WHERE table_name = 'relationships' AND constraint_type = 'CHECK'
       `);
       
-      const constraints = result.rows.map(r => r.constraint_name);
+      const constraints = rows.map(r => r.constraint_name);
       expect(constraints).toContain('valid_relationship_type');
     });
   });
@@ -95,26 +82,26 @@ describe('INTEGRITY Tests', () => {
   // SANITY-011: All Foreign Keys Valid (structure check)
   describe('SANITY-011: All Foreign Keys Valid', () => {
     it('relationships table has FK columns', async () => {
-      const result = await pool.query(`
+      const rows = await metaQuery<{ column_name: string }>(`
         SELECT column_name 
         FROM information_schema.columns 
         WHERE table_name = 'relationships'
       `);
       
-      const columns = result.rows.map(r => r.column_name);
+      const columns = rows.map(r => r.column_name);
       expect(columns).toContain('from_entity_id');
       expect(columns).toContain('to_entity_id');
     });
 
     it('relationships table has no orphaned references (empty graph)', async () => {
-      const result = await pool.query(`
+      const rows = await metaQuery<{ orphan_count: string }>(`
         SELECT COUNT(*) as orphan_count
         FROM relationships r
         WHERE NOT EXISTS (SELECT 1 FROM entities e WHERE e.id = r.from_entity_id)
            OR NOT EXISTS (SELECT 1 FROM entities e WHERE e.id = r.to_entity_id)
       `);
       
-      expect(parseInt(result.rows[0].orphan_count)).toBe(0);
+      expect(parseInt(rows[0].orphan_count)).toBe(0);
       console.log('EMPTY_GRAPH: Structural invariant verified, 0 orphaned relationships');
     });
   });
@@ -122,24 +109,24 @@ describe('INTEGRITY Tests', () => {
   // SANITY-012: No Duplicate Entity IDs (constraint check)
   describe('SANITY-012: No Duplicate Entity IDs', () => {
     it('entities table has unique instance_id constraint', async () => {
-      const result = await pool.query(`
+      const rows = await metaQuery<{ constraint_name: string }>(`
         SELECT constraint_name
         FROM information_schema.table_constraints
         WHERE table_name = 'entities' AND constraint_type = 'UNIQUE'
       `);
       
-      expect(result.rows.length).toBeGreaterThan(0);
+      expect(rows.length).toBeGreaterThan(0);
     });
 
     it('no duplicate entity IDs exist (empty graph)', async () => {
-      const result = await pool.query(`
+      const rows = await metaQuery<{ id: string; count: string }>(`
         SELECT id, COUNT(*) as count
         FROM entities
         GROUP BY id
         HAVING COUNT(*) > 1
       `);
       
-      expect(result.rows.length).toBe(0);
+      expect(rows.length).toBe(0);
       console.log('EMPTY_GRAPH: Structural invariant verified, 0 duplicate IDs');
     });
   });
@@ -147,14 +134,14 @@ describe('INTEGRITY Tests', () => {
   // SANITY-013: Content Hashes Computable (column exists with correct type)
   describe('SANITY-013: Content Hashes Computable', () => {
     it('entities table has content_hash column with VARCHAR(71)', async () => {
-      const result = await pool.query(`
+      const rows = await metaQuery<{ column_name: string; character_maximum_length: number }>(`
         SELECT column_name, character_maximum_length
         FROM information_schema.columns 
         WHERE table_name = 'entities' AND column_name = 'content_hash'
       `);
       
-      expect(result.rows.length).toBe(1);
-      expect(result.rows[0].character_maximum_length).toBe(71); // sha256:... format
+      expect(rows.length).toBe(1);
+      expect(rows[0].character_maximum_length).toBe(71); // sha256:... format
       console.log('EMPTY_GRAPH: Structural invariant verified, 0 entities to hash');
     });
   });
@@ -162,23 +149,23 @@ describe('INTEGRITY Tests', () => {
   // SANITY-014: RLS Enabled and Graph Connectivity
   describe('SANITY-014: RLS Enabled and Graph Connectivity', () => {
     it('RLS enabled on entities table', async () => {
-      const result = await pool.query(`
+      const rows = await metaQuery<{ relrowsecurity: boolean }>(`
         SELECT relrowsecurity
         FROM pg_class
         WHERE relname = 'entities'
       `);
       
-      expect(result.rows[0].relrowsecurity).toBe(true);
+      expect(rows[0].relrowsecurity).toBe(true);
     });
 
     it('RLS enabled on relationships table', async () => {
-      const result = await pool.query(`
+      const rows = await metaQuery<{ relrowsecurity: boolean }>(`
         SELECT relrowsecurity
         FROM pg_class
         WHERE relname = 'relationships'
       `);
       
-      expect(result.rows[0].relrowsecurity).toBe(true);
+      expect(rows[0].relrowsecurity).toBe(true);
     });
 
     it('graph population matches phase (SANITY_PHASE required)', async () => {
@@ -195,7 +182,7 @@ describe('INTEGRITY Tests', () => {
       }
 
       // Get entity counts by type
-      const result = await pool.query(`
+      const rows = await metaQuery<{ entity_type: string; count: string }>(`
         SELECT entity_type, COUNT(*) as count
         FROM entities
         GROUP BY entity_type
@@ -203,7 +190,7 @@ describe('INTEGRITY Tests', () => {
       `);
       
       const counts: Record<string, number> = {};
-      for (const row of result.rows) {
+      for (const row of rows) {
         counts[row.entity_type] = parseInt(row.count);
       }
       const totalEntities = Object.values(counts).reduce((a, b) => a + b, 0);
@@ -275,7 +262,7 @@ describe('INTEGRITY Tests', () => {
   // Authority: ENTRY.md Constraint A.2, migration 004
   describe('SANITY-017: Relationship Evidence Schema', () => {
     it('relationships table has required evidence columns', async () => {
-      const result = await pool.query(`
+      const rows = await metaQuery<{ column_name: string; is_nullable: string; data_type: string }>(`
         SELECT column_name, is_nullable, data_type
         FROM information_schema.columns 
         WHERE table_name = 'relationships' 
@@ -283,7 +270,7 @@ describe('INTEGRITY Tests', () => {
         ORDER BY column_name
       `);
       
-      const columns = new Map(result.rows.map(r => [r.column_name, r]));
+      const columns = new Map(rows.map(r => [r.column_name, r]));
       
       // content_hash: NULLABLE VARCHAR (optional, for change detection)
       expect(columns.has('content_hash')).toBe(true);
@@ -302,21 +289,21 @@ describe('INTEGRITY Tests', () => {
     });
 
     it('relationships table has valid_line_range constraint', async () => {
-      const result = await pool.query(`
+      const rows = await metaQuery<{ conname: string }>(`
         SELECT conname FROM pg_constraint 
         WHERE conrelid = 'relationships'::regclass 
         AND conname = 'valid_line_range'
       `);
-      expect(result.rows.length).toBe(1);
+      expect(rows.length).toBe(1);
     });
   });
 
-  // SANITY-018: RLS Context Guardrail
-  // Ensures SANITY tests use setProjectContext() when querying RLS-protected tables FOR PROJECT DATA
-  // Added to prevent SANITY-045-style bugs from recurring
-  // Exception: Database-wide invariant checks (e.g., orphan detection) legitimately query all data
-  describe('SANITY-018: RLS Context Guardrail', () => {
-    it('SANITY tests querying project data must use setProjectContext for RLS tables', () => {
+  // SANITY-018: RLS Context Guardrail (Diagnostic Backstop)
+  // Role: Secondary safety net for RLS enforcement (diagnostic output).
+  // Primary enforcement: forbidden-actions harness + two-level helper allowlists.
+  // This test detects if project-scoped queries bypass the approved helpers.
+  describe('SANITY-018: RLS Context Guardrail (Diagnostic)', () => {
+    it('SANITY tests querying project data must use RLS helpers', () => {
       const sanityDir = path.join(__dirname, '.');
       const sanityFiles = fs.readdirSync(sanityDir)
         .filter(f => f.endsWith('.test.ts'))
@@ -328,8 +315,7 @@ describe('INTEGRITY Tests', () => {
         const content = fs.readFileSync(file, 'utf-8');
         const filename = path.basename(file);
         
-        // Skip integrity.test.ts - it contains database-wide invariant checks
-        // that legitimately need to query all data (orphan detection, etc.)
+        // Skip integrity.test.ts - it uses db-meta.ts for database-wide checks
         if (filename === 'integrity.test.ts') {
           continue;
         }
@@ -342,37 +328,36 @@ describe('INTEGRITY Tests', () => {
           content.includes('FROM relationships') || 
           content.includes('FROM entities');
         
-        // If file uses PROJECT_ID AND queries RLS tables, it must use setProjectContext
+        // If file uses PROJECT_ID AND queries RLS tables, it must use rlsQuery helper
         if (usesProjectId && queriesRLSTables) {
-          // Check for pool.query usage on RLS data tables (not information_schema/pg_*)
+          // Must import from utils/rls.ts
+          if (!content.includes('utils/rls')) {
+            violations.push(`${filename}: Uses PROJECT_ID and queries RLS tables but doesn't import from utils/rls.ts`);
+          }
+          
+          // Check for forbidden patterns (pool.query, direct client.query)
           const lines = content.split('\n');
           for (let i = 0; i < lines.length; i++) {
             const line = lines[i];
-            // Skip lines querying metadata tables (information_schema, pg_*)
+            // Skip lines querying metadata tables
             if (line.includes('information_schema') || line.includes('pg_class') || line.includes('pg_constraint')) {
               continue;
             }
-            // Detect pool.query on data tables
+            // Detect forbidden patterns
             if (line.includes('pool.query') && (line.includes('FROM relationships') || line.includes('FROM entities'))) {
-              violations.push(`${filename}:${i + 1}: pool.query on RLS table without setProjectContext`);
+              violations.push(`${filename}:${i + 1}: pool.query on RLS table - use rlsQuery() instead`);
             }
-          }
-          
-          // Also check: if file queries RLS tables with PROJECT_ID, must import setProjectContext
-          if (!content.includes('setProjectContext')) {
-            violations.push(`${filename}: Uses PROJECT_ID and queries RLS tables but missing setProjectContext`);
           }
         }
       }
       
       if (violations.length > 0) {
         throw new Error(
-          `RLS context violations found:\n${violations.join('\n')}\n\n` +
-          `SANITY tests querying entities/relationships tables with PROJECT_ID must:\n` +
-          `1. Import RLS helpers: import { getClient, setProjectContext } from '../../src/db/postgres.js'\n` +
-          `   (Exception allowed for SANITY tests per forbidden-actions-harness)\n` +
-          `2. Use: const client = await getClient(); await setProjectContext(client, PROJECT_ID);\n` +
-          `3. Query on client (not pool): await client.query('SELECT ... FROM relationships')`
+          `[SANITY-018 Diagnostic] RLS helper violations found:\n${violations.join('\n')}\n\n` +
+          `Project-scoped queries must use test/utils/rls.ts:\n` +
+          `  import { rlsQuery } from '../utils/rls.js';\n` +
+          `  const rows = await rlsQuery(PROJECT_ID, 'SELECT ... FROM entities');\n\n` +
+          `Note: Primary enforcement is in forbidden-actions-harness.test.ts`
         );
       }
     });
