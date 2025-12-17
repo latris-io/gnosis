@@ -1,6 +1,6 @@
 # Story A.2: Relationship Registry
 
-**Version:** 1.5.0  
+**Version:** 1.6.0  
 **Implements:** STORY-64.2 (UTG Relationship Extraction)  
 **Track:** A  
 **Duration:** 2-3 days  
@@ -9,6 +9,7 @@
 - UTG Schema V20.6.1 §Relationship Registry
 - Verification Spec V20.6.4 §Part IX
 
+> **v1.6.0:** Organ Patch - Defer R14/R18/R19 to A3 (marker-dependent), defer R24 until E14 exists, scope reduced to 15 in-scope relationships  
 > **v1.5.0:** Pre-A2 Hardening - Added Evidence Fields section, R36/R37 deferral to A3, instance_id format validation  
 > **v1.4.0:** Added R70 GROUPS extraction logic, endpoint deviation note  
 > **v1.3.0:** Multi-tenant identity fix: ON CONFLICT (project_id, instance_id)  
@@ -19,7 +20,13 @@
 
 ## User Story
 
-> As the Gnosis system, I need to extract and store all 21 Track A relationship types between entities so that I can traverse the structural connections in my codebase.
+> As the Gnosis system, I need to extract and store 15 Track A relationship types between entities so that I can traverse the structural connections in my codebase.
+>
+> **A2 Scope:** R01, R02, R03, R04, R05, R06, R07, R16, R21, R22, R23, R26, R63, R67, R70
+>
+> **Deferred to A3:** R14, R18, R19, R36, R37 (marker-dependent)
+>
+> **Deferred until E14 exists:** R24 (requires Interface entity)
 
 ---
 
@@ -34,14 +41,14 @@
 | AC-64.2.5 | Extract CONTAINS_ENTITY (File→Func/Class) | Shadow Ledger | VERIFY-R05 |
 | AC-64.2.6 | Extract CONTAINS_SUITE (TestFile→TestSuite) | Shadow Ledger | VERIFY-R06 |
 | AC-64.2.7 | Extract CONTAINS_CASE (TestSuite→TestCase) | Shadow Ledger | VERIFY-R07 |
-| AC-64.2.8 | Extract IMPLEMENTED_BY (Story→Func/Class) | Shadow Ledger | VERIFY-R14 |
+| AC-64.2.8 | Extract IMPLEMENTED_BY (Story→Func/Class) | Shadow Ledger | VERIFY-R14 | **DEFERRED TO A3** |
 | AC-64.2.9 | Extract DEFINED_IN (Func/Class→File) | Shadow Ledger | VERIFY-R16 |
-| AC-64.2.10 | Extract IMPLEMENTS (Func/Class→Story) | Shadow Ledger | VERIFY-R18 |
-| AC-64.2.11 | Extract SATISFIES (Func/Class→AC) | Shadow Ledger | VERIFY-R19 |
+| AC-64.2.10 | Extract IMPLEMENTS (Func/Class→Story) | Shadow Ledger | VERIFY-R18 | **DEFERRED TO A3** |
+| AC-64.2.11 | Extract SATISFIES (Func/Class→AC) | Shadow Ledger | VERIFY-R19 | **DEFERRED TO A3** |
 | AC-64.2.12 | Extract IMPORTS (File→File) | Shadow Ledger | VERIFY-R21 |
 | AC-64.2.13 | Extract CALLS (Func→Func) | Shadow Ledger | VERIFY-R22 |
 | AC-64.2.14 | Extract EXTENDS (Class→Class) | Shadow Ledger | VERIFY-R23 |
-| AC-64.2.15 | Extract IMPLEMENTS_INTERFACE (Class→Interface) | Shadow Ledger | VERIFY-R24 |
+| AC-64.2.15 | Extract IMPLEMENTS_INTERFACE (Class→Interface) | Shadow Ledger | VERIFY-R24 | **DEFERRED UNTIL E14** |
 | AC-64.2.16 | Extract DEPENDS_ON (Module→Module) | Shadow Ledger | VERIFY-R26 |
 | AC-64.2.17 | Extract TESTED_BY (Func/Class→TestCase) | Shadow Ledger | VERIFY-R36 | **DEFERRED TO A3** |
 | AC-64.2.18 | Extract VERIFIED_BY (AC→TestCase) | Shadow Ledger | VERIFY-R37 | **DEFERRED TO A3** |
@@ -51,7 +58,9 @@
 | AC-64.2.22 | All relationships logged to shadow ledger | Shadow Ledger | RULE-LEDGER-002 |
 | AC-64.2.23 | All relationships have provenance fields | Evidence | SANITY-044 |
 
-> **Note on Interface Targets:** R05 (CONTAINS_ENTITY) and R24 (IMPLEMENTS_INTERFACE) may reference E14 Interface as a target entity type. Interface extraction is deferred to post-Track A; relationships with Interface targets will have `confidence < 1.0` until Interface entities are extracted in a later track.
+> **Note on Interface Targets:** R05 (CONTAINS_ENTITY) may reference E14 Interface as a target entity type. Since E14 extraction is deferred, R05 relationships targeting interfaces will not be emitted in A2.
+>
+> **R24 IMPLEMENTS_INTERFACE:** Do NOT emit R24 relationships in A2. R24 is deferred until E14 (Interface) entity extraction exists. Confidence stubs are explicitly forbidden for deferred relationships.
 
 > **Endpoint Deviation:** See ENTRY.md §Relationship Endpoint Deviation Notice. Track A uses simplified endpoints optimized for marker-based extraction. This is documented and intentional.
 
@@ -94,6 +103,37 @@ The service layer validates this format before upsert and rejects malformed IDs.
 > **AC-64.2.17 (TESTED_BY)** and **AC-64.2.18 (VERIFIED_BY)** are explicitly deferred to Story A3 (Marker Extraction).
 >
 > These relationships require marker-based extraction (`@implements`, `@satisfies`) which is not implemented until A3. This is a deliberate scope change recorded per organ patch rules, not an implementation shortcut. A2 exit criteria do NOT require R36/R37 extraction.
+
+---
+
+## Relationship Deferrals (ORGAN PATCH)
+
+### R14/R18/R19 Deferral (Marker-Dependent)
+
+> **AC-64.2.8 (IMPLEMENTED_BY)**, **AC-64.2.10 (IMPLEMENTS)**, and **AC-64.2.11 (SATISFIES)** are deferred to Story A3 (Marker Extraction).
+>
+> These relationships require `@implements` and `@satisfies` marker parsing, which is A3's responsibility. A2 builds the relationship infrastructure; A3 populates marker-derived relationships.
+>
+> **A2 exit criteria do NOT require R14/R18/R19 extraction.**
+
+### R24 Deferral (E14-Dependent)
+
+> **AC-64.2.15 (IMPLEMENTS_INTERFACE)** is deferred until E14 (Interface) entity extraction exists.
+>
+> R24 connects Class (E13) to Interface (E14). Since E14 is deferred in Track A, R24 cannot be meaningfully extracted. Do NOT emit R24 relationships in A2, even with reduced confidence.
+>
+> **A2 exit criteria do NOT require R24 extraction.**
+
+### Summary of Deferred Relationships
+
+| R-Code | Name | Reason | Deferred To |
+|--------|------|--------|-------------|
+| R14 | IMPLEMENTED_BY | Requires @implements markers | A3 |
+| R18 | IMPLEMENTS | Requires @implements markers | A3 |
+| R19 | SATISFIES | Requires @satisfies markers | A3 |
+| R24 | IMPLEMENTS_INTERFACE | Requires E14 Interface entity | Post-Track A |
+| R36 | TESTED_BY | Requires @implements markers | A3 |
+| R37 | VERIFIED_BY | Requires @satisfies markers | A3 |
 
 ---
 
@@ -323,24 +363,8 @@ export class ASTRelationshipProvider implements ExtractionProvider {
         }
       }
       
-      // R24: IMPLEMENTS_INTERFACE (confidence < 1.0 since E14 deferred)
-      for (const cls of sourceFile.getClasses()) {
-        const classInstanceId = `CLASS-${filePath}:${cls.getName()}`;
-        
-        for (const impl of cls.getImplements()) {
-          const interfaceName = impl.getText();
-          const interfaceInstanceId = `IFACE-${filePath}:${interfaceName}`;  // Placeholder
-          
-          relationships.push({
-            relationship_type: 'R24',
-            instance_id: `R24:${classInstanceId}:${interfaceInstanceId}`,
-            name: `IMPLEMENTS_INTERFACE: ${classInstanceId} → ${interfaceInstanceId}`,
-            from_instance_id: classInstanceId,
-            to_instance_id: interfaceInstanceId,
-            confidence: 0.5  // E14 Interface extraction deferred
-          });
-        }
-      }
+      // R24: IMPLEMENTS_INTERFACE - DEFERRED UNTIL E14 EXISTS
+      // Do NOT emit R24 relationships in A2. Confidence stubs are forbidden.
       
       // R16: DEFINED_IN (Function/Class → SourceFile)
       for (const func of sourceFile.getFunctions()) {
@@ -596,12 +620,13 @@ describe('Relationship Registry', () => {
 
 ## Verification Checklist
 
-- [ ] All acceptance criteria implemented
-- [ ] All VERIFY-R* tests pass
+- [ ] All acceptance criteria implemented (15 in-scope relationships)
+- [ ] All VERIFY-R* tests pass for in-scope relationships
 - [ ] Code has `@implements STORY-64.2` marker
 - [ ] Functions have `@satisfies AC-64.2.*` markers
-- [ ] Shadow ledger entries recorded for all relationships
+- [ ] Shadow ledger entries recorded for all in-scope relationships
 - [ ] No direct database access from outside src/db/
+- [ ] **Deferred relationships NOT emitted:** R14, R18, R19, R24, R36, R37 have 0 rows
 - [ ] **Mission Alignment:** Confirm no oracle claims (confidence ≠ truth, alignment ≠ understanding)
 - [ ] **No Placeholders:** All bracketed placeholders resolved to concrete values
 
@@ -609,14 +634,17 @@ describe('Relationship Registry', () => {
 
 ## Definition of Done
 
-- [ ] All 21 relationship types extractable (using R-codes)
+- [ ] All 15 in-scope relationship types extractable (using R-codes)
 - [ ] Relationship counts validate against entities:
   - [ ] 351 Epic→Story HAS_STORY (R01)
   - [ ] 2,849 Story→AC HAS_AC (R02)
-- [ ] All tests pass
+- [ ] All tests pass for in-scope relationships
 - [ ] Neo4j traversal operational
-- [ ] Shadow ledger contains entries for all relationships
+- [ ] Shadow ledger contains entries for all in-scope relationships
+- [ ] Deferred relationships (R14, R18, R19, R24, R36, R37) are NOT emitted
 - [ ] Committed with message: "STORY-64.2: Relationship Registry"
+
+> **Note:** Deferred relationships are NOT required for A2 exit. They will be implemented in A3 (marker-dependent) or post-Track A (E14-dependent).
 
 ---
 
