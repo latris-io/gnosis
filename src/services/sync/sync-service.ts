@@ -3,6 +3,8 @@
 // Graph sync operations - allowed to import db
 // Syncs entities from Postgres to Neo4j
 
+import type { PoolClient } from 'pg';
+import type { Session } from 'neo4j-driver';
 import { pool, setProjectContext } from '../../db/postgres.js';
 import { getSession } from '../../db/neo4j.js';
 
@@ -14,10 +16,13 @@ import { getSession } from '../../db/neo4j.js';
  * @returns Count of synced entities
  */
 export async function syncEntitiesToNeo4j(projectId: string): Promise<{ synced: number }> {
-  const client = await pool.connect();
-  const session = getSession();
+  let client: PoolClient | null = null;
+  let session: Session | null = null;
 
   try {
+    session = getSession();
+    client = await pool.connect();
+
     // Set project context for RLS
     await setProjectContext(client, projectId);
 
@@ -50,7 +55,7 @@ export async function syncEntitiesToNeo4j(projectId: string): Promise<{ synced: 
 
     return { synced };
   } finally {
-    client.release();
-    await session.close();
+    client?.release();
+    if (session) await session.close();
   }
 }
