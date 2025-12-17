@@ -3,55 +3,21 @@
 // Default: CHECK-ONLY mode (no mutations)
 // Mutations require BOTH: --fix flag AND ALLOW_DB_FIX=1 env var
 
-import { pool } from '../src/db/postgres.js';
+import { getDbInfo, checkConstraints, fixUpsertConstraint, closeAdminPool } from '../src/ops/track-a.js';
 
 // CLI and environment parsing
 const FIX_MODE = process.argv.includes('--fix');
 const ALLOW_FIX = process.env.ALLOW_DB_FIX === '1';
 
-/**
- * Get database connection info with password redaction.
- * Fails fast if no DB URL is configured.
- */
-function getDbInfo(): { envVar: string; url: string; display: string } {
-  const envVar = process.env.TEST_DATABASE_URL ? 'TEST_DATABASE_URL' : 'DATABASE_URL';
-  const url = process.env.TEST_DATABASE_URL || process.env.DATABASE_URL || '';
-
-  // Fail fast if no DB URL
-  if (!url) {
-    console.error('[ERROR] No database URL configured');
-    console.error('Set DATABASE_URL or TEST_DATABASE_URL environment variable');
-    process.exit(1);
-  }
-
-  // Redact password using URL parsing (safer than regex)
-  let display: string;
-  try {
-    const parsed = new URL(url);
-    if (parsed.password) {
-      parsed.password = '***';
-    }
-    display = parsed.toString();
-  } catch {
-    // Fallback to regex if URL parsing fails
-    display = url.replace(/:([^:@]+)@/, ':***@');
-  }
-
-  return { envVar, url, display };
-}
-
-// Constraint check query (semantics-based, not name-based)
-const CONSTRAINT_QUERY = `
-  SELECT c.conname, pg_get_constraintdef(c.oid) as def
-  FROM pg_constraint c
-  JOIN pg_class t ON c.conrelid = t.oid
-  WHERE t.relname = 'entities'
-    AND c.contype IN ('u', 'p')
-`;
-
 async function main() {
   // Get DB info (fails fast if missing)
-  const dbInfo = getDbInfo();
+  let dbInfo: { envVar: string; display: string };
+  try {
+    dbInfo = getDbInfo();
+  } catch (error) {
+    console.error('[ERROR]', error instanceof Error ? error.message : error);
+    process.exit(1);
+  }
 
   // Print summary
   console.log('=== DB Schema Check ===');
@@ -65,25 +31,22 @@ async function main() {
     }
   }
 
-  const client = await pool.connect();
   try {
-    // Check applied migrations
-    const migrations = await client.query('SELECT name FROM migrations ORDER BY id');
+    // Check constraints via ops layer
+    const result = await checkConstraints();
+
+    // Print migrations
     console.log('\nApplied migrations:');
-    migrations.rows.forEach((r: { name: string }) => console.log(`  ${r.name}`));
+    result.migrations.forEach(m => console.log(`  ${m.name}`));
 
-    // Check constraints (semantics-based)
-    const result = await client.query<{ conname: string; def: string }>(CONSTRAINT_QUERY);
+    // Print constraints
     console.log('\nConstraints on entities table:');
-    result.rows.forEach((r) => console.log(`  ${r.conname}: ${r.def}`));
+    result.constraints.forEach(c => console.log(`  ${c.name}: ${c.definition}`));
 
-    // Check if upsert semantics are supported (project_id, instance_id uniqueness)
-    const hasUpsertSupport = result.rows.some((r) =>
-      r.def.includes('project_id') && r.def.includes('instance_id')
-    );
-    console.log(`\nUpsert support (project_id, instance_id): ${hasUpsertSupport}`);
+    // Check upsert support
+    console.log(`\nUpsert support (project_id, instance_id): ${result.hasUpsertSupport}`);
 
-    if (!hasUpsertSupport) {
+    if (!result.hasUpsertSupport) {
       console.error('\n[ERROR] Constraint missing or wrong: need UNIQUE (project_id, instance_id)');
       console.error('');
       console.error('To fix manually:');
@@ -106,33 +69,14 @@ async function main() {
 
       // Both gates passed - proceed with fix
       console.log('=== FIXING CONSTRAINT (--fix + ALLOW_DB_FIX=1) ===');
-
-      // Drop old constraint if exists (UNIQUE instance_id only)
-      const oldConstraint = result.rows.find((r) =>
-        r.def.includes('instance_id') && !r.def.includes('project_id')
-      );
-      if (oldConstraint) {
-        console.log(`Dropping old constraint: ${oldConstraint.conname}`);
-        await client.query(`ALTER TABLE entities DROP CONSTRAINT IF EXISTS "${oldConstraint.conname}"`);
-      }
-
-      // Add correct constraint
-      console.log('Adding constraint: entities_project_instance_unique');
-      await client.query(`
-        ALTER TABLE entities 
-        ADD CONSTRAINT entities_project_instance_unique 
-        UNIQUE (project_id, instance_id)
-      `);
+      await fixUpsertConstraint();
 
       // Re-check after fix
-      const verify = await client.query<{ conname: string; def: string }>(CONSTRAINT_QUERY);
+      const verify = await checkConstraints();
       console.log('\nConstraints after fix:');
-      verify.rows.forEach((r) => console.log(`  ${r.conname}: ${r.def}`));
+      verify.constraints.forEach(c => console.log(`  ${c.name}: ${c.definition}`));
 
-      const stillMissing = !verify.rows.some((r) =>
-        r.def.includes('project_id') && r.def.includes('instance_id')
-      );
-      if (stillMissing) {
+      if (!verify.hasUpsertSupport) {
         console.error('\n[ERROR] Fix failed - constraint still missing');
         process.exit(1);
       }
@@ -142,8 +86,7 @@ async function main() {
       console.log('\n[OK] Constraint exists: UNIQUE (project_id, instance_id)');
     }
   } finally {
-    client.release();
-    await pool.end();
+    await closeAdminPool();
   }
 }
 

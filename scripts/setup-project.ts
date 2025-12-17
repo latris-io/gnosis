@@ -3,34 +3,22 @@
 // Creates a default project for A1 extraction if it doesn't exist
 
 import 'dotenv/config';
-import { pool } from '../src/db/postgres.js';
+import { initProject, closeConnections } from '../src/ops/track-a.js';
 
 async function main(): Promise<void> {
   const projectName = process.env.PROJECT_NAME || 'gnosis-default';
   
   try {
-    // Check if project exists
-    const existing = await pool.query(
-      "SELECT id FROM projects WHERE name = $1",
-      [projectName]
-    );
+    // Use ops layer to resolve/create project
+    const project = await initProject({ projectSlug: projectName });
     
-    if (existing.rows.length > 0) {
-      console.log(`Project '${projectName}' already exists: ${existing.rows[0].id}`);
-      console.log(`\nUse this PROJECT_ID for extraction:`);
-      console.log(`export PROJECT_ID=${existing.rows[0].id}`);
-    } else {
-      // Create project
-      const result = await pool.query<{ id: string; name: string }>(
-        "INSERT INTO projects (id, name) VALUES (gen_random_uuid(), $1) RETURNING id, name",
-        [projectName]
-      );
-      console.log(`Created project '${projectName}': ${result.rows[0].id}`);
-      console.log(`\nUse this PROJECT_ID for extraction:`);
-      console.log(`export PROJECT_ID=${result.rows[0].id}`);
-    }
+    console.log(`Project '${project.slug}' ready: ${project.id}`);
+    console.log(`\nUse this for extraction:`);
+    console.log(`export PROJECT_SLUG=${project.slug}`);
+    console.log(`# or`);
+    console.log(`export PROJECT_ID=${project.id}`);
     
-    await pool.end();
+    await closeConnections();
   } catch (e) {
     console.error('Error:', e);
     process.exit(1);

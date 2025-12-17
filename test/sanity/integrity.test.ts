@@ -4,6 +4,7 @@
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { Pool } from 'pg';
+import * as fs from 'fs';
 import 'dotenv/config';
 
 let pool: Pool;
@@ -225,5 +226,46 @@ describe('INTEGRITY Tests', () => {
         console.log(`  E04: ${counts['E04'] || 0} (expected >=0)`);
       }
     });
+  });
+
+  // SANITY-015: EP-D-002 Present
+  describe('SANITY-015: EP-D-002 Present', () => {
+    const EP_D_002_PATH = 'docs/integrations/EP-D-002_RUNTIME_RECONCILIATION_V20_6_1.md';
+
+    it('EP-D-002 document exists and is readable', () => {
+      // Assert file exists
+      expect(fs.existsSync(EP_D_002_PATH), `EP-D-002 document not found at ${EP_D_002_PATH}`).toBe(true);
+      
+      // Assert file is non-empty
+      const stats = fs.statSync(EP_D_002_PATH);
+      expect(stats.size, `EP-D-002 document is empty (0 bytes)`).toBeGreaterThan(0);
+      
+      // Assert file is readable
+      expect(() => fs.readFileSync(EP_D_002_PATH, 'utf8'), `EP-D-002 document is not readable`).not.toThrow();
+    });
+  });
+
+  // SANITY-016: Document Version Headers Valid
+  describe('SANITY-016: Document Version Headers Valid', () => {
+    const CANONICAL_DOCS = [
+      { path: 'docs/BRD_V20_6_3_COMPLETE.md', expected: '20.6.3' },
+      { path: 'docs/UNIFIED_TRACEABILITY_GRAPH_SCHEMA_V20_6_1.md', expected: '20.6.1' },
+      { path: 'docs/UNIFIED_VERIFICATION_SPECIFICATION_V20_6_4.md', expected: '20.6.4' },
+      { path: 'docs/GNOSIS_TO_SOPHIA_MASTER_ROADMAP_V20_6_4.md', expected: '20.6.4' },
+    ];
+
+    for (const doc of CANONICAL_DOCS) {
+      it(`${doc.path} has version header ${doc.expected}`, () => {
+        // Assert file exists
+        expect(fs.existsSync(doc.path), `Document ${doc.path} not found`).toBe(true);
+        
+        // Read content and check version header
+        const content = fs.readFileSync(doc.path, 'utf8');
+        const match = content.match(/\*\*Version:\*\*\s*(\d+\.\d+\.\d+)/);
+        
+        expect(match, `Document ${doc.path} missing version header`).not.toBeNull();
+        expect(match![1], `Document ${doc.path} version mismatch: expected ${doc.expected}, got ${match![1]}`).toBe(doc.expected);
+      });
+    }
   });
 });

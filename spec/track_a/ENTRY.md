@@ -61,9 +61,9 @@
 
 - [ ] All SANITY-001 to 005 tests pass (Environment)
 - [ ] All SANITY-010 to 016 tests pass (Canonical)
-- [ ] All SANITY-020 to 024 tests pass (Schema)
-- [ ] All SANITY-030 to 033 tests pass (Markers)
-- [ ] All SANITY-040 to 044 tests pass (Extraction)
+- [ ] All SANITY-020 to 024 test declarations exist (Schema — pass required at EXIT)
+- [ ] All SANITY-030 to 033 test declarations exist (Markers — pass required at EXIT)
+- [ ] All SANITY-040 to 044 test declarations exist (Extraction — pass required at EXIT)
 - [ ] All SANITY-055 to 057 tests pass (BRD)
 - [ ] All SANITY-080 to 083 tests return `{skipped: true}` (Dormant)
 

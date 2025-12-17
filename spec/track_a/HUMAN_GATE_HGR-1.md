@@ -157,7 +157,7 @@ Before requesting HGR-1 review, confirm:
 
 | Suite | Total | Passed | Failed | Skipped |
 |-------|-------|--------|--------|---------|
-| SANITY | 58 | ______ | ______ | 4 (dormant) |
+| SANITY | gate-critical | ______ | ______ | 4 (dormant) |
 | Entity Registry | ______ | ______ | ______ | ______ |
 | Relationship Registry | ______ | ______ | ______ | ______ |
 | Marker Extraction | ______ | ______ | ______ | ______ |

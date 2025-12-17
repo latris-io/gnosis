@@ -28,13 +28,19 @@ This system IS a traceability-first verification engine. Its purpose is to:
 ### Rule 3: Database Access Boundary (G-API)
 ```
 ALLOWED:
-- src/api/v1/*.ts may import from src/db/*
-- Tests access database ONLY through @gnosis/api/v1
+- src/db/** may be imported ONLY by src/services/**
+- src/services/** may import from src/db/**
+- src/api/v1/** may import from src/services/**
+- src/ops/** may import from src/services/**
+- Tests may import from @gnosis/api/v1 (functional) or src/ops/** (lifecycle only)
+- Scripts may import from src/ops/**
 
 FORBIDDEN:
-- src/extraction/providers/* importing from src/db/*
-- Any file outside src/api/v1/ importing from src/db/*
-- Tests importing directly from src/db/*
+- src/api/v1/** importing from src/db/**
+- src/ops/** importing from src/db/**
+- src/extraction/providers/** importing from src/db/** or src/services/**
+- Tests importing from src/db/** or src/services/**
+- Scripts importing from src/db/** or src/services/**
 ```
 Violation = HALT and fix immediately.
 

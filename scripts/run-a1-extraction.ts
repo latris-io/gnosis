@@ -11,9 +11,8 @@ import { filesystemProvider } from '../src/extraction/providers/filesystem-provi
 import { astProvider } from '../src/extraction/providers/ast-provider.js';
 import { gitProvider } from '../src/extraction/providers/git-provider.js';
 import { changesetProvider } from '../src/extraction/providers/changeset-provider.js';
-import { batchUpsert, type UpsertResult } from '../src/services/entities/entity-service.js';
+import { initProject, persistEntities, type UpsertResult } from '../src/ops/track-a.js';
 import { semanticCorpus, captureCorrectSignal, captureIncorrectSignal } from '../src/ledger/semantic-corpus.js';
-import { getClient } from '../src/db/postgres.js';
 import type { RepoSnapshot, ExtractionProvider, ExtractedEntity } from '../src/extraction/types.js';
 import type { EntityTypeCode } from '../src/schema/track-a/entities.js';
 
@@ -21,76 +20,8 @@ import type { EntityTypeCode } from '../src/schema/track-a/entities.js';
 // Configuration
 // ============================================================================
 
-const PROJECT_ID_ENV = process.env.PROJECT_ID;
-const PROJECT_SLUG = process.env.PROJECT_SLUG;
 const REPO_ROOT = process.env.REPO_ROOT || process.cwd();
 const MIN_SIGNALS = 50;
-
-// UUID v4 pattern (standard format)
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-/**
- * Validate that a string is a valid UUID.
- */
-function isValidUUID(value: string): boolean {
-  return UUID_PATTERN.test(value);
-}
-
-/**
- * Resolve project identity from PROJECT_ID or PROJECT_SLUG.
- * - If PROJECT_ID is provided, validates it's a UUID and returns it.
- * - If PROJECT_SLUG is provided, looks up the project by name or creates it.
- * 
- * @returns { id: string (UUID), slug: string }
- * @throws Error if neither provided, or if PROJECT_ID is invalid UUID
- */
-async function resolveProjectId(): Promise<{ id: string; slug: string }> {
-  // PROJECT_ID takes precedence
-  if (PROJECT_ID_ENV) {
-    if (!isValidUUID(PROJECT_ID_ENV)) {
-      throw new Error(
-        `PROJECT_ID must be a valid UUID, got: "${PROJECT_ID_ENV}"\n` +
-        `Hint: Use PROJECT_SLUG for human-friendly names (e.g., PROJECT_SLUG=gnosis-default)`
-      );
-    }
-    // Return UUID directly; slug is unknown unless we query
-    return { id: PROJECT_ID_ENV, slug: PROJECT_ID_ENV };
-  }
-
-  // PROJECT_SLUG provided - lookup or create
-  if (PROJECT_SLUG) {
-    const client = await getClient();
-    try {
-      // Try to find existing project by name
-      const existing = await client.query<{ id: string; name: string }>(
-        'SELECT id, name FROM projects WHERE name = $1',
-        [PROJECT_SLUG]
-      );
-
-      if (existing.rows.length > 0) {
-        return { id: existing.rows[0].id, slug: existing.rows[0].name };
-      }
-
-      // Create new project
-      const created = await client.query<{ id: string; name: string }>(
-        'INSERT INTO projects (name) VALUES ($1) RETURNING id, name',
-        [PROJECT_SLUG]
-      );
-
-      return { id: created.rows[0].id, slug: created.rows[0].name };
-    } finally {
-      client.release();
-    }
-  }
-
-  // Neither provided
-  throw new Error(
-    'Either PROJECT_ID (UUID) or PROJECT_SLUG (string) is required.\n' +
-    'Usage:\n' +
-    '  PROJECT_ID=<uuid> npm run extract:a1\n' +
-    '  PROJECT_SLUG=gnosis-default npm run extract:a1'
-  );
-}
 
 // Provider execution order per plan
 const providers: ExtractionProvider[] = [
@@ -156,7 +87,10 @@ async function main(): Promise<void> {
   // Resolve project identity (UUID from PROJECT_ID or lookup from PROJECT_SLUG)
   let project: { id: string; slug: string };
   try {
-    project = await resolveProjectId();
+    project = await initProject({
+      projectId: process.env.PROJECT_ID,
+      projectSlug: process.env.PROJECT_SLUG,
+    });
   } catch (error) {
     console.error(`\x1b[31m[ERROR]\x1b[0m ${error instanceof Error ? error.message : error}`);
     process.exit(1);
@@ -236,28 +170,15 @@ async function main(): Promise<void> {
   });
   signalCount++;
 
-  // Persist to PostgreSQL via batchUpsert with progress
-  // NOTE: batchUpsert internally logs to shadow ledger - DO NOT double-log
+  // Persist to PostgreSQL via ops layer with progress
+  // NOTE: persistEntities internally logs to shadow ledger - DO NOT double-log
   let upsertResults: UpsertResult[];
   const startTime = Date.now();
-  const progressInterval = 500; // entities per progress update
-  let lastProgress = 0;
   
   try {
-    upsertResults = [];
-    for (let i = 0; i < allEntities.length; i++) {
-      const result = await (await import('../src/services/entities/entity-service.js')).upsert(projectId, allEntities[i]);
-      upsertResults.push(result);
-      
-      // Progress output every N entities
-      if (i - lastProgress >= progressInterval || i === allEntities.length - 1) {
-        const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-        const pct = ((i + 1) / allEntities.length * 100).toFixed(1);
-        const rate = ((i + 1) / (Date.now() - startTime) * 1000).toFixed(1);
-        process.stdout.write(`\r  Progress: ${i + 1}/${allEntities.length} (${pct}%) - ${elapsed}s elapsed, ${rate} entities/sec`);
-        lastProgress = i;
-      }
-    }
+    // Use batch persistence via ops layer
+    console.log('  Persisting...');
+    upsertResults = await persistEntities(projectId, allEntities);
     console.log(''); // newline after progress
   } catch (error) {
     console.log(''); // newline after progress

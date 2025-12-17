@@ -21,9 +21,12 @@ import { ShadowLedger, shadowLedger } from '../../src/ledger/shadow-ledger.js';
 import { SemanticCorpus } from '../../src/ledger/semantic-corpus.js';
 import { createEvidenceAnchor, isValidEvidenceAnchor } from '../../src/extraction/evidence.js';
 
-// Entity Service (for VERIFY-LEDGER test with DB persistence)
-import * as entityService from '../../src/services/entities/entity-service.js';
-import { pool } from '../../src/db/postgres.js';
+// API v1 (for VERIFY-LEDGER test with DB persistence) - G-API compliant
+import { createEntity, batchCreateEntities } from '../../src/api/v1/entities.js';
+// Ops layer for test infrastructure (lifecycle only)
+import { checkConstraints } from '../../src/ops/track-a.js';
+// Test-only helpers (NODE_ENV guarded)
+import { createTestProject, deleteProjectEntities, deleteProject } from '../utils/admin-test-only.js';
 import { randomUUID } from 'crypto';
 
 // Types
@@ -590,57 +593,30 @@ describe('Entity Registry - Story A.1', () => {
       }
       const dbEnvVar = process.env.TEST_DATABASE_URL ? 'TEST_DATABASE_URL' : 'DATABASE_URL';
 
-      const client = await pool.connect();
-      try {
-        // Check constraint SEMANTICS (columns), not name
-        const result = await client.query(`
-          SELECT pg_get_constraintdef(c.oid) as def
-          FROM pg_constraint c
-          JOIN pg_class t ON c.conrelid = t.oid
-          WHERE t.relname = 'entities'
-            AND c.contype IN ('u', 'p')
-        `);
-
-        const hasUpsertSupport = result.rows.some((r: { def: string }) =>
-          r.def.includes('project_id') && r.def.includes('instance_id')
+      // Check constraints via ops layer (G-API compliant)
+      const constraintResult = await checkConstraints();
+      if (!constraintResult.hasUpsertSupport) {
+        throw new Error(
+          'Migration not applied: entities table missing unique constraint on (project_id, instance_id). ' +
+          `Run: psql $${dbEnvVar} -f migrations/003_reset_schema_to_cursor_plan.sql`
         );
-
-        if (!hasUpsertSupport) {
-          throw new Error(
-            'Migration not applied: entities table missing unique constraint on (project_id, instance_id). ' +
-            `Run: psql $${dbEnvVar} -f migrations/003_reset_schema_to_cursor_plan.sql`
-          );
-        }
-
-        // Create test project - use only required columns (id, name)
-        // Schema: migrations/000_init.sql defines projects(id UUID, name TEXT, created_at TIMESTAMPTZ)
-        // created_at has DEFAULT NOW(), so omit it
-        await client.query(`
-          INSERT INTO projects (id, name)
-          VALUES ($1, 'VERIFY-LEDGER Test Project')
-          ON CONFLICT (id) DO NOTHING
-        `, [DB_TEST_PROJECT_ID]);
-      } finally {
-        client.release();
       }
+
+      // Create test project via ops layer
+      await createTestProject(DB_TEST_PROJECT_ID, 'VERIFY-LEDGER Test Project');
     });
 
     afterAll(async () => {
-      // Clean up test data (do NOT call pool.end() - breaks other tests)
+      // Clean up test data via ops layer (G-API compliant)
       try {
-        const client = await pool.connect();
-        try {
-          await client.query('DELETE FROM entities WHERE project_id = $1', [DB_TEST_PROJECT_ID]);
-          await client.query('DELETE FROM projects WHERE id = $1', [DB_TEST_PROJECT_ID]);
-        } finally {
-          client.release();
-        }
+        await deleteProjectEntities(DB_TEST_PROJECT_ID);
+        await deleteProject(DB_TEST_PROJECT_ID);
       } catch {
         // Ignore cleanup errors
       }
     });
 
-    it('VERIFY-LEDGER: shadow ledger has entries after entityService.upsert()', async () => {
+    it('VERIFY-LEDGER: shadow ledger has entries after createEntity()', async () => {
       // NO SKIP - this test MUST pass or fail
 
       // Reset global ledger for deterministic state
@@ -651,10 +627,10 @@ describe('Entity Registry - Story A.1', () => {
       const result = await brdProvider.extract(snapshot);
       expect(result.entities.length).toBeGreaterThan(0);
 
-      // Persist a small subset to trigger ledger writes via entityService
+      // Persist a small subset to trigger ledger writes via API v1
       const entitiesToPersist = result.entities.slice(0, 10);
       for (const entity of entitiesToPersist) {
-        await entityService.upsert(DB_TEST_PROJECT_ID, entity);
+        await createEntity(DB_TEST_PROJECT_ID, entity);
       }
 
       // Assert ledger FILE is non-empty (prevents "memory-only" loophole)
