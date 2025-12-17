@@ -5,6 +5,7 @@
 
 /**
  * Parsed Epic from BRD.
+ * @contract SANITY-056 expects `id` to match /^EPIC-\d+$/
  */
 export interface ParsedEpic {
   number: number;
@@ -12,10 +13,12 @@ export interface ParsedEpic {
   description: string;  // Per A1_ENTITY_REGISTRY.md line 155
   lineStart: number;
   lineEnd: number;
+  id: string;           // Canonical format: "EPIC-{number}" e.g. "EPIC-64"
 }
 
 /**
  * Parsed Story from BRD.
+ * @contract SANITY-057 expects `id` to match /^STORY-\d+\.\d+$/
  */
 export interface ParsedStory {
   epicNumber: number;
@@ -24,10 +27,12 @@ export interface ParsedStory {
   userStory: string;  // Per A1_ENTITY_REGISTRY.md line 172
   lineStart: number;
   lineEnd: number;
+  id: string;         // Canonical format: "STORY-{epic}.{story}" e.g. "STORY-64.1"
 }
 
 /**
  * Parsed Acceptance Criterion from BRD.
+ * @contract Canonical ID format: /^AC-\d+\.\d+\.\d+$/
  */
 export interface ParsedAC {
   epicNumber: number;
@@ -36,6 +41,7 @@ export interface ParsedAC {
   description: string;
   lineStart: number;
   lineEnd: number;
+  id: string;         // Canonical format: "AC-{epic}.{story}.{ac}" e.g. "AC-64.1.1"
 }
 
 /**
@@ -151,6 +157,7 @@ export function parseBRD(content: string, sourcePath: string): BRDParseResult {
         description: '',  // Will be populated after parsing
         lineStart: lineNumber,
         lineEnd: lineNumber, // Will be updated when next epic starts or EOF
+        id: `EPIC-${epicNum}`,
       });
       
       epicDescriptions.set(epicNum, []);
@@ -179,6 +186,7 @@ export function parseBRD(content: string, sourcePath: string): BRDParseResult {
         userStory: '',  // Will be populated after parsing
         lineStart: lineNumber,
         lineEnd: lineNumber, // Will be updated when next story/epic starts or EOF
+        id: `STORY-${epicNum}.${storyNum}`,
       });
       
       storyUserStories.set(storyKey(epicNum, storyNum), []);
@@ -243,6 +251,7 @@ export function parseBRD(content: string, sourcePath: string): BRDParseResult {
         description: cleanDesc,
         lineStart: lineNumber,
         lineEnd: lineNumber,
+        id: `AC-${epicNum}.${storyNum}.${acNum}`,
       });
       continue;
     }
@@ -269,6 +278,7 @@ export function parseBRD(content: string, sourcePath: string): BRDParseResult {
         description,
         lineStart: lineNumber,
         lineEnd: lineNumber,
+        id: `AC-${currentEpicNumber}.${currentStoryNumber}.${acNum}`,
       });
       continue;
     }

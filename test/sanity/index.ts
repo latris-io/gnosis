@@ -2,7 +2,7 @@
 // SANITY test suite runner - main entry point
 // Supports filtering by category and individual test
 
-export type SanityCategory = 'ONTOLOGY' | 'INTEGRITY' | 'MARKER' | 'COVERAGE' | 'EXTRACTION';
+export type SanityCategory = 'ONTOLOGY' | 'INTEGRITY' | 'MARKER' | 'COVERAGE' | 'EXTRACTION' | 'BRD';
 
 export interface SanityTestResult {
   id: string;
@@ -18,10 +18,11 @@ export interface SanityTestResult {
  */
 export const SANITY_CATEGORIES: Record<SanityCategory, { start: number; end: number; description: string }> = {
   ONTOLOGY: { start: 1, end: 5, description: 'Entity types, relationships, ID formats' },
-  INTEGRITY: { start: 10, end: 14, description: 'DB schema, FK, duplicates, hashes, graph connected' },
+  INTEGRITY: { start: 10, end: 16, description: 'DB schema, FK, duplicates, hashes, graph connected, canonical docs' },
   MARKER: { start: 20, end: 24, description: 'Marker parsing (Track A)' },
   COVERAGE: { start: 30, end: 33, description: 'Coverage validation (Track A)' },
   EXTRACTION: { start: 40, end: 44, description: 'Extraction validation (Track A)' },
+  BRD: { start: 55, end: 57, description: 'BRD counts and ID validation' },
 };
 
 /**
@@ -46,7 +47,8 @@ export function formatTestId(testId: number): string {
 
 // Note: Actual test implementations are in category-specific files:
 // - test/sanity/ontology.test.ts (SANITY-001 to SANITY-005)
-// - test/sanity/integrity.test.ts (SANITY-010 to SANITY-014)
+// - test/sanity/integrity.test.ts (SANITY-010 to SANITY-016)
 // - test/sanity/markers.test.ts (SANITY-020 to SANITY-024) - Track A
 // - test/sanity/coverage.test.ts (SANITY-030 to SANITY-033) - Track A
 // - test/sanity/extraction.test.ts (SANITY-040 to SANITY-044) - Track A
+// - test/sanity/brd.test.ts (SANITY-055 to SANITY-057)
