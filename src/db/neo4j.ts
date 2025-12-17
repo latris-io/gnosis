@@ -42,3 +42,34 @@ export async function testConnection(): Promise<boolean> {
 export async function closeDriver(): Promise<void> {
   await driver.close();
 }
+
+// Module-level memoization flag for constraint initialization
+let constraintsInitialized = false;
+
+/**
+ * Ensure required constraints exist.
+ * Per A5_GRAPH_API_V1.md and EXIT.md Upsert Rule (Locked).
+ * Creates uniqueness constraint on (project_id, instance_id) for :Entity nodes.
+ */
+export async function ensureConstraints(): Promise<void> {
+  const session = getSession();
+  try {
+    await session.run(`
+      CREATE CONSTRAINT entity_project_instance_unique IF NOT EXISTS
+      FOR (n:Entity) REQUIRE (n.project_id, n.instance_id) IS UNIQUE
+    `);
+  } finally {
+    await session.close();
+  }
+}
+
+/**
+ * Memoized constraint initialization - runs once per process.
+ * Call this from sync operations to avoid repeated constraint checks.
+ * Only sets flag to true AFTER successful execution.
+ */
+export async function ensureConstraintsOnce(): Promise<void> {
+  if (constraintsInitialized) return;
+  await ensureConstraints();
+  constraintsInitialized = true;  // Only after success
+}

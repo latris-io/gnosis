@@ -45,6 +45,10 @@ function green(s: string): string { return `\x1b[32m${s}\x1b[0m`; }
 function red(s: string): string { return `\x1b[31m${s}\x1b[0m`; }
 function yellow(s: string): string { return `\x1b[33m${s}\x1b[0m`; }
 
+function safePct(valid: number, total: number): string {
+  return total > 0 ? ((valid / total) * 100).toFixed(1) : '0.0';
+}
+
 interface AuditResult {
   total: number;
   valid: number;
@@ -232,7 +236,7 @@ function main() {
   const ledger = auditLedger();
   console.log(`Total entries: ${ledger.result.total}`);
   console.log(`By operation: CREATE=${ledger.byOperation.CREATE || 0}, UPDATE=${ledger.byOperation.UPDATE || 0}`);
-  console.log(`Schema valid: ${ledger.result.valid}/${ledger.result.total} entries (${((ledger.result.valid / ledger.result.total) * 100).toFixed(1)}%)`);
+  console.log(`Schema valid: ${ledger.result.valid}/${ledger.result.total} entries (${safePct(ledger.result.valid, ledger.result.total)}%)`);
   
   if (ledger.result.errors.length > 0) {
     console.log(yellow(`Errors (first 5):`));
@@ -249,7 +253,7 @@ function main() {
   const corpus = auditCorpus();
   console.log(`Total signals: ${corpus.result.total}`);
   console.log(`By type: ${Object.entries(corpus.byType).map(([k, v]) => `${k}=${v}`).join(', ')}`);
-  console.log(`Schema valid: ${corpus.result.valid}/${corpus.result.total} signals (${((corpus.result.valid / corpus.result.total) * 100).toFixed(1)}%)`);
+  console.log(`Schema valid: ${corpus.result.valid}/${corpus.result.total} signals (${safePct(corpus.result.valid, corpus.result.total)}%)`);
   
   if (corpus.result.errors.length > 0) {
     console.log(yellow(`Errors (first 5):`));

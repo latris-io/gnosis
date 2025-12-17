@@ -7,4 +7,7 @@ export {
   createTestProject,
   deleteProjectEntities,
   deleteProject,
+  createTestEntity,
+  deleteNeo4jProjectNodes,
+  queryNeo4jByInstanceId,
 } from '../../src/services/admin/admin-test-only.js';
