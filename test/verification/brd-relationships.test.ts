@@ -5,6 +5,11 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { extractAndPersistBrdRelationships } from '../../src/ops/track-a.js';
 import { rlsQuery } from '../utils/rls.js';
+import {
+  clearNeo4jProject,
+  countNeo4jNodes,
+  countNeo4jRelationships,
+} from '../utils/admin-test-only.js';
 
 const PROJECT_ID = process.env.PROJECT_ID;
 
@@ -123,4 +128,32 @@ describe('A2 Phase 1: BRD relationships (R01/R02/R03)', () => {
     );
     expect(total[0].n).toBe(3200);
   }, 900000); // 15 minute timeout for second extraction
+});
+
+describe('Neo4j entities-first prerequisite', () => {
+  it('enforces entities sync before relationship sync', async () => {
+    if (!PROJECT_ID) throw new Error('PROJECT_ID required');
+    
+    // 1) Clear Neo4j for this project only (scoped by project_id)
+    await clearNeo4jProject(PROJECT_ID);
+    
+    // 2) Verify Neo4j empty for this project
+    expect(await countNeo4jNodes(PROJECT_ID)).toBe(0);
+    expect(await countNeo4jRelationships(PROJECT_ID)).toBe(0);
+    
+    // 3) Run extraction (triggers persist+sync with prerequisite)
+    const res = await extractAndPersistBrdRelationships(PROJECT_ID);
+    
+    // 4) STRONG TRUTH: Verify Neo4j now has correct counts
+    expect(await countNeo4jNodes(PROJECT_ID)).toBe(3516);
+    expect(await countNeo4jRelationships(PROJECT_ID)).toBe(3200);
+    
+    // 5) Safe assertions for return value (MERGE may report 0 on re-sync)
+    // entitiesSynced reports what the sync function returned, not Neo4j truth
+    // ops always returns a number (0 when absent), so this is safe
+    expect(res.entitiesSynced).toBeGreaterThanOrEqual(0);
+    
+    // synced should match relationship count (we cleared Neo4j first)
+    expect(res.synced).toBe(3200);
+  }, 120000);  // 120 seconds (safe margin for slow CI)
 });

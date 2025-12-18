@@ -89,6 +89,7 @@ export async function extractAndPersistBrdRelationships(projectId: string): Prom
   extracted: number;
   persisted: number;
   synced: number;
+  entitiesSynced: number;
 }> {
   // Query BRD entities via api/v1 (G-API compliant - no direct DB import)
   const brdTypes: EntityTypeCode[] = ['E01', 'E02', 'E03', 'E04'];
@@ -105,14 +106,14 @@ export async function extractAndPersistBrdRelationships(projectId: string): Prom
   }));
   
   if (entities.length === 0) {
-    return { extracted: 0, persisted: 0, synced: 0 };
+    return { extracted: 0, persisted: 0, synced: 0, entitiesSynced: 0 };
   }
   
   // Derive relationships (pure transform)
   const relationships = deriveBrdRelationships(entities);
   
   if (relationships.length === 0) {
-    return { extracted: 0, persisted: 0, synced: 0 };
+    return { extracted: 0, persisted: 0, synced: 0, entitiesSynced: 0 };
   }
   
   // Persist and sync via existing persistRelationshipsAndSync (already in this file)
@@ -122,6 +123,7 @@ export async function extractAndPersistBrdRelationships(projectId: string): Prom
     extracted: relationships.length,
     persisted: persistResult.results.filter(r => r.operation !== 'NO-OP').length,
     synced: persistResult.neo4jSync?.synced ?? 0,
+    entitiesSynced: persistResult.neo4jSync?.entitiesSynced ?? 0,
   };
 }
 

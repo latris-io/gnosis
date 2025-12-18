@@ -15,7 +15,7 @@ import { createHash } from 'crypto';
 import { pool, setProjectContext, getClient } from '../../db/postgres.js';
 import { shadowLedger } from '../../ledger/shadow-ledger.js';
 import { createEvidenceAnchor } from '../../extraction/evidence.js';
-import { syncRelationshipsToNeo4j } from '../sync/sync-service.js';
+import { syncRelationshipsToNeo4j, syncEntitiesToNeo4j } from '../sync/sync-service.js';
 import type { Relationship, RelationshipTypeCode } from '../../schema/track-a/relationships.js';
 import type { ExtractedRelationship, EvidenceAnchor } from '../../extraction/types.js';
 import type { PoolClient } from 'pg';
@@ -406,7 +406,11 @@ export async function batchUpsert(
  */
 export interface BatchUpsertAndSyncResult {
   results: UpsertResult[];
-  neo4jSync: { synced: number; skipped: number };
+  neo4jSync: {
+    synced: number;           // relationships synced
+    skipped: number;          // relationships skipped
+    entitiesSynced?: number;  // entities synced first (optional for backward compat)
+  };
 }
 
 /**
@@ -430,8 +434,24 @@ export async function batchUpsertAndSync(
   // Phase 0: per-row upsert (functional but not optimal)
   const results = await batchUpsert(projectId, relationships);
 
-  // Always sync to Neo4j (that's the point of this function)
-  const neo4jSync = await syncRelationshipsToNeo4j(projectId);
+  // PREREQUISITE: Entities must exist in Neo4j before relationship sync
+  // This is idempotent (MERGE) and safe to call every time
+  const entitiesSync = await syncEntitiesToNeo4j(projectId);
 
-  return { results, neo4jSync };
+  // Now sync relationships (entities guaranteed to exist)
+  const relationshipsSync = await syncRelationshipsToNeo4j(projectId);
+
+  // Null-safe return value extraction (handles any return shape)
+  const entitiesSynced = (entitiesSync as any)?.synced ?? (entitiesSync as any)?.entitiesSynced ?? 0;
+  const synced = relationshipsSync?.synced ?? 0;
+  const skipped = relationshipsSync?.skipped ?? 0;
+
+  return {
+    results,
+    neo4jSync: {
+      synced,
+      skipped,
+      entitiesSynced,
+    },
+  };
 }

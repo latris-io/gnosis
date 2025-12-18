@@ -14,4 +14,8 @@ export {
   createTestRelationship,
   deleteProjectRelationships,
   queryNeo4jRelationshipByInstanceId,
+  // A2: Neo4j entities-first prerequisite helpers
+  countNeo4jNodes,
+  countNeo4jRelationships,
+  clearNeo4jProject,
 } from '../../src/services/admin/admin-test-only.js';

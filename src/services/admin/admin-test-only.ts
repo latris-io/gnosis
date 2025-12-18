@@ -220,3 +220,59 @@ export async function queryNeo4jRelationshipByInstanceId(
     if (session) await session.close();
   }
 }
+
+/**
+ * Count all nodes in Neo4j for a specific project.
+ * Uses generic {project_id} match to handle any node labels.
+ * Scoped by project_id to avoid cross-project interference.
+ */
+export async function countNeo4jNodes(projectId: string): Promise<number> {
+  let session: ReturnType<typeof getSession> | null = null;
+  try {
+    session = getSession();
+    const result = await session.run(
+      'MATCH (n {project_id: $projectId}) RETURN count(n) AS n',
+      { projectId }
+    );
+    return result.records[0]?.get('n')?.toNumber() ?? 0;
+  } finally {
+    if (session) await session.close();
+  }
+}
+
+/**
+ * Count relationships in Neo4j for a specific project.
+ * Scoped by project_id to avoid cross-project interference.
+ */
+export async function countNeo4jRelationships(projectId: string): Promise<number> {
+  let session: ReturnType<typeof getSession> | null = null;
+  try {
+    session = getSession();
+    const result = await session.run(
+      'MATCH ()-[r:RELATIONSHIP {project_id: $projectId}]->() RETURN count(r) AS n',
+      { projectId }
+    );
+    return result.records[0]?.get('n')?.toNumber() ?? 0;
+  } finally {
+    if (session) await session.close();
+  }
+}
+
+/**
+ * Clear all Neo4j data for a specific project (all nodes + relationships).
+ * DETACH DELETE removes nodes and their relationships atomically.
+ * Scoped by project_id - does NOT affect other projects.
+ * Uses generic {project_id} match to handle any future node labels.
+ */
+export async function clearNeo4jProject(projectId: string): Promise<void> {
+  let session: ReturnType<typeof getSession> | null = null;
+  try {
+    session = getSession();
+    await session.run(
+      'MATCH (n {project_id: $projectId}) DETACH DELETE n',
+      { projectId }
+    );
+  } finally {
+    if (session) await session.close();
+  }
+}
