@@ -83,7 +83,6 @@ export async function syncEntitiesToNeo4j(projectId: string): Promise<{ synced: 
  * @param projectId - Project scope for RLS
  * @returns Sync statistics
  * @throws Error if duplicate relationships detected post-sync
- * @satisfies AC-64.2.1
  */
 export async function syncRelationshipsToNeo4j(
   projectId: string

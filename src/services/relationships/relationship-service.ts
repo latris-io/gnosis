@@ -101,7 +101,7 @@ async function resolveEntityId(
  * 
  * @param projectId - Project UUID for RLS isolation
  * @param extracted - Extracted relationship data (must include evidence fields)
- * @satisfies AC-64.2.1 through AC-64.2.21
+ * @satisfies AC-64.2.22, AC-64.2.23
  */
 export async function upsert(
   projectId: string,
@@ -421,7 +421,7 @@ export interface BatchUpsertAndSyncResult {
  * @param projectId - Project scope
  * @param relationships - Relationships to upsert
  * @returns Results array + Neo4j sync stats
- * @satisfies AC-64.2.1
+ * @satisfies AC-64.2.22, AC-64.2.23
  */
 export async function batchUpsertAndSync(
   projectId: string,
