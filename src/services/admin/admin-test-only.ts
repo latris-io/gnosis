@@ -10,7 +10,7 @@ if (process.env.NODE_ENV !== 'test') {
   );
 }
 
-import { pool } from '../../db/postgres.js';
+import { pool, getClient, setProjectContext } from '../../db/postgres.js';
 import { getSession } from '../../db/neo4j.js';
 
 /**
@@ -114,6 +114,107 @@ export async function queryNeo4jByInstanceId(
     return result.records.map(r => ({
       projectId: r.get('projectId'),
       name: r.get('name'),
+    }));
+  } finally {
+    if (session) await session.close();
+  }
+}
+
+/**
+ * Create a test relationship.
+ * For test setup only.
+ * Uses RLS context via getClient() + setProjectContext().
+ */
+export async function createTestRelationship(
+  projectId: string,
+  relationshipType: string,
+  instanceId: string,
+  name: string,
+  fromInstanceId: string,
+  toInstanceId: string
+): Promise<void> {
+  const client = await getClient();
+  try {
+    await setProjectContext(client, projectId);
+    
+    // Resolve entity UUIDs (RLS scoped)
+    const fromResult = await client.query(
+      'SELECT id FROM entities WHERE instance_id = $1',
+      [fromInstanceId]
+    );
+    const toResult = await client.query(
+      'SELECT id FROM entities WHERE instance_id = $1',
+      [toInstanceId]
+    );
+    
+    if (!fromResult.rows[0] || !toResult.rows[0]) {
+      throw new Error(`Endpoint entities not found for relationship ${instanceId}`);
+    }
+
+    // Check if relationship already exists (RLS-scoped)
+    const existing = await client.query(
+      'SELECT id FROM relationships WHERE instance_id = $1',
+      [instanceId]
+    );
+    
+    if (existing.rows.length === 0) {
+      await client.query(`
+        INSERT INTO relationships (
+          id, project_id, relationship_type, instance_id, name,
+          from_entity_id, to_entity_id, confidence,
+          source_file, line_start, line_end
+        ) VALUES (
+          gen_random_uuid(), $1, $2, $3, $4, $5, $6, 1.0,
+          'test.md', 1, 1
+        )
+      `, [
+        projectId, relationshipType, instanceId, name,
+        fromResult.rows[0].id, toResult.rows[0].id
+      ]);
+    }
+  } finally {
+    client.release();
+  }
+}
+
+/**
+ * Delete relationships for a project.
+ * For test cleanup only.
+ * Uses RLS context via getClient() + setProjectContext().
+ */
+export async function deleteProjectRelationships(projectId: string): Promise<void> {
+  const client = await getClient();
+  try {
+    await setProjectContext(client, projectId);
+    // RLS-scoped delete - no need for WHERE project_id clause
+    await client.query('DELETE FROM relationships');
+  } finally {
+    client.release();
+  }
+}
+
+/**
+ * Query Neo4j relationships by project and instance_id.
+ * Project-scoped to prevent cross-project collision in parallel tests.
+ * For test verification only.
+ */
+export async function queryNeo4jRelationshipByInstanceId(
+  projectId: string,
+  instanceId: string
+): Promise<Array<{ projectId: string; type: string; fromInstanceId: string; toInstanceId: string }>> {
+  let session: ReturnType<typeof getSession> | null = null;
+  try {
+    session = getSession();
+    const result = await session.run(`
+      MATCH (from:Entity)-[r:RELATIONSHIP {project_id: $projectId, instance_id: $instanceId}]->(to:Entity)
+      RETURN r.project_id as projectId, r.relationship_type as type,
+             from.instance_id as fromInstanceId, to.instance_id as toInstanceId
+    `, { projectId, instanceId });
+    return result.records.map(r => ({
+      projectId: r.get('projectId'),
+      type: r.get('type'),
+      fromInstanceId: r.get('fromInstanceId'),
+      toInstanceId: r.get('toInstanceId'),
     }));
   } finally {
     if (session) await session.close();

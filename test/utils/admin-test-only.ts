@@ -10,4 +10,8 @@ export {
   createTestEntity,
   deleteNeo4jProjectNodes,
   queryNeo4jByInstanceId,
+  // A2 Phase 0: Relationship test helpers
+  createTestRelationship,
+  deleteProjectRelationships,
+  queryNeo4jRelationshipByInstanceId,
 } from '../../src/services/admin/admin-test-only.js';

@@ -1,11 +1,15 @@
 // src/ops/track-a.ts
 // @implements STORY-64.1
+// @implements STORY-64.2
 // Operator/CLI entrypoints - delegates to services, MUST NOT import db
 // NOT public API surface (per A5), but enforces G-API boundary
 
 import { resolveProjectId, type ProjectIdentity } from '../services/projects/project-service.js';
 import { batchUpsert, type UpsertResult } from '../services/entities/entity-service.js';
-import { syncEntitiesToNeo4j } from '../services/sync/sync-service.js';
+import { 
+  syncEntitiesToNeo4j, 
+  syncRelationshipsToNeo4j as serviceSyncRelationships 
+} from '../services/sync/sync-service.js';
 import { closeConnections } from '../services/connections/connection-service.js';
 import {
   checkConstraints as serviceCheckConstraints,
@@ -47,6 +51,16 @@ export async function persistEntities(
  */
 export async function syncToNeo4j(projectId: string): Promise<{ synced: number }> {
   return syncEntitiesToNeo4j(projectId);
+}
+
+/**
+ * Sync relationships from Postgres to Neo4j.
+ * Delegates to sync-service.
+ */
+export async function syncRelationshipsToNeo4j(
+  projectId: string
+): Promise<{ synced: number; skipped: number }> {
+  return serviceSyncRelationships(projectId);
 }
 
 /**

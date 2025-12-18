@@ -15,6 +15,7 @@ import { createHash } from 'crypto';
 import { pool, setProjectContext, getClient } from '../../db/postgres.js';
 import { shadowLedger } from '../../ledger/shadow-ledger.js';
 import { createEvidenceAnchor } from '../../extraction/evidence.js';
+import { syncRelationshipsToNeo4j } from '../sync/sync-service.js';
 import type { Relationship, RelationshipTypeCode } from '../../schema/track-a/relationships.js';
 import type { ExtractedRelationship, EvidenceAnchor } from '../../extraction/types.js';
 import type { PoolClient } from 'pg';
@@ -384,6 +385,7 @@ export async function countByType(
 /**
  * Batch upsert multiple relationships.
  * Returns results for each relationship.
+ * Does NOT sync to Neo4j - use batchUpsertAndSync() if you need sync.
  */
 export async function batchUpsert(
   projectId: string,
@@ -397,4 +399,39 @@ export async function batchUpsert(
   }
 
   return results;
+}
+
+/**
+ * Batch upsert result with Neo4j sync stats.
+ */
+export interface BatchUpsertAndSyncResult {
+  results: UpsertResult[];
+  neo4jSync: { synced: number; skipped: number };
+}
+
+/**
+ * Batch upsert relationships AND sync to Neo4j.
+ * Use this when you need sync stats; use batchUpsert() for PostgreSQL-only.
+ * 
+ * PHASE 0 NOTE: PostgreSQL upserts are still per-row (calls upsert() in loop).
+ * This is acceptable for Phase 0 infrastructure validation.
+ * PHASE 2 TODO: Implement true bulk INSERT ... ON CONFLICT for PostgreSQL
+ * to match the UNWIND batching already used in Neo4j sync.
+ * 
+ * @param projectId - Project scope
+ * @param relationships - Relationships to upsert
+ * @returns Results array + Neo4j sync stats
+ * @satisfies AC-64.2.1
+ */
+export async function batchUpsertAndSync(
+  projectId: string,
+  relationships: ExtractedRelationship[]
+): Promise<BatchUpsertAndSyncResult> {
+  // Phase 0: per-row upsert (functional but not optimal)
+  const results = await batchUpsert(projectId, relationships);
+
+  // Always sync to Neo4j (that's the point of this function)
+  const neo4jSync = await syncRelationshipsToNeo4j(projectId);
+
+  return { results, neo4jSync };
 }
