@@ -79,6 +79,59 @@ describe('INTEGRITY Tests', () => {
     });
   });
 
+  // SANITY-023: Entities Composite Uniqueness
+  // @satisfies BRD Epic 39.5 (Complete Data Isolation)
+  // Per spec v1.2.0: verifies multi-tenant isolation via composite uniqueness
+  describe('SANITY-023: Entities Composite Uniqueness', () => {
+    it('entities enforces UNIQUE(project_id, instance_id)', async () => {
+      const rows = await metaQuery<{ conname: string; def: string }>(`
+        SELECT c.conname, pg_get_constraintdef(c.oid) AS def
+        FROM pg_constraint c
+        WHERE c.conrelid = 'entities'::regclass AND c.contype = 'u'
+      `);
+
+      // Must have composite uniqueness
+      const hasComposite = rows.some(r =>
+        r.def.includes('(project_id, instance_id)') ||
+        r.def.includes('(instance_id, project_id)')
+      );
+      expect(hasComposite, 'entities must have UNIQUE(project_id, instance_id)').toBe(true);
+
+      // Must NOT have global uniqueness on instance_id alone
+      const hasGlobalInstanceOnly = rows.some(r =>
+        r.def.includes('(instance_id)') && !r.def.includes('project_id')
+      );
+      expect(hasGlobalInstanceOnly, 'entities must NOT have UNIQUE(instance_id) alone').toBe(false);
+    });
+  });
+
+  // SANITY-024: Relationships Composite Uniqueness
+  // @satisfies BRD Epic 39.5 (Complete Data Isolation)
+  // Per spec v1.2.0: verifies multi-tenant isolation via composite uniqueness
+  // This test prevents the "UNIQUE(instance_id) alone" regression that blocks multi-tenant upserts
+  describe('SANITY-024: Relationships Composite Uniqueness', () => {
+    it('relationships enforces UNIQUE(project_id, instance_id)', async () => {
+      const rows = await metaQuery<{ conname: string; def: string }>(`
+        SELECT c.conname, pg_get_constraintdef(c.oid) AS def
+        FROM pg_constraint c
+        WHERE c.conrelid = 'relationships'::regclass AND c.contype = 'u'
+      `);
+
+      // Must have composite uniqueness
+      const hasComposite = rows.some(r =>
+        r.def.includes('(project_id, instance_id)') ||
+        r.def.includes('(instance_id, project_id)')
+      );
+      expect(hasComposite, 'relationships must have UNIQUE(project_id, instance_id)').toBe(true);
+
+      // Must NOT have global uniqueness on instance_id alone (known prior failure mode)
+      const hasGlobalInstanceOnly = rows.some(r =>
+        r.def.includes('(instance_id)') && !r.def.includes('project_id')
+      );
+      expect(hasGlobalInstanceOnly, 'relationships must NOT have UNIQUE(instance_id) alone - blocks multi-tenant upserts').toBe(false);
+    });
+  });
+
   // SANITY-011: All Foreign Keys Valid (structure check)
   describe('SANITY-011: All Foreign Keys Valid', () => {
     it('relationships table has FK columns', async () => {
