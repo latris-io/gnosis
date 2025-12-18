@@ -38,6 +38,32 @@ function getStoryFromAc(acInstanceId: string): string {
 }
 
 /**
+ * Validate evidence fields for relationship derivation.
+ * Fails fast with explicit error message including relationship code and entity info.
+ * 
+ * @param e - Entity providing evidence for the relationship
+ * @param relCode - Relationship type code (R01 or R02)
+ * @throws Error if any evidence field is invalid
+ */
+function requireEvidence(e: BrdEntity, relCode: 'R01' | 'R02'): void {
+  if (!e.source_file || typeof e.source_file !== 'string') {
+    throw new Error(
+      `[A2][${relCode}] Missing source_file for ${e.entity_type} ${e.instance_id}`
+    );
+  }
+  if (!Number.isInteger(e.line_start) || e.line_start <= 0) {
+    throw new Error(
+      `[A2][${relCode}] Invalid line_start for ${e.entity_type} ${e.instance_id}: ${e.line_start}`
+    );
+  }
+  if (!Number.isInteger(e.line_end) || e.line_end < e.line_start) {
+    throw new Error(
+      `[A2][${relCode}] Invalid line_end for ${e.entity_type} ${e.instance_id}: ${e.line_end} (line_start=${e.line_start})`
+    );
+  }
+}
+
+/**
  * Derive BRD hierarchy relationships from existing entities.
  * 
  * Pure function - no DB/service imports.
@@ -60,6 +86,7 @@ export function deriveBrdRelationships(entities: BrdEntity[]): ExtractedRelation
   
   // R01: Epic HAS_STORY Story
   for (const story of stories) {
+    requireEvidence(story, 'R01');
     const epicId = getEpicFromStory(story.instance_id);
     if (!epicSet.has(epicId)) {
       throw new Error(`R01: Epic ${epicId} not found for story ${story.instance_id}`);
@@ -79,6 +106,7 @@ export function deriveBrdRelationships(entities: BrdEntity[]): ExtractedRelation
   
   // R02: Story HAS_AC AC
   for (const ac of acs) {
+    requireEvidence(ac, 'R02');
     const storyId = getStoryFromAc(ac.instance_id);
     if (!storySet.has(storyId)) {
       throw new Error(`R02: Story ${storyId} not found for AC ${ac.instance_id}`);
