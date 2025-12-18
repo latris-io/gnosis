@@ -25,6 +25,9 @@ import {
   type ConstraintCheckResult,
 } from '../services/admin/admin-service.js';
 import type { ExtractedEntity, ExtractedRelationship } from '../extraction/types.js';
+import { deriveBrdRelationships } from '../extraction/providers/brd-relationship-provider.js';
+import { queryEntities } from '../api/v1/entities.js';
+import type { EntityTypeCode } from '../schema/track-a/entities.js';
 
 // Re-export types for convenience
 export type { ProjectIdentity, ConstraintCheckResult, BatchUpsertAndSyncResult };
@@ -72,6 +75,54 @@ export async function persistRelationshipsAndSync(
   relationships: ExtractedRelationship[]
 ): Promise<BatchUpsertAndSyncResult> {
   return relBatchUpsertAndSync(projectId, relationships);
+}
+
+/**
+ * Extract and persist BRD hierarchy relationships (R01/R02/R03).
+ * 
+ * Queries existing BRD entities (E01 Epic, E02 Story, E03 AC, E04 Constraint)
+ * and derives parent-child relationships from instance_id patterns.
+ * 
+ * @satisfies AC-64.2.1, AC-64.2.2, AC-64.2.3
+ */
+export async function extractAndPersistBrdRelationships(projectId: string): Promise<{
+  extracted: number;
+  persisted: number;
+  synced: number;
+}> {
+  // Query BRD entities via api/v1 (G-API compliant - no direct DB import)
+  const brdTypes: EntityTypeCode[] = ['E01', 'E02', 'E03', 'E04'];
+  const entityPromises = brdTypes.map(t => queryEntities(projectId, t));
+  const entityArrays = await Promise.all(entityPromises);
+  
+  // Normalize to snake_case (handles both snake_case and camelCase returns)
+  const entities = entityArrays.flat().map((e: any) => ({
+    entity_type: e.entity_type ?? e.entityType,
+    instance_id: e.instance_id ?? e.instanceId,
+    source_file: e.source_file ?? e.sourceFile,
+    line_start: e.line_start ?? e.lineStart,
+    line_end: e.line_end ?? e.lineEnd,
+  }));
+  
+  if (entities.length === 0) {
+    return { extracted: 0, persisted: 0, synced: 0 };
+  }
+  
+  // Derive relationships (pure transform)
+  const relationships = deriveBrdRelationships(entities);
+  
+  if (relationships.length === 0) {
+    return { extracted: 0, persisted: 0, synced: 0 };
+  }
+  
+  // Persist and sync via existing persistRelationshipsAndSync (already in this file)
+  const persistResult = await persistRelationshipsAndSync(projectId, relationships);
+  
+  return {
+    extracted: relationships.length,
+    persisted: persistResult.results.filter(r => r.operation !== 'NO-OP').length,
+    synced: persistResult.neo4jSync?.synced ?? 0,
+  };
 }
 
 /**
