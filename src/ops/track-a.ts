@@ -5,7 +5,13 @@
 // NOT public API surface (per A5), but enforces G-API boundary
 
 import { resolveProjectId, type ProjectIdentity } from '../services/projects/project-service.js';
-import { batchUpsert, type UpsertResult } from '../services/entities/entity-service.js';
+import { batchUpsert, type UpsertResult as EntityUpsertResult } from '../services/entities/entity-service.js';
+import { 
+  batchUpsert as relBatchUpsert,
+  batchUpsertAndSync as relBatchUpsertAndSync,
+  type UpsertResult as RelationshipUpsertResult,
+  type BatchUpsertAndSyncResult,
+} from '../services/relationships/relationship-service.js';
 import { 
   syncEntitiesToNeo4j, 
   syncRelationshipsToNeo4j as serviceSyncRelationships 
@@ -18,10 +24,11 @@ import {
   closeAdminPool,
   type ConstraintCheckResult,
 } from '../services/admin/admin-service.js';
-import type { ExtractedEntity } from '../extraction/types.js';
+import type { ExtractedEntity, ExtractedRelationship } from '../extraction/types.js';
 
 // Re-export types for convenience
-export type { ProjectIdentity, UpsertResult, ConstraintCheckResult };
+export type { ProjectIdentity, ConstraintCheckResult, BatchUpsertAndSyncResult };
+export type { EntityUpsertResult, RelationshipUpsertResult };
 
 /**
  * Resolve project by UUID or slug.
@@ -41,8 +48,30 @@ export async function initProject(opts: {
 export async function persistEntities(
   projectId: string,
   entities: ExtractedEntity[]
-): Promise<UpsertResult[]> {
+): Promise<EntityUpsertResult[]> {
   return batchUpsert(projectId, entities);
+}
+
+/**
+ * Batch upsert relationships (PostgreSQL only, no Neo4j sync).
+ * Delegates to relationship-service.
+ */
+export async function persistRelationships(
+  projectId: string,
+  relationships: ExtractedRelationship[]
+): Promise<RelationshipUpsertResult[]> {
+  return relBatchUpsert(projectId, relationships);
+}
+
+/**
+ * Batch upsert relationships AND sync to Neo4j.
+ * Delegates to relationship-service.
+ */
+export async function persistRelationshipsAndSync(
+  projectId: string,
+  relationships: ExtractedRelationship[]
+): Promise<BatchUpsertAndSyncResult> {
+  return relBatchUpsertAndSync(projectId, relationships);
 }
 
 /**

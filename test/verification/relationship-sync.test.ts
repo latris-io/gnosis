@@ -4,7 +4,8 @@
 // G-API compliant: no src/db/** imports
 
 import { describe, it, expect, afterAll, beforeAll } from 'vitest';
-import { syncToNeo4j, syncRelationshipsToNeo4j } from '../../src/ops/track-a.js';
+import { syncToNeo4j, syncRelationshipsToNeo4j, persistRelationshipsAndSync } from '../../src/ops/track-a.js';
+import type { ExtractedRelationship } from '../../src/extraction/types.js';
 import {
   createTestProject,
   createTestEntity,
@@ -97,6 +98,55 @@ describe('Relationship Neo4j Sync (A2 Phase 0)', () => {
       await deleteProjectRelationships(orphanProject);
       await deleteProjectEntities(orphanProject);
       await deleteProject(orphanProject);
+    }
+  });
+
+  it('batchUpsertAndSync is idempotent (no duplicate drift)', async () => {
+    // Idempotency test: running same data twice should not create duplicates
+    const IDEM_PROJECT = 'ffffffff-ffff-ffff-ffff-ffffffffffff';
+    const testRels: ExtractedRelationship[] = [{
+      relationship_type: 'R01',
+      instance_id: 'R01:EPIC-IDEM:STORY-IDEM',
+      name: 'HAS_STORY',
+      from_instance_id: 'EPIC-IDEM',
+      to_instance_id: 'STORY-IDEM',
+      confidence: 1.0,
+      source_file: 'test.md',
+      line_start: 1,
+      line_end: 1,
+    }];
+
+    await createTestProject(IDEM_PROJECT, 'Idempotency Test');
+    await createTestEntity(IDEM_PROJECT, 'E01', 'EPIC-IDEM', 'Idem Epic');
+    await createTestEntity(IDEM_PROJECT, 'E02', 'STORY-IDEM', 'Idem Story');
+    await syncToNeo4j(IDEM_PROJECT);
+
+    try {
+      // First run - should CREATE
+      const run1 = await persistRelationshipsAndSync(IDEM_PROJECT, testRels);
+      expect(run1.results[0].operation).toBe('CREATE');
+      expect(run1.neo4jSync.synced).toBe(1);
+
+      // Second run - should be NO-OP (idempotent)
+      const run2 = await persistRelationshipsAndSync(IDEM_PROJECT, testRels);
+      expect(run2.results[0].operation).toBe('NO-OP'); // content_hash unchanged
+      
+      // Neo4j sync STILL runs (always syncs), MERGE is idempotent
+      expect(run2.neo4jSync.synced).toBe(1); // MERGE returns 1 (merged, not "new")
+      expect(run2.neo4jSync.skipped).toBe(0);
+
+      // Verify no duplicates in Neo4j
+      const neo4jRels = await queryNeo4jRelationshipByInstanceId(
+        IDEM_PROJECT, 
+        testRels[0].instance_id
+      );
+      expect(neo4jRels.length).toBe(1); // Still exactly 1, not 2
+
+    } finally {
+      await deleteProjectRelationships(IDEM_PROJECT);
+      await deleteProjectEntities(IDEM_PROJECT);
+      await deleteProject(IDEM_PROJECT);
+      await deleteNeo4jProjectNodes([IDEM_PROJECT]);
     }
   });
 });
