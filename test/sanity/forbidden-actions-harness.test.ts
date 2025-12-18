@@ -153,9 +153,12 @@ const RELATIVE_TEST_IMPORT_REGEX = /(?:from\s+['"]|require\s*\(\s*['"])\.\.?\/[^
 // ============================================================
 
 // Level 1: Only these files may import from src/db/* or use DB primitives
+// Note: integrity.test.ts is included because it contains test fixtures that
+// reference pool.query patterns (for testing the detection logic itself)
 const LEVEL1_DB_ALLOWLIST = [
   'test/utils/rls.ts',
   'test/utils/db-meta.ts',
+  'test/sanity/integrity.test.ts',
 ];
 
 // Level 2: Only these files may import from test/utils/db-meta

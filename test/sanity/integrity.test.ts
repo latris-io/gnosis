@@ -302,55 +302,67 @@ describe('INTEGRITY Tests', () => {
   // Role: Secondary safety net for RLS enforcement (diagnostic output).
   // Primary enforcement: forbidden-actions harness + two-level helper allowlists.
   // This test detects if project-scoped queries bypass the approved helpers.
+  // Updated: Now detects multi-line SQL queries by normalizing whitespace.
   describe('SANITY-018: RLS Context Guardrail (Diagnostic)', () => {
+    
+    // Helper to detect RLS violations in content (supports multi-line SQL)
+    function detectRlsViolations(content: string, filename: string): string[] {
+      const violations: string[] = [];
+      
+      // Normalize whitespace to detect multi-line SQL queries
+      const normalized = content.replace(/\s+/g, ' ');
+      
+      // Check if file uses PROJECT_ID (indicates project-scoped queries)
+      const usesProjectId = content.includes('PROJECT_ID');
+      
+      // Check if file touches RLS-protected tables (case-insensitive, multi-line safe)
+      const rlsTablePattern = /\b(FROM|JOIN)\s+(entities|relationships)\b/i;
+      const touchesRlsTables = rlsTablePattern.test(normalized);
+      
+      // Check if file uses raw pool.query (specifically pool.query, not generic .query())
+      const usesPoolQuery = /\bpool\.query\s*\(/i.test(normalized);
+      
+      // Check if file uses approved RLS helpers
+      const usesRlsHelper = content.includes('rlsQuery') || content.includes('withRlsClient');
+      
+      // Skip files that don't query RLS tables or don't use PROJECT_ID
+      if (!usesProjectId || !touchesRlsTables) {
+        return violations;
+      }
+      
+      // Must import from utils/rls.ts
+      if (!content.includes('utils/rls')) {
+        violations.push(`${filename}: Uses PROJECT_ID and queries RLS tables but doesn't import from utils/rls.ts`);
+      }
+      
+      // Flag pool.query usage on RLS tables (multi-line safe via normalized content)
+      if (usesPoolQuery && touchesRlsTables && !usesRlsHelper) {
+        violations.push(`${filename}: pool.query on RLS table detected - use rlsQuery() instead`);
+      }
+      
+      return violations;
+    }
+    
     it('SANITY tests querying project data must use RLS helpers', () => {
       const sanityDir = path.join(__dirname, '.');
       const sanityFiles = fs.readdirSync(sanityDir)
         .filter(f => f.endsWith('.test.ts'))
         .map(f => path.join(sanityDir, f));
-      
+
       const violations: string[] = [];
-      
+
       for (const file of sanityFiles) {
         const content = fs.readFileSync(file, 'utf-8');
         const filename = path.basename(file);
-        
+
         // Skip integrity.test.ts - it uses db-meta.ts for database-wide checks
         if (filename === 'integrity.test.ts') {
           continue;
         }
-        
-        // Check if file uses PROJECT_ID (indicates project-scoped queries)
-        const usesProjectId = content.includes('PROJECT_ID');
-        
-        // Check if file queries RLS-protected tables
-        const queriesRLSTables = 
-          content.includes('FROM relationships') || 
-          content.includes('FROM entities');
-        
-        // If file uses PROJECT_ID AND queries RLS tables, it must use rlsQuery helper
-        if (usesProjectId && queriesRLSTables) {
-          // Must import from utils/rls.ts
-          if (!content.includes('utils/rls')) {
-            violations.push(`${filename}: Uses PROJECT_ID and queries RLS tables but doesn't import from utils/rls.ts`);
-          }
-          
-          // Check for forbidden patterns (pool.query, direct client.query)
-          const lines = content.split('\n');
-          for (let i = 0; i < lines.length; i++) {
-            const line = lines[i];
-            // Skip lines querying metadata tables
-            if (line.includes('information_schema') || line.includes('pg_class') || line.includes('pg_constraint')) {
-              continue;
-            }
-            // Detect forbidden patterns
-            if (line.includes('pool.query') && (line.includes('FROM relationships') || line.includes('FROM entities'))) {
-              violations.push(`${filename}:${i + 1}: pool.query on RLS table - use rlsQuery() instead`);
-            }
-          }
-        }
+
+        violations.push(...detectRlsViolations(content, filename));
       }
-      
+
       if (violations.length > 0) {
         throw new Error(
           `[SANITY-018 Diagnostic] RLS helper violations found:\n${violations.join('\n')}\n\n` +
@@ -361,7 +373,39 @@ describe('INTEGRITY Tests', () => {
         );
       }
     });
+    
+    it('detects multi-line pool.query violations (regression test)', () => {
+      // This test proves the detection logic works for multi-line SQL
+      
+      // VIOLATION: pool.query with multi-line SQL touching RLS table
+      const violationFixture = `
+        const PROJECT_ID = 'test';
+        const result = await pool.query(\`
+          SELECT *
+          FROM relationships
+          WHERE id = $1
+        \`, [id]);
+      `;
+      
+      // Should detect this as a violation
+      const violations = detectRlsViolations(violationFixture, 'test-fixture.ts');
+      expect(violations.length).toBeGreaterThan(0);
+      expect(violations.some(v => v.includes('pool.query'))).toBe(true);
+      
+      // NON-VIOLATION: rlsQuery helper with multi-line SQL
+      const helperFixture = `
+        import { rlsQuery } from '../utils/rls.js';
+        const PROJECT_ID = 'test';
+        const result = await rlsQuery(PROJECT_ID, \`
+          SELECT *
+          FROM relationships
+          WHERE id = $1
+        \`);
+      `;
+      
+      // Should NOT detect this as a violation (uses helper)
+      const noViolations = detectRlsViolations(helperFixture, 'test-fixture.ts');
+      expect(noViolations.filter(v => v.includes('pool.query'))).toHaveLength(0);
+    });
   });
 });
-
-
