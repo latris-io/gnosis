@@ -227,3 +227,4 @@ describe('validateModuleSemantics', () => {
     expect(result.invalid).toHaveLength(0);
   });
 });
+

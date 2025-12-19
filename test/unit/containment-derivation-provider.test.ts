@@ -272,3 +272,4 @@ describe('validateEvidenceAnchors', () => {
     expect(() => validateEvidenceAnchors(entities)).not.toThrow();
   });
 });
+

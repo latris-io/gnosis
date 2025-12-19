@@ -54,3 +54,4 @@ describe('Neo4j Multi-tenant Isolation', () => {
     expect(projectIds).toContain(PROJECT_B);
   });
 });
+
