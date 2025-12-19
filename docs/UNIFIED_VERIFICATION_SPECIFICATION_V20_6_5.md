@@ -4507,6 +4507,16 @@ If Track docs could define canonical identifiers:
 
 The system must be intolerant of ontological violations.
 
+## 17.8 Entity Semantic Rules
+
+| Entity | Rule | Enforcement |
+|--------|------|-------------|
+| E15 Module | Directory-derived only; persistence rejects import-derived E15 | `validateE15Semantics()` guardrail |
+
+**E15 Semantic Invariant:** E15 Module entities must have directory-based `instance_id` patterns (e.g., `MOD-src/utils`). Single-segment npm-style identifiers (e.g., `MOD-yaml`, `MOD-typescript`) are rejected at the persistence boundary.
+
+This prevents semantic pollution from AST import extraction and ensures E15 entities always correspond to actual directory structure derived by `module-derivation-provider.ts`.
+
 ---
 
 # APPENDIX A: BRD CANONICAL COUNTS

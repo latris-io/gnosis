@@ -73,8 +73,9 @@ export async function initProject(opts: {
  * - Must not be node_modules path
  * 
  * @throws Error if any E15 violates Track A semantics
+ * @exported for regression testing
  */
-function validateE15Semantics(entities: ExtractedEntity[]): void {
+export function validateE15Semantics(entities: ExtractedEntity[]): void {
   const e15Entities = entities.filter(e => e.entity_type === 'E15');
   const invalid: string[] = [];
   
