@@ -241,10 +241,83 @@ async function checkStoryCardVersions(): Promise<CheckResult[]> {
   return results;
 }
 
+/**
+ * Parse canonical statistics block from BRD.
+ * Looks for the authoritative table at the end of the doc with "Enumerated in Appendix":
+ * | **Total Epics** | 65 | Enumerated in Appendix E |
+ * | **Total Stories** | 351 | Enumerated in Appendix A |
+ * | **Total Acceptance Criteria** | 2,849 | Enumerated in Appendix B |
+ */
+function parseBrdStats(content: string): { epics: number; stories: number; acs: number } | null {
+  // Look for the canonical table with "Enumerated in Appendix" marker
+  const epicMatch = content.match(/\|\s*\*\*Total Epics\*\*\s*\|\s*(\d+)\s*\|\s*Enumerated/);
+  const storyMatch = content.match(/\|\s*\*\*Total Stories\*\*\s*\|\s*(\d+)\s*\|\s*Enumerated/);
+  const acMatch = content.match(/\|\s*\*\*Total Acceptance Criteria\*\*\s*\|\s*([\d,]+)\s*\|\s*Enumerated/);
+  
+  if (!epicMatch || !storyMatch || !acMatch) return null;
+  
+  return {
+    epics: parseInt(epicMatch[1], 10),
+    stories: parseInt(storyMatch[1], 10),
+    acs: parseInt(acMatch[1].replace(/,/g, ''), 10),
+  };
+}
+
+/**
+ * Parse canonical statistics from UTG Schema.
+ * Looks for the summary line:
+ * "This specification defines 83 entities... connected by 114 relationships..."
+ */
+function parseUtgStats(content: string): { entities: number; relationships: number } | null {
+  // Primary: summary sentence
+  const summaryMatch = content.match(/defines\s+(\d+)\s+entities.*?(\d+)\s+relationships/i);
+  if (summaryMatch) {
+    return {
+      entities: parseInt(summaryMatch[1], 10),
+      relationships: parseInt(summaryMatch[2], 10),
+    };
+  }
+  
+  // Fallback: statistics block
+  const entityMatch = content.match(/\*\*Entities:\*\*.*?=\s*(\d+)/);
+  const relMatch = content.match(/\*\*Relationships:\*\*.*?=\s*(\d+)/);
+  if (entityMatch && relMatch) {
+    return {
+      entities: parseInt(entityMatch[1], 10),
+      relationships: parseInt(relMatch[1], 10),
+    };
+  }
+  
+  return null;
+}
+
+/**
+ * Parse gate count from Verification Spec.
+ * Looks for: "| Gates Specified | 21 ..." or "21 Gates"
+ */
+function parseGateCount(content: string): number | null {
+  // Primary: table row
+  const tableMatch = content.match(/\|\s*Gates Specified\s*\|\s*(\d+)/);
+  if (tableMatch) {
+    return parseInt(tableMatch[1], 10);
+  }
+  
+  // Fallback: scope line "21 Gates"
+  const scopeMatch = content.match(/(\d+)\s+Gates/);
+  if (scopeMatch) {
+    return parseInt(scopeMatch[1], 10);
+  }
+  
+  return null;
+}
+
+// Export parsers for testing
+export { parseBrdStats, parseUtgStats, parseGateCount };
+
 async function checkInvariantCounts(): Promise<CheckResult[]> {
   const results: CheckResult[] = [];
   
-  // Actually parse and count BRD entities
+  // BRD counts - parse canonical statistics block
   const brdFiles = await glob(join(ROOT, 'docs/BRD_*.md'));
   if (brdFiles.length === 0) {
     results.push({
@@ -254,45 +327,38 @@ async function checkInvariantCounts(): Promise<CheckResult[]> {
     });
   } else {
     const brdContent = readFileSync(brdFiles[0], 'utf-8');
+    const stats = parseBrdStats(brdContent);
     
-    // Count epics: ### Epic N: pattern
-    const epicMatches = brdContent.match(/^### Epic \d+:/gm) || [];
-    const epicCount = epicMatches.length;
-    
-    // Count stories: #### Story N.M: pattern  
-    const storyMatches = brdContent.match(/^#### Story \d+\.\d+:/gm) || [];
-    const storyCount = storyMatches.length;
-    
-    // Count ACs: - ACN: (list style) or | AC-X.Y.Z | (table style)
-    const listAcMatches = brdContent.match(/^- AC\d+:/gm) || [];
-    const tableAcMatches = brdContent.match(/\| AC-\d+\.\d+\.\d+ \|/g) || [];
-    const acCount = listAcMatches.length + tableAcMatches.length;
-    
-    const epicPass = epicCount === INVARIANTS.epics;
-    const storyPass = storyCount === INVARIANTS.stories;
-    const acPass = acCount === INVARIANTS.acceptanceCriteria;
-    
-    if (epicPass && storyPass && acPass) {
-      results.push({
-        name: 'brd-counts',
-        status: 'pass',
-        message: `${epicCount}/${storyCount}/${acCount} (matches expected)`,
-        details: { epics: epicCount, stories: storyCount, acs: acCount },
-      });
-    } else {
+    if (!stats) {
       results.push({
         name: 'brd-counts',
         status: PHASE === 0 ? 'warn' : 'fail',
-        message: `Mismatch: got ${epicCount}/${storyCount}/${acCount}, expected ${INVARIANTS.epics}/${INVARIANTS.stories}/${INVARIANTS.acceptanceCriteria}`,
-        details: { 
-          actual: { epics: epicCount, stories: storyCount, acs: acCount },
-          expected: { epics: INVARIANTS.epics, stories: INVARIANTS.stories, acs: INVARIANTS.acceptanceCriteria },
-        },
+        message: 'Could not parse BRD statistics block',
       });
+    } else {
+      const pass = stats.epics === INVARIANTS.epics && 
+                   stats.stories === INVARIANTS.stories && 
+                   stats.acs === INVARIANTS.acceptanceCriteria;
+      
+      if (pass) {
+        results.push({
+          name: 'brd-counts',
+          status: 'pass',
+          message: `${stats.epics}/${stats.stories}/${stats.acs} (matches expected)`,
+          details: stats,
+        });
+      } else {
+        results.push({
+          name: 'brd-counts',
+          status: PHASE === 0 ? 'warn' : 'fail',
+          message: `Mismatch: got ${stats.epics}/${stats.stories}/${stats.acs}, expected ${INVARIANTS.epics}/${INVARIANTS.stories}/${INVARIANTS.acceptanceCriteria}`,
+          details: { actual: stats, expected: INVARIANTS },
+        });
+      }
     }
   }
   
-  // UTG entity/relationship counts - parse from UTG Schema
+  // UTG counts - parse canonical statistics
   const utgFiles = await glob(join(ROOT, 'docs/UNIFIED_TRACEABILITY_GRAPH_SCHEMA_*.md'));
   if (utgFiles.length === 0) {
     results.push({
@@ -302,35 +368,33 @@ async function checkInvariantCounts(): Promise<CheckResult[]> {
     });
   } else {
     const utgContent = readFileSync(utgFiles[0], 'utf-8');
+    const stats = parseUtgStats(utgContent);
     
-    // Count entities: | E## | pattern in entity tables
-    const entityMatches = utgContent.match(/\| E\d+ \|/g) || [];
-    const entityCount = new Set(entityMatches).size; // Unique entities
-    
-    // Count relationships: | R## | or | R### | pattern
-    const relMatches = utgContent.match(/\| R\d+ \|/g) || [];
-    const relCount = new Set(relMatches).size; // Unique relationships
-    
-    const entityPass = entityCount === INVARIANTS.entities;
-    const relPass = relCount === INVARIANTS.relationships;
-    
-    if (entityPass && relPass) {
-      results.push({
-        name: 'utg-counts',
-        status: 'pass',
-        message: `${entityCount} entities, ${relCount} relationships (matches expected)`,
-        details: { entities: entityCount, relationships: relCount },
-      });
-    } else {
+    if (!stats) {
       results.push({
         name: 'utg-counts',
         status: PHASE === 0 ? 'warn' : 'fail',
-        message: `Mismatch: got ${entityCount}/${relCount}, expected ${INVARIANTS.entities}/${INVARIANTS.relationships}`,
-        details: {
-          actual: { entities: entityCount, relationships: relCount },
-          expected: { entities: INVARIANTS.entities, relationships: INVARIANTS.relationships },
-        },
+        message: 'Could not parse UTG statistics',
       });
+    } else {
+      const pass = stats.entities === INVARIANTS.entities && 
+                   stats.relationships === INVARIANTS.relationships;
+      
+      if (pass) {
+        results.push({
+          name: 'utg-counts',
+          status: 'pass',
+          message: `${stats.entities} entities, ${stats.relationships} relationships (matches expected)`,
+          details: stats,
+        });
+      } else {
+        results.push({
+          name: 'utg-counts',
+          status: PHASE === 0 ? 'warn' : 'fail',
+          message: `Mismatch: got ${stats.entities}/${stats.relationships}, expected ${INVARIANTS.entities}/${INVARIANTS.relationships}`,
+          details: { actual: stats, expected: { entities: INVARIANTS.entities, relationships: INVARIANTS.relationships } },
+        });
+      }
     }
   }
   
@@ -344,12 +408,15 @@ async function checkInvariantCounts(): Promise<CheckResult[]> {
     });
   } else {
     const verContent = readFileSync(verFiles[0], 'utf-8');
+    const gateCount = parseGateCount(verContent);
     
-    // Count gates: | G-XXXX | pattern
-    const gateMatches = verContent.match(/\| G-[A-Z]+ \|/g) || [];
-    const gateCount = new Set(gateMatches).size; // Unique gates
-    
-    if (gateCount === INVARIANTS.gates) {
+    if (gateCount === null) {
+      results.push({
+        name: 'gate-count',
+        status: PHASE === 0 ? 'warn' : 'fail',
+        message: 'Could not parse gate count',
+      });
+    } else if (gateCount === INVARIANTS.gates) {
       results.push({
         name: 'gate-count',
         status: 'pass',

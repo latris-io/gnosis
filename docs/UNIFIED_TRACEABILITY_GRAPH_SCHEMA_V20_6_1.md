@@ -3027,7 +3027,7 @@ Build it with the care it deserves.
 
 ---
 
-**END OF SPECIFICATION**
+**END OF UNIFIED TRACEABILITY GRAPH SCHEMA V20.6.1**
 
 **Final Statistics:**
 - **Entities:** 67 (base) + 16 (extensions) = 83
