@@ -63,13 +63,67 @@ export async function initProject(opts: {
 }
 
 /**
+ * Validate E15 entities have directory-based instance_ids.
+ * Track A E15 must be derived from directory structure (MOD-path/to/dir),
+ * NOT from import statements (MOD-packagename).
+ * 
+ * Validation rules:
+ * - Must start with MOD-
+ * - Must contain at least one / (directory path)
+ * - Must not be node_modules path
+ * 
+ * @throws Error if any E15 violates Track A semantics
+ */
+function validateE15Semantics(entities: ExtractedEntity[]): void {
+  const e15Entities = entities.filter(e => e.entity_type === 'E15');
+  const invalid: string[] = [];
+  
+  for (const e of e15Entities) {
+    const id = e.instance_id;
+    
+    // Must start with MOD-
+    if (!id.startsWith('MOD-')) {
+      invalid.push(`${id}: missing MOD- prefix`);
+      continue;
+    }
+    
+    const path = id.slice(4); // Remove MOD- prefix
+    
+    // Must contain at least one / (directory path, not npm package)
+    if (!path.includes('/')) {
+      invalid.push(`${id}: single-segment (npm-style) not allowed in Track A`);
+      continue;
+    }
+    
+    // Must not be node_modules path
+    if (path.includes('node_modules')) {
+      invalid.push(`${id}: node_modules paths not allowed`);
+    }
+  }
+  
+  if (invalid.length > 0) {
+    throw new Error(
+      `[E15 SEMANTIC VIOLATION] Invalid E15 entities detected at persistence boundary:\n` +
+      invalid.map(msg => `  - ${msg}`).join('\n') +
+      `\n\nE15 must be directory-based (derived by module-derivation-provider), not import-based.`
+    );
+  }
+}
+
+/**
  * Batch upsert entities for A1 extraction.
  * Delegates to entity-service.
+ * 
+ * GUARDRAIL: Validates E15 semantics before persistence to prevent
+ * npm-style modules from polluting the graph.
  */
 export async function persistEntities(
   projectId: string,
   entities: ExtractedEntity[]
 ): Promise<EntityUpsertResult[]> {
+  // Fail fast if any E15 violates Track A semantics
+  validateE15Semantics(entities);
+  
   return batchUpsert(projectId, entities);
 }
 

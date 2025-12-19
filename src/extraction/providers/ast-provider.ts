@@ -3,7 +3,8 @@
 // @satisfies AC-64.1.6, AC-64.1.8
 // @tdd TDD-A1-ENTITY-REGISTRY
 // AST extraction provider - parses TypeScript files
-// E08 DataSchema, E12 Function, E13 Class, E15 Module, E28 TestSuite, E29 TestCase
+// E08 DataSchema, E12 Function, E13 Class, E28 TestSuite, E29 TestCase
+// NOTE: E15 Module is derived by module-derivation-provider.ts, NOT from imports
 
 import * as fs from 'fs/promises';
 import * as path from 'path';
@@ -154,37 +155,8 @@ export class ASTProvider implements ExtractionProvider {
         captureCorrectSignal('E08', instanceId, { name }).catch(() => {});
       }
 
-      // E15: Extract Modules (from import statements)
-      if (ts.isImportDeclaration(node)) {
-        const moduleSpecifier = node.moduleSpecifier;
-        if (ts.isStringLiteral(moduleSpecifier)) {
-          const moduleName = moduleSpecifier.text;
-          // Only track external modules (not relative imports)
-          if (!moduleName.startsWith('.')) {
-            const instanceId = `MOD-${moduleName.replace(/[^a-zA-Z0-9]/g, '-')}`;
-            const startLine = sourceFile.getLineAndCharacterOfPosition(node.getStart()).line + 1;
-
-            // Skip if we've already captured this module
-            const existingModule = entities.find(e => e.instance_id === instanceId);
-            if (!existingModule) {
-              entities.push({
-                entity_type: 'E15',
-                instance_id: instanceId,
-                name: moduleName,
-                attributes: {
-                  module_name: moduleName,
-                  imported_in: relativePath,
-                },
-                source_file: fullPath,
-                line_start: startLine,
-                line_end: startLine,
-              });
-
-              captureCorrectSignal('E15', instanceId, { module: moduleName }).catch(() => {});
-            }
-          }
-        }
-      }
+      // NOTE: E15 Module extraction removed - E15 must be directory-based only
+      // Use module-derivation-provider.ts to derive E15 from E11 SourceFile directories
 
       ts.forEachChild(node, visit);
     };
