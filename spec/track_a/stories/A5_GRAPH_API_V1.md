@@ -12,7 +12,9 @@ tdd:
       - AC-64.5.2
       - AC-64.5.3
       - AC-64.5.4
-    schemas: []
+    schemas:
+      - SCHEMA-GraphQuery
+      - SCHEMA-GraphResponse
   implements:
     files:
       - src/api/v1/entities.ts

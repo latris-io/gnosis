@@ -16,7 +16,9 @@ tdd:
       - AC-64.2.6
       - AC-64.2.7
       - AC-64.2.8
-    schemas: []
+    schemas:
+      - SCHEMA-Relationship
+      - SCHEMA-RelationshipTypeCode
   implements:
     files:
       - src/extraction/providers/brd-relationship-provider.ts

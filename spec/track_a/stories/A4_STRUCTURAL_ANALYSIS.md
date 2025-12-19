@@ -12,7 +12,9 @@ tdd:
       - AC-64.4.2
       - AC-64.4.3
       - AC-64.4.4
-    schemas: []
+    schemas:
+      - SCHEMA-PipelineConfig
+      - SCHEMA-RepoSnapshot
   implements:
     files:
       - src/ops/track-a.ts

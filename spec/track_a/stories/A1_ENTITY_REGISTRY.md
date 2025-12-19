@@ -16,7 +16,9 @@ tdd:
       - AC-64.1.6
       - AC-64.1.7
       - AC-64.1.8
-    schemas: []
+    schemas:
+      - SCHEMA-Entity
+      - SCHEMA-EntityTypeCode
   implements:
     files:
       - src/extraction/providers/brd-provider.ts

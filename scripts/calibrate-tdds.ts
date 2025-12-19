@@ -19,6 +19,8 @@ import { fileURLToPath } from 'url';
 import { rlsQuery } from '../test/utils/rls.js';
 import { discoverTDDs, parseFrontmatter, ParsedFrontmatter } from '../src/extraction/providers/tdd-frontmatter-provider.js';
 import { computeExpectedCounts } from '../src/extraction/providers/tdd-relationship-provider.js';
+import { persistEntities } from '../src/ops/track-a.js';
+import { shadowLedger } from '../src/ledger/shadow-ledger.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
@@ -131,7 +133,47 @@ async function validateE08References(
     
     if (rows.length === 0) {
       if (seedEnabled) {
-        result.warnings.push(`Schema ${entry.value} not found - would be seeded`);
+        // Seed the E08 entity
+        try {
+          const seedEntity = {
+            entity_type: 'E08' as const,
+            instance_id: entry.value,
+            name: entry.value.replace('SCHEMA-', ''),
+            attributes: {
+              seeded_from: 'tdd-frontmatter',
+              requires_implementation: true,
+              provisional: true,
+            },
+            source_file: frontmatter.meta.source_file,
+            line_start: entry.line,
+            line_end: entry.line,
+          };
+          
+          await persistEntities(projectId, [seedEntity]);
+          
+          // Log to shadow ledger
+          await shadowLedger.append({
+            operation: 'E08_SEED',
+            entity_type: 'E08',
+            entity_id: 'seeded',
+            instance_id: entry.value,
+            project_id: projectId,
+            content_hash: 'seeded',
+            evidence: {
+              source_file: frontmatter.meta.source_file,
+              line_start: entry.line,
+              line_end: entry.line,
+              commit_sha: 'n/a',
+              extraction_timestamp: new Date().toISOString(),
+              extractor_version: '1.0.0',
+            },
+          });
+          
+          result.warnings.push(`Schema ${entry.value} seeded (provisional)`);
+        } catch (err) {
+          result.passed = false;
+          result.errors.push(`Failed to seed schema ${entry.value}: ${err}`);
+        }
       } else {
         result.passed = false;
         result.errors.push(`Schema ${entry.value} not found in E08 entities (enable SEED_E08=true to auto-seed)`);
