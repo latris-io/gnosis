@@ -280,3 +280,4 @@ export async function getTDDIds(specDir: string): Promise<string[]> {
   const entities = await discoverTDDs(specDir);
   return entities.map(e => e.instance_id);
 }
+
