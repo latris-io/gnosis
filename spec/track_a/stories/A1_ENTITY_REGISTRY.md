@@ -37,6 +37,8 @@ tdd:
       - src/services/entities/entity-service.ts
       - src/extraction/parsers/brd-parser.ts
       - src/services/sync/sync-service.ts
+      - src/ops/track-a.ts
+      - src/api/v1/entities.ts
 ---
 
 # Story A.1: Entity Registry

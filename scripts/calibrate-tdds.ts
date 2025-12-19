@@ -3,13 +3,13 @@
 // @implements STORY-64.2
 // TDD Calibration Script - Mandatory CI Check
 //
-// Validates:
-// 1. All addresses.stories[] resolve to E02 entities
-// 2. All addresses.acceptance_criteria[] resolve to E03 entities
-// 3. All addresses.schemas[] resolve to E08 entities (or seeds them)
-// 4. All implements.files[] resolve to E11 entities (using DERIVED instance_id)
-// 5. Bidirectional: implements.files[] ↔ @tdd markers match
-// 6. AC completeness: addresses.acceptance_criteria[] matches BRD AC set for story
+// Validates (6 checks):
+// 1. E02_STORY_REFS: All addresses.stories[] resolve to E02 entities
+// 2. E03_AC_REFS: All addresses.acceptance_criteria[] resolve to E03 entities
+// 3. E08_SCHEMA_REFS: All addresses.schemas[] resolve to E08 entities (or seeds them)
+// 4. E11_FILE_REFS: All implements.files[] resolve to E11 entities (using DERIVED instance_id)
+// 5. TDD_MARKER_MATCH: implements.files[] ↔ @tdd markers match
+// 6. TDD_STORY_COHERENCE: files in implements[] must have @implements STORY-* for this TDD's stories
 //
 // Exit: 0 if all pass, 1 if any fail
 
@@ -270,6 +270,63 @@ async function validateTDDMarkers(
   return result;
 }
 
+async function validateStoryCoherence(
+  frontmatter: ParsedFrontmatter
+): Promise<ValidationResult> {
+  const result: ValidationResult = {
+    check: 'TDD_STORY_COHERENCE',
+    passed: true,
+    warnings: [],
+    errors: [],
+  };
+  
+  // Get the stories this TDD addresses
+  const tddStories = new Set(frontmatter.addresses.stories.map(s => s.value));
+  if (tddStories.size === 0) {
+    result.warnings.push('TDD has no stories in addresses.stories[]');
+    return result;
+  }
+  
+  // Pattern matches @implements followed by one or more comma-separated STORY-* references
+  // Captures the entire list after @implements
+  const IMPLEMENTS_LINE_PATTERN = /@implements\s+([^\n]+)/g;
+  const STORY_PATTERN = /STORY-[\d.]+/g;
+  
+  for (const entry of frontmatter.implements.files) {
+    const filePath = path.join(ROOT, entry.value);
+    
+    try {
+      const content = await fs.readFile(filePath, 'utf-8');
+      
+      // Find all @implements lines and extract all STORY-* references from them
+      const lineMatches = [...content.matchAll(IMPLEMENTS_LINE_PATTERN)];
+      const fileStories: string[] = [];
+      
+      for (const lineMatch of lineMatches) {
+        const storiesInLine = lineMatch[1].match(STORY_PATTERN) || [];
+        fileStories.push(...storiesInLine);
+      }
+      
+      // Check if at least one of the file's @implements STORY markers
+      // matches a story this TDD addresses
+      const hasMatchingStory = fileStories.some(s => tddStories.has(s));
+      
+      if (!hasMatchingStory) {
+        result.passed = false;
+        result.errors.push(
+          `File ${entry.value} is in implements.files[] but has no @implements marker ` +
+          `matching TDD stories [${[...tddStories].join(', ')}]. ` +
+          `Found markers: [${fileStories.join(', ') || 'none'}]`
+        );
+      }
+    } catch {
+      result.warnings.push(`Could not read file ${entry.value}`);
+    }
+  }
+  
+  return result;
+}
+
 // ============================================================
 // CALIBRATION OUTPUT
 // ============================================================
@@ -299,6 +356,7 @@ async function calibrateTDD(
     validateE08References(config.projectId, frontmatter, config.seedE08),
     validateE11References(config.projectId, frontmatter),
     validateTDDMarkers(config.projectId, frontmatter, config.strictMarkers),
+    validateStoryCoherence(frontmatter),
   ]);
   
   const allPassed = validationResults.every(r => r.passed);

@@ -1,6 +1,8 @@
 // src/ops/track-a.ts
 // @implements STORY-64.1
 // @implements STORY-64.2
+// @implements STORY-64.4
+// @tdd TDD-A1-ENTITY-REGISTRY
 // @tdd TDD-A2-RELATIONSHIP-REGISTRY
 // @tdd TDD-A4-STRUCTURAL-ANALYSIS
 // Operator/CLI entrypoints - delegates to services, MUST NOT import db

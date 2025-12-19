@@ -1,5 +1,6 @@
 // src/services/entities/entity-service.ts
 // @implements STORY-64.1
+// @implements STORY-64.5
 // @tdd TDD-A1-ENTITY-REGISTRY
 // Entity upsert service with content_hash change detection
 // Implements ENTRY.md Upsert Rule: ON CONFLICT (project_id, instance_id) DO UPDATE
