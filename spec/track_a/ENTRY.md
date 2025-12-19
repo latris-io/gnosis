@@ -105,21 +105,20 @@
 | E50 | Commit | Provenance | Git analysis |
 | E52 | ChangeSet | Provenance | Derived |
 
-### Relationship Endpoint Deviation Notice
+### Relationship Endpoint Resolution Notice
 
-> **Track A Deviation:** The relationship endpoints below differ from BRD V20.6.3 Appendix I.
-> 
-> **Rationale:** BRD canonical definitions use design-layer entities (TechnicalDesign, DataSchema) as relationship sources for R14/R16. Track A uses marker-based extraction where code entities (SourceFile, Function/Class) are the known anchor points. This is an intentional simplification.
+> **Deviation Resolved:** As of commit [TBD], the R04 deviation has been corrected.
 >
-> **Affected Relationships:**
-> - R03: Track A uses `AC → Constraint` (BRD: `Story → Constraint`)
-> - R04: Track A uses `SourceFile → SourceFile` (BRD: `Module → SourceFile`)
-> - R14: Track A uses `Story → Function/Class` (BRD: `TechnicalDesign → SourceFile`)
-> - R16: Track A uses `Function/Class → SourceFile` (BRD: `DataSchema → SourceFile`)
-> - R18: Track A uses `Function/Class → Story` (BRD: `SourceFile → Story`)
-> - R36: Track A uses `Function/Class → TestCase` (BRD: `Story → TestSuite`)
+> **Original deviation:** R04 was defined as `SourceFile → SourceFile` because E15 Module
+> entities were incorrectly extracted from npm import targets instead of directory structure.
 >
-> **Future Alignment:** When E06/E08 extraction is fully implemented, a reconciliation migration will align these relationships to BRD canonical form.
+> **Resolution:** E15 extraction was corrected to derive modules from the parent directories
+> of E11 SourceFile entities. R04 now correctly uses `Module (E15) → SourceFile (E11)`
+> per BRD V20.6.3 Appendix I.
+>
+> **Other deviations** (R03, R14, R16, R18, R36) remain as documented pending
+> design-layer entity implementation. These will be reconciled when E06/E08
+> extraction is fully implemented.
 
 ### Relationships to Implement (21)
 
@@ -128,7 +127,7 @@
 | R01 | HAS_STORY | Epic → Story |
 | R02 | HAS_AC | Story → AcceptanceCriterion |
 | R03 | HAS_CONSTRAINT | AcceptanceCriterion → Constraint |
-| R04 | CONTAINS_FILE | SourceFile → SourceFile |
+| R04 | CONTAINS_FILE | Module → SourceFile |
 | R05 | CONTAINS_ENTITY | SourceFile → Function/Class |
 | R06 | CONTAINS_SUITE | TestFile → TestSuite |
 | R07 | CONTAINS_CASE | TestSuite → TestCase |

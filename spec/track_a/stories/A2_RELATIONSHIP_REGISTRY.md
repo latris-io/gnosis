@@ -37,7 +37,7 @@
 | AC-64.2.1 | Extract HAS_STORY (Epic→Story) | Shadow Ledger | VERIFY-R01 |
 | AC-64.2.2 | Extract HAS_AC (Story→AC) | Shadow Ledger | VERIFY-R02 |
 | AC-64.2.3 | Extract HAS_CONSTRAINT (AC→Constraint) | Shadow Ledger | VERIFY-R03 |
-| AC-64.2.4 | Extract CONTAINS_FILE (File→File) | Shadow Ledger | VERIFY-R04 |
+| AC-64.2.4 | Extract CONTAINS_FILE (Module→File) | Shadow Ledger | VERIFY-R04 |
 | AC-64.2.5 | Extract CONTAINS_ENTITY (File→Func/Class) | Shadow Ledger | VERIFY-R05 |
 | AC-64.2.6 | Extract CONTAINS_SUITE (TestFile→TestSuite) | Shadow Ledger | VERIFY-R06 |
 | AC-64.2.7 | Extract CONTAINS_CASE (TestSuite→TestCase) | Shadow Ledger | VERIFY-R07 |

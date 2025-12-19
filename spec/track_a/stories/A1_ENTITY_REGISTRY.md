@@ -44,7 +44,7 @@
 | AC-64.1.7 | Track A: Extract SourceFile entities (E11) from filesystem | Shadow Ledger | VERIFY-E11 |
 | AC-64.1.8 | Track A: Extract Function entities (E12) from AST | Shadow Ledger | VERIFY-E12 |
 | AC-64.1.9 | Track A: Extract Class entities (E13) from AST | Shadow Ledger | VERIFY-E13 |
-| AC-64.1.10 | Track A: Extract Module entities (E15) from imports | Shadow Ledger | VERIFY-E15 |
+| AC-64.1.10 | Track A: Extract Module entities (E15) from directory structure | Shadow Ledger | VERIFY-E15 |
 | AC-64.1.11 | Track A: Extract TestFile entities (E27) from test directory | Shadow Ledger | VERIFY-E27 |
 | AC-64.1.12 | Track A: Extract TestSuite entities (E28) from describe blocks | Shadow Ledger | VERIFY-E28 |
 | AC-64.1.13 | Track A: Extract TestCase entities (E29) from it blocks | Shadow Ledger | VERIFY-E29 |

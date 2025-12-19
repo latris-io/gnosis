@@ -122,3 +122,128 @@ export async function closeAdminPool(): Promise<void> {
 
 // NOTE: Test-only destructive helpers (createTestProject, deleteProjectEntities, deleteProject)
 // have been moved to admin-test-only.ts with NODE_ENV guard.
+
+// ============================================================================
+// Admin Delete Operations (for remediation scripts)
+// ============================================================================
+
+import { getClient, setProjectContext } from '../../db/postgres.js';
+import { getSession, closeDriver } from '../../db/neo4j.js';
+
+/**
+ * Delete all R04 relationships for a project.
+ * R04 is fully derivable - safe to delete and re-derive.
+ * Admin operation for remediation scripts only.
+ */
+export async function deleteR04Relationships(projectId: string): Promise<number> {
+  const client = await getClient();
+  try {
+    await setProjectContext(client, projectId);
+    const result = await client.query(`
+      DELETE FROM relationships 
+      WHERE relationship_type = 'R04'
+      RETURNING id
+    `);
+    return result.rowCount ?? 0;
+  } finally {
+    client.release();
+  }
+}
+
+/**
+ * Delete E15 entities by instance_id list.
+ * Admin operation for remediation scripts only.
+ */
+export async function deleteE15ByInstanceIds(
+  projectId: string, 
+  instanceIds: string[]
+): Promise<number> {
+  if (instanceIds.length === 0) return 0;
+  
+  const client = await getClient();
+  try {
+    await setProjectContext(client, projectId);
+    
+    let totalDeleted = 0;
+    const batchSize = 100;
+    
+    for (let i = 0; i < instanceIds.length; i += batchSize) {
+      const batch = instanceIds.slice(i, i + batchSize);
+      const placeholders = batch.map((_, idx) => `$${idx + 1}`).join(', ');
+      
+      const result = await client.query(`
+        DELETE FROM entities 
+        WHERE instance_id IN (${placeholders})
+        AND entity_type = 'E15'
+        RETURNING id
+      `, batch);
+      
+      totalDeleted += result.rowCount ?? 0;
+    }
+    
+    return totalDeleted;
+  } finally {
+    client.release();
+  }
+}
+
+/**
+ * Delete E15 nodes and incident edges in Neo4j.
+ * Admin operation for remediation scripts only.
+ */
+export async function deleteInvalidE15FromNeo4j(
+  projectId: string,
+  instanceIds: string[]
+): Promise<{ nodesDeleted: number; edgesDeleted: number }> {
+  if (instanceIds.length === 0) {
+    return { nodesDeleted: 0, edgesDeleted: 0 };
+  }
+  
+  const session = getSession();
+  try {
+    let totalEdgesDeleted = 0;
+    let totalNodesDeleted = 0;
+    const batchSize = 50;
+    
+    // Delete incident edges first
+    for (let i = 0; i < instanceIds.length; i += batchSize) {
+      const batch = instanceIds.slice(i, i + batchSize);
+      
+      const edgeResult = await session.run(`
+        MATCH (n:Entity {project_id: $projectId})
+        WHERE n.instance_id IN $instanceIds
+        MATCH (n)-[r]-()
+        DELETE r
+        RETURN count(r) as deleted
+      `, { projectId, instanceIds: batch });
+      
+      totalEdgesDeleted += edgeResult.records[0]?.get('deleted')?.toNumber() ?? 0;
+    }
+    
+    // Then delete nodes
+    for (let i = 0; i < instanceIds.length; i += batchSize) {
+      const batch = instanceIds.slice(i, i + batchSize);
+      
+      const nodeResult = await session.run(`
+        MATCH (n:Entity {project_id: $projectId, entity_type: 'E15'})
+        WHERE n.instance_id IN $instanceIds
+        DELETE n
+        RETURN count(n) as deleted
+      `, { projectId, instanceIds: batch });
+      
+      totalNodesDeleted += nodeResult.records[0]?.get('deleted')?.toNumber() ?? 0;
+    }
+    
+    return { nodesDeleted: totalNodesDeleted, edgesDeleted: totalEdgesDeleted };
+  } finally {
+    await session.close();
+  }
+}
+
+/**
+ * Close Neo4j driver.
+ * For graceful shutdown in admin scripts.
+ */
+export async function closeNeo4jDriver(): Promise<void> {
+  await closeDriver();
+}
