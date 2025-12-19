@@ -85,3 +85,4 @@ CREATE INDEX idx_relationships_project_instance ON relationships(project_id, ins
 ALTER TABLE relationships ENABLE ROW LEVEL SECURITY;
 CREATE POLICY relationships_isolation ON relationships
   USING (project_id = current_setting('app.project_id', true)::UUID);
+

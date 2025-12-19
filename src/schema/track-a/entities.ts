@@ -86,3 +86,4 @@ export function isEntityTypeCode(code: string): code is EntityTypeCode {
 export function getEntityTypeName(code: EntityTypeCode): string {
   return ENTITY_TYPE_NAMES[code];
 }
+

@@ -26,3 +26,4 @@ export {
   validateEntityId,
   getIdPatternDescription,
 } from './id-formats.js';
+
