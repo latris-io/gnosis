@@ -46,6 +46,15 @@ import {
   deriveR07,
   type EntityInput 
 } from '../extraction/providers/containment-derivation-provider.js';
+import {
+  parseFrontmatter,
+  discoverTDDs,
+} from '../extraction/providers/tdd-frontmatter-provider.js';
+import {
+  deriveTDDRelationships,
+  flattenRelationships,
+} from '../extraction/providers/tdd-relationship-provider.js';
+import * as path from 'path';
 import { queryEntities } from '../api/v1/entities.js';
 import type { EntityTypeCode } from '../schema/track-a/entities.js';
 
@@ -450,6 +459,155 @@ export async function extractAndPersistContainmentRelationships(projectId: strin
       persisted: persistResult.results.filter(r => r.operation !== 'NO-OP').length,
       synced: persistResult.neo4jSync?.synced ?? 0,
     },
+  };
+}
+
+// ============================================================================
+// TDD Relationship Extraction
+// ============================================================================
+
+const MAX_NAME_LENGTH = 100;
+
+/**
+ * Apply TDD relationship invariants:
+ * 1. source_file must be repo-relative (never absolute)
+ * 2. name must be length-safe with full_name preserved in attributes
+ */
+function applyTddRelationshipInvariants(
+  relationships: ExtractedRelationship[],
+  repoRoot: string
+): ExtractedRelationship[] {
+  return relationships.map(rel => {
+    // Invariant 1: Repo-relative source_file
+    let sourceFile = rel.source_file;
+    if (path.isAbsolute(sourceFile)) {
+      sourceFile = path.relative(repoRoot, sourceFile);
+    }
+    
+    // Invariant 2: Length-safe name with full_name preservation
+    const fullName = rel.name;
+    let name = fullName;
+    let attributes = { ...rel.attributes };
+    
+    if (fullName.length > MAX_NAME_LENGTH) {
+      // Deterministic truncation: keep prefix, add ellipsis
+      name = fullName.substring(0, MAX_NAME_LENGTH - 3) + '...';
+      // Preserve full name in attributes for audit/debugging
+      attributes = { ...attributes, full_name: fullName };
+    }
+    
+    return {
+      ...rel,
+      source_file: sourceFile,
+      name,
+      attributes,
+    };
+  });
+}
+
+/**
+ * Extract E06 TechnicalDesign entities from TDD frontmatter.
+ * 
+ * @param projectId - Project to extract for
+ * @param specDir - Path to spec directory (defaults to ./spec)
+ * @returns Persistence results
+ */
+export async function extractAndPersistTddEntities(
+  projectId: string,
+  specDir?: string
+): Promise<{ extracted: number; persisted: number }> {
+  const resolvedSpecDir = specDir || path.resolve(process.cwd(), 'spec');
+  
+  const tddEntities = await discoverTDDs(resolvedSpecDir);
+  
+  if (tddEntities.length === 0) {
+    return { extracted: 0, persisted: 0 };
+  }
+  
+  const results = await persistEntities(projectId, tddEntities);
+  const persisted = results.filter(r => r.operation !== 'NO-OP').length;
+  
+  return {
+    extracted: tddEntities.length,
+    persisted,
+  };
+}
+
+/**
+ * Extract and persist TDD Bridge relationships (R08, R09, R11, R14).
+ * 
+ * Invariants enforced:
+ * - source_file is always repo-relative
+ * - name is length-safe (<=100 chars), with full_name in attributes if truncated
+ * 
+ * @param projectId - Project to extract for
+ * @param specDir - Path to spec directory (defaults to ./spec)
+ * @returns Extraction and persistence results with breakdown by type
+ */
+export async function extractAndPersistTddRelationships(
+  projectId: string,
+  specDir?: string
+): Promise<{
+  extracted: { r08: number; r09: number; r11: number; r14: number; total: number };
+  persisted: number;
+  synced: number;
+}> {
+  const resolvedSpecDir = specDir || path.resolve(process.cwd(), 'spec');
+  const repoRoot = process.cwd();
+  const storiesDir = path.join(resolvedSpecDir, 'track_a', 'stories');
+  
+  // Read story files
+  const fs = await import('fs/promises');
+  let files: string[];
+  try {
+    files = await fs.readdir(storiesDir);
+  } catch {
+    return {
+      extracted: { r08: 0, r09: 0, r11: 0, r14: 0, total: 0 },
+      persisted: 0,
+      synced: 0,
+    };
+  }
+  
+  const mdFiles = files.filter(f => f.endsWith('.md'));
+  let allRelationships: ExtractedRelationship[] = [];
+  let counts = { r08: 0, r09: 0, r11: 0, r14: 0 };
+  
+  for (const file of mdFiles) {
+    const filePath = path.join(storiesDir, file);
+    const frontmatter = await parseFrontmatter(filePath);
+    
+    if (frontmatter && frontmatter.id) {
+      const derived = await deriveTDDRelationships(frontmatter);
+      counts.r08 += derived.r08.length;
+      counts.r09 += derived.r09.length;
+      counts.r11 += derived.r11.length;
+      counts.r14 += derived.r14.length;
+      
+      const flat = flattenRelationships(derived);
+      allRelationships.push(...flat);
+    }
+  }
+  
+  if (allRelationships.length === 0) {
+    return {
+      extracted: { ...counts, total: 0 },
+      persisted: 0,
+      synced: 0,
+    };
+  }
+  
+  // Apply invariants before persistence
+  const safeRelationships = applyTddRelationshipInvariants(allRelationships, repoRoot);
+  
+  // Persist and sync
+  const result = await persistRelationshipsAndSync(projectId, safeRelationships);
+  const persisted = result.results.filter(r => r.operation !== 'NO-OP').length;
+  
+  return {
+    extracted: { ...counts, total: allRelationships.length },
+    persisted,
+    synced: result.neo4jSync?.synced ?? 0,
   };
 }
 

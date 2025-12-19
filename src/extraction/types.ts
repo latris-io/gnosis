@@ -64,6 +64,7 @@ export interface ExtractedRelationship {
   from_instance_id: string;  // e.g., "EPIC-64" (resolved to UUID during persistence)
   to_instance_id: string;    // e.g., "STORY-64.1" (resolved to UUID during persistence)
   confidence?: number;
+  attributes?: Record<string, unknown>;  // Optional metadata (e.g., full_name for truncated names)
   // Evidence fields (required per Constraint A.2)
   source_file: string;
   line_start: number;
