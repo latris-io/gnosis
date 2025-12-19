@@ -48,7 +48,7 @@ export function formatTestId(testId: number): string {
 // Note: Actual test implementations are in category-specific files:
 // - test/sanity/ontology.test.ts (SANITY-001 to SANITY-005)
 // - test/sanity/integrity.test.ts (SANITY-010 to SANITY-016)
-// - test/sanity/markers.test.ts (SANITY-020 to SANITY-024) - Track A
+// - test/sanity/markers.test.ts (SANITY-020 to SANITY-023, SANITY-034) - Track A
 // - test/sanity/coverage.test.ts (SANITY-030 to SANITY-033) - Track A
 // - test/sanity/extraction.test.ts (SANITY-040 to SANITY-044) - Track A
 // - test/sanity/brd.test.ts (SANITY-055 to SANITY-057)

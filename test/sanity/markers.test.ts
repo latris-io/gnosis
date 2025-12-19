@@ -1,5 +1,5 @@
 // @implements INFRASTRUCTURE
-// SANITY tests: MARKER/SCHEMA category (SANITY-020 to SANITY-024)
+// SANITY tests: MARKER category (SANITY-020 to SANITY-023, SANITY-034)
 // Track A - marker validation
 // Authority: ENTRY.md:64, EXIT.md:120
 
@@ -207,9 +207,9 @@ describe('MARKER (Track A)', () => {
     console.log(`[SANITY-023] Marker coverage: ${implementsMarkers.length} @implements, ${satisfiesMarkers.length} @satisfies`);
   });
 
-  // SANITY-024: Orphan marker detection mechanism works
-  // Authority: ENTRY.md:64 "All SANITY-020 to 024 tests pass (Schema)"
-  it('SANITY-024: Orphan Markers Detected (Track A)', async () => {
+  // SANITY-034: Orphan marker detection mechanism works
+  // Authority: SANITY_SUITE.md MARKER Tests (030-039)
+  it('SANITY-034: Orphan Markers Detected (Track A)', async () => {
     if (!PROJECT_ID) {
       // Fallback: verify semantic corpus is accessible
       const count = await semanticCorpus.getCount();
