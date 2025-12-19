@@ -101,7 +101,7 @@ E11 SourceFile, E12 Function, E13 Class, E14 Interface, E15 Module,
 E27 TestFile, E28 TestSuite, E29 TestCase,
 E49 ReleaseVersion, E50 Commit
 
-## Track A Relationships (21 total — no others allowed)
+## Track A Relationships (24 total — no others allowed)
 
 R01-R05 (Requirements), R10-R11 (Design), R21-R26 (Implementation),
 R40-R45 (Verification), R60-R61 (Provenance)

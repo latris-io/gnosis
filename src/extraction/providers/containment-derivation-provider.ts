@@ -1,6 +1,7 @@
 // src/extraction/providers/containment-derivation-provider.ts
 // @implements STORY-64.2
 // @satisfies AC-64.2.4, AC-64.2.5, AC-64.2.6, AC-64.2.7
+// @tdd TDD-A2-RELATIONSHIP-REGISTRY
 // Derives containment relationships (R04-R07) from entity data
 // Provider purity: NO imports from src/db/*
 

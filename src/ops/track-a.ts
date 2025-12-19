@@ -1,6 +1,8 @@
 // src/ops/track-a.ts
 // @implements STORY-64.1
 // @implements STORY-64.2
+// @tdd TDD-A2-RELATIONSHIP-REGISTRY
+// @tdd TDD-A4-STRUCTURAL-ANALYSIS
 // Operator/CLI entrypoints - delegates to services, MUST NOT import db
 // NOT public API surface (per A5), but enforces G-API boundary
 

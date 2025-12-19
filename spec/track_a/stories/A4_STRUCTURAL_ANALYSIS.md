@@ -1,14 +1,35 @@
+---
+tdd:
+  id: TDD-A4-STRUCTURAL-ANALYSIS
+  type: TechnicalDesign
+  version: "2.0.0"
+  status: pending
+  addresses:
+    stories:
+      - STORY-64.4
+    acceptance_criteria:
+      - AC-64.4.1
+      - AC-64.4.2
+      - AC-64.4.3
+      - AC-64.4.4
+    schemas: []
+  implements:
+    files:
+      - src/ops/track-a.ts
+---
+
 # Story A.4: Structural Analysis
 
-**Version:** 1.3.0  
+**Version:** 2.0.0  
 **Implements:** STORY-64.4 (Structural Analysis Pipeline)  
 **Track:** A  
 **Duration:** 2-3 days  
 **Canonical Sources:**
-- BRD V20.6.3 §Epic 64, Story 64.4
-- UTG Schema V20.6.1 §Analysis Pipeline
-- Verification Spec V20.6.4 §Part IX
+- BRD V20.7.0 §Epic 64, Story 64.4
+- UTG Schema V20.7.0 §Analysis Pipeline
+- Verification Spec V20.7.0 §Part IX
 
+> **v2.0.0:** TDD Retrofit - Added TDD frontmatter for E06 TechnicalDesign extraction  
 > **v1.3.0:** Added explicit project_id propagation in PipelineConfig, RepoSnapshot, createSnapshot, and create* calls  
 > **v1.2.0:** Epistemic hygiene: IntegrityValidator→IntegrityEvaluator, pass/fail→findings with severity, schema column fix (entity_type with E-codes)  
 > **v1.1.0:** Added architecture note clarifying IntegrityEvaluator is service-layer; added verification guardrail

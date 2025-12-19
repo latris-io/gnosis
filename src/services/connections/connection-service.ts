@@ -1,5 +1,6 @@
 // src/services/connections/connection-service.ts
 // @implements STORY-64.1
+// @tdd TDD-A1-ENTITY-REGISTRY
 // Connection lifecycle management - allowed to import db
 // Single public function only - closes both Postgres and Neo4j
 

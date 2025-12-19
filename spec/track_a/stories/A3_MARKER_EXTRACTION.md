@@ -1,14 +1,34 @@
 # Story A.3: Marker Extraction
 
-**Version:** 1.2.0  
+---
+tdd:
+  id: TDD-A3-MARKER-EXTRACTION
+  type: TechnicalDesign
+  version: "2.0.0"
+  status: pending
+  addresses:
+    stories:
+      - STORY-64.3
+    acceptance_criteria:
+      - AC-64.3.1
+      - AC-64.3.2
+      - AC-64.3.3
+      - AC-64.3.4
+    schemas: []
+  implements:
+    files: []
+---
+
+**Version:** 2.0.0  
 **Implements:** STORY-64.3 (Traceability Marker Extraction)  
 **Track:** A  
 **Duration:** 1-2 days  
 **Canonical Sources:**
-- BRD V20.6.3 §Epic 64, Story 64.3
-- UTG Schema V20.6.1 §Marker Patterns
-- Verification Spec V20.6.4 §Part IX, SANITY-030-033
+- BRD V20.7.0 §Epic 64, Story 64.3
+- UTG Schema V20.7.0 §Marker Patterns
+- Verification Spec V20.7.0 §Part IX, SANITY-030-033
 
+> **v2.0.0:** TDD Retrofit - R14 moved to A2 (TDD frontmatter), A3 now R18/R19/R36/R37 only; added @tdd marker extraction  
 > **v1.2.0:** Fixed instance_id prefixes to canonical uppercase forms (FILE-, FUNC-, CLASS-) per ENTRY.md  
 > **v1.1.0:** Added service-layer imports; added projectId scoping; added architecture note
 
@@ -37,13 +57,17 @@ The following obligations must be satisfied for A3 completion. These derive from
 |------------|--------------|--------------|
 | Extract @implements STORY-X.Y markers | Verification Spec §SANITY-030 | VERIFY-MARKER-01 |
 | Extract @satisfies AC-X.Y.Z markers | Verification Spec §SANITY-031 | VERIFY-MARKER-02 |
+| Extract @tdd TDD-* markers (NEW) | Verification Spec §SANITY-032 | VERIFY-MARKER-07 |
 | Link markers to source entities | UTG Schema §Marker Patterns | VERIFY-MARKER-03 |
-| Create R14/R18 IMPLEMENTS relationships | Verification Spec §10.2 | VERIFY-R14, VERIFY-R18 |
+| Create R18 IMPLEMENTS relationships | Verification Spec §10.2 | VERIFY-R18 |
 | Create R19 SATISFIES relationships | Verification Spec §10.2 | VERIFY-R19 |
+| Validate @tdd ↔ TDD frontmatter coherence | Verification Spec §Part XVIII | VERIFY-TDD-01 |
 | Validate marker targets exist | Verification Spec §Evidence | VERIFY-MARKER-04 |
 | Report orphan markers to semantic corpus | Roadmap §Track A Pillars | Signal count includes ORPHAN_MARKER |
 | Support multiline and block comments | SANITY-030/031 patterns | VERIFY-MARKER-06 |
 | All marker extractions logged | Roadmap §Track A Pillars | Ledger count > 0 |
+
+> **R14 Change (v2.0.0):** R14 (IMPLEMENTED_BY) is now derived from TDD frontmatter in A2, not from @implements markers. A3 only creates R18/R19/R36/R37 marker-derived relationships.
 
 ---
 

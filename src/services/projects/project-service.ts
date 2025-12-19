@@ -1,5 +1,6 @@
 // src/services/projects/project-service.ts
 // @implements STORY-64.1
+// @tdd TDD-A1-ENTITY-REGISTRY
 // Project identity resolution - allowed to import db
 
 import { getClient } from '../../db/postgres.js';

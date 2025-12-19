@@ -3,8 +3,8 @@
 // Matches Cursor Plan canonical schema (lines 470-494)
 
 /**
- * Track A Relationship Type Codes (21 total)
- * Per Verification Spec V20.6.4 §2.2 SANITY-002
+ * Track A Relationship Type Codes (24 total)
+ * Per Verification Spec V20.7.0 §2.2 SANITY-002
  */
 export type RelationshipTypeCode =
   // Hierarchical (R01-R03)
@@ -16,6 +16,10 @@ export type RelationshipTypeCode =
   | 'R05'   // CONTAINS_ENTITY: SourceFile → Function/Class/Interface
   | 'R06'   // CONTAINS_SUITE: TestFile → TestSuite
   | 'R07'   // CONTAINS_CASE: TestSuite → TestCase
+  // TDD Bridge (R08, R09, R11)
+  | 'R08'   // DESIGNED_IN: Story → TechnicalDesign
+  | 'R09'   // SPECIFIED_IN: AcceptanceCriterion → TechnicalDesign
+  | 'R11'   // DEFINES_SCHEMA: Story → DataSchema
   // Design→Impl (R14, R16)
   | 'R14'   // IMPLEMENTED_BY: TechnicalDesign → SourceFile
   | 'R16'   // DEFINED_IN: DataSchema → SourceFile
@@ -68,6 +72,9 @@ export const RELATIONSHIP_TYPE_NAMES: Record<RelationshipTypeCode, string> = {
   'R05': 'CONTAINS_ENTITY',
   'R06': 'CONTAINS_SUITE',
   'R07': 'CONTAINS_CASE',
+  'R08': 'DESIGNED_IN',
+  'R09': 'SPECIFIED_IN',
+  'R11': 'DEFINES_SCHEMA',
   'R14': 'IMPLEMENTED_BY',
   'R16': 'DEFINED_IN',
   'R18': 'IMPLEMENTS',
@@ -89,6 +96,7 @@ export const RELATIONSHIP_TYPE_NAMES: Record<RelationshipTypeCode, string> = {
  */
 export const RELATIONSHIP_TYPE_CODES: RelationshipTypeCode[] = [
   'R01', 'R02', 'R03', 'R04', 'R05', 'R06', 'R07',
+  'R08', 'R09', 'R11',
   'R14', 'R16', 'R18', 'R19',
   'R21', 'R22', 'R23', 'R24', 'R26',
   'R36', 'R37',

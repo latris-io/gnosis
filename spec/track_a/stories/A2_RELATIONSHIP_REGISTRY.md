@@ -1,14 +1,45 @@
+---
+tdd:
+  id: TDD-A2-RELATIONSHIP-REGISTRY
+  type: TechnicalDesign
+  version: "2.0.0"
+  status: implemented
+  addresses:
+    stories:
+      - STORY-64.2
+    acceptance_criteria:
+      - AC-64.2.1
+      - AC-64.2.2
+      - AC-64.2.3
+      - AC-64.2.4
+      - AC-64.2.5
+      - AC-64.2.6
+      - AC-64.2.7
+      - AC-64.2.8
+    schemas: []
+  implements:
+    files:
+      - src/extraction/providers/brd-relationship-provider.ts
+      - src/extraction/providers/containment-derivation-provider.ts
+      - src/extraction/providers/tdd-frontmatter-provider.ts
+      - src/extraction/providers/tdd-relationship-provider.ts
+      - src/services/relationships/relationship-service.ts
+      - src/services/sync/sync-service.ts
+      - src/ops/track-a.ts
+---
+
 # Story A.2: Relationship Registry
 
-**Version:** 1.6.0  
+**Version:** 2.0.0  
 **Implements:** STORY-64.2 (UTG Relationship Extraction)  
 **Track:** A  
 **Duration:** 2-3 days  
 **Canonical Sources:**
-- BRD V20.6.3 §Epic 64, Story 64.2
-- UTG Schema V20.6.1 §Relationship Registry
-- Verification Spec V20.6.4 §Part IX
+- BRD V20.7.0 §Epic 64, Story 64.2
+- UTG Schema V20.7.0 §Relationship Registry
+- Verification Spec V20.7.0 §Part IX
 
+> **v2.0.0:** TDD Retrofit - Add R08/R09/R11 (TDD Bridge), R14 derived from TDD frontmatter (not deferred), scope expanded to 18 in-scope relationships
 > **v1.6.0:** Organ Patch - Defer R14/R18/R19 to A3 (marker-dependent), defer R24 until E14 exists, scope reduced to 15 in-scope relationships  
 > **v1.5.0:** Pre-A2 Hardening - Added Evidence Fields section, R36/R37 deferral to A3, instance_id format validation  
 > **v1.4.0:** Added R70 GROUPS extraction logic, endpoint deviation note  
@@ -20,11 +51,13 @@
 
 ## User Story
 
-> As the Gnosis system, I need to extract and store 15 Track A relationship types between entities so that I can traverse the structural connections in my codebase.
+> As the Gnosis system, I need to extract and store 18 Track A relationship types between entities so that I can traverse the structural connections in my codebase.
 >
-> **A2 Scope:** R01, R02, R03, R04, R05, R06, R07, R16, R21, R22, R23, R26, R63, R67, R70
+> **A2 Scope:** R01, R02, R03, R04, R05, R06, R07, R08, R09, R11, R14, R16, R21, R22, R23, R26, R63, R67, R70
 >
-> **Deferred to A3:** R14, R18, R19, R36, R37 (marker-dependent)
+> **TDD Bridge (NEW):** R08 (DESIGNED_IN), R09 (SPECIFIED_IN), R11 (DEFINES_SCHEMA), R14 (IMPLEMENTED_BY) - derived from TDD frontmatter
+>
+> **Deferred to A3:** R18, R19, R36, R37 (marker-dependent)
 >
 > **Deferred until E14 exists:** R24 (requires Interface entity)
 
@@ -101,21 +134,38 @@ The service layer validates this format before upsert and rejects malformed IDs.
 
 ---
 
-## Relationship Deferrals (ORGAN PATCH)
+## TDD Bridge Relationships (NEW in v2.0.0)
 
-### R14/R18/R19 Deferral (Marker-Dependent)
+### R08/R09/R11/R14 - Derived from TDD Frontmatter
 
-> **AC-64.2.8 (IMPLEMENTED_BY)**, **AC-64.2.10 (IMPLEMENTS)**, and **AC-64.2.11 (SATISFIES)** are deferred to Story A3 (Marker Extraction).
+These relationships are derived from TDD (Technical Design Document) frontmatter in Track A story files:
+
+| R-Code | Name | From | To | Source |
+|--------|------|------|-----|--------|
+| R08 | DESIGNED_IN | Story | TechnicalDesign | `addresses.stories[]` |
+| R09 | SPECIFIED_IN | AcceptanceCriterion | TechnicalDesign | `addresses.acceptance_criteria[]` |
+| R11 | DEFINES_SCHEMA | Story | DataSchema | `addresses.schemas[]` |
+| R14 | IMPLEMENTED_BY | TechnicalDesign | SourceFile | `implements.files[]` |
+
+> **R14 Change (v2.0.0):** R14 is NO LONGER marker-dependent. It is derived from TDD frontmatter `implements.files[]` arrays. A2 extracts R14; A3 validates bidirectional consistency via `@tdd` markers.
+
+---
+
+## Relationship Deferrals
+
+### R18/R19 Deferral (Marker-Dependent)
+
+> **AC-64.2.10 (IMPLEMENTS)** and **AC-64.2.11 (SATISFIES)** are deferred to Story A3 (Marker Extraction).
 >
-> These relationships require `@implements` and `@satisfies` marker parsing, which is A3's responsibility. A2 builds the relationship infrastructure; A3 populates marker-derived relationships.
+> These relationships require `@implements` and `@satisfies` marker parsing, which is A3's responsibility.
 >
-> **A2 exit criteria do NOT require R14/R18/R19 extraction.**
+> **A2 exit criteria do NOT require R18/R19 extraction.**
 
 ### R24 Deferral (E14-Dependent)
 
 > **AC-64.2.15 (IMPLEMENTS_INTERFACE)** is deferred until E14 (Interface) entity extraction exists.
 >
-> R24 connects Class (E13) to Interface (E14). Since E14 is deferred in Track A, R24 cannot be meaningfully extracted. Do NOT emit R24 relationships in A2, even with reduced confidence.
+> R24 connects Class (E13) to Interface (E14). Since E14 is deferred in Track A, R24 cannot be meaningfully extracted.
 >
 > **A2 exit criteria do NOT require R24 extraction.**
 
@@ -123,7 +173,6 @@ The service layer validates this format before upsert and rejects malformed IDs.
 
 | R-Code | Name | Reason | Deferred To |
 |--------|------|--------|-------------|
-| R14 | IMPLEMENTED_BY | Requires @implements markers | A3 |
 | R18 | IMPLEMENTS | Requires @implements markers | A3 |
 | R19 | SATISFIES | Requires @satisfies markers | A3 |
 | R24 | IMPLEMENTS_INTERFACE | Requires E14 Interface entity | Post-Track A |

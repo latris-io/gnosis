@@ -1,14 +1,35 @@
+---
+tdd:
+  id: TDD-A5-GRAPH-API-V1
+  type: TechnicalDesign
+  version: "2.0.0"
+  status: pending
+  addresses:
+    stories:
+      - STORY-64.5
+    acceptance_criteria:
+      - AC-64.5.1
+      - AC-64.5.2
+      - AC-64.5.3
+      - AC-64.5.4
+    schemas: []
+  implements:
+    files:
+      - src/api/v1/entities.ts
+---
+
 # Story A.5: Graph API v1
 
-**Version:** 1.2.0  
+**Version:** 2.0.0  
 **Implements:** STORY-64.5 (Graph API v1)  
 **Track:** A  
 **Duration:** 2-3 days  
 **Canonical Sources:**
-- BRD V20.6.3 §Epic 64, Story 64.5
-- UTG Schema V20.6.1 §API Specification
-- Verification Spec V20.6.4 §8.3 (G-API)
+- BRD V20.7.0 §Epic 64, Story 64.5
+- UTG Schema V20.7.0 §API Specification
+- Verification Spec V20.7.0 §8.3 (G-API)
 
+> **v2.0.0:** TDD Retrofit - Added TDD frontmatter for E06 TechnicalDesign extraction  
 > **v1.2.0:** Added scope note clarifying pipeline is not public API surface  
 > **v1.1.0:** Service-layer alignment; API delegates to services per PROMPTS.md
 

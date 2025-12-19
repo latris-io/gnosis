@@ -1,6 +1,7 @@
 // src/extraction/providers/ast-provider.ts
 // @implements STORY-64.1
 // @satisfies AC-64.1.6, AC-64.1.8
+// @tdd TDD-A1-ENTITY-REGISTRY
 // AST extraction provider - parses TypeScript files
 // E08 DataSchema, E12 Function, E13 Class, E15 Module, E28 TestSuite, E29 TestCase
 

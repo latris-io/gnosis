@@ -1,14 +1,54 @@
+---
+tdd:
+  id: TDD-A1-ENTITY-REGISTRY
+  type: TechnicalDesign
+  version: "2.0.0"
+  status: implemented
+  addresses:
+    stories:
+      - STORY-64.1
+    acceptance_criteria:
+      - AC-64.1.1
+      - AC-64.1.2
+      - AC-64.1.3
+      - AC-64.1.4
+      - AC-64.1.5
+      - AC-64.1.6
+      - AC-64.1.7
+      - AC-64.1.8
+    schemas: []
+  implements:
+    files:
+      - src/extraction/providers/brd-provider.ts
+      - src/extraction/providers/ast-provider.ts
+      - src/extraction/providers/filesystem-provider.ts
+      - src/extraction/providers/git-provider.ts
+      - src/extraction/providers/changeset-provider.ts
+      - src/extraction/providers/module-derivation-provider.ts
+      - src/extraction/providers/tdd-frontmatter-provider.ts
+      - src/extraction/evidence.ts
+      - src/ledger/shadow-ledger.ts
+      - src/ledger/semantic-corpus.ts
+      - src/services/admin/admin-service.ts
+      - src/services/connections/connection-service.ts
+      - src/services/projects/project-service.ts
+      - src/services/entities/entity-service.ts
+      - src/extraction/parsers/brd-parser.ts
+      - src/services/sync/sync-service.ts
+---
+
 # Story A.1: Entity Registry
 
-**Version:** 1.6.0  
+**Version:** 2.0.0  
 **Implements:** STORY-64.1 (UTG Entity Extraction)  
 **Track:** A  
 **Duration:** 2-3 days  
 **Canonical Sources:**
-- BRD V20.6.3 §Epic 64, Story 64.1
-- UTG Schema V20.6.1 §Entity Registry
-- Verification Spec V20.6.4 §Part IX
+- BRD V20.7.0 §Epic 64, Story 64.1
+- UTG Schema V20.7.0 §Entity Registry
+- Verification Spec V20.7.0 §Part IX
 
+> **v2.0.0:** TDD Retrofit - Added TDD frontmatter for E06 TechnicalDesign extraction  
 > **v1.7.0:** Added AC Deviation Note clarifying Track A acceptance IDs vs BRD semantics  
 > **v1.6.0:** Added AC-64.1.19 for E52 ChangeSet, ChangeSetProvider, signal count 50, AC marker fix  
 > **v1.5.0:** Multi-tenant identity fix: ON CONFLICT (project_id, instance_id)  

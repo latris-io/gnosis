@@ -1,5 +1,6 @@
 // src/extraction/evidence.ts
 // @implements STORY-64.1
+// @tdd TDD-A1-ENTITY-REGISTRY
 // Centralized EvidenceAnchor creation - all providers MUST use this
 
 import { execSync } from 'child_process';

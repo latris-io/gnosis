@@ -1,6 +1,7 @@
 // src/extraction/parsers/brd-parser.ts
 // @implements STORY-64.1
 // @satisfies AC-64.1.1, AC-64.1.2, AC-64.1.3, AC-64.1.4
+// @tdd TDD-A1-ENTITY-REGISTRY
 // BRD Parser - extracts Epics, Stories, and Acceptance Criteria from BRD markdown
 
 /**

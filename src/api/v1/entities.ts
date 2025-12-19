@@ -1,5 +1,6 @@
 // src/api/v1/entities.ts
 // @implements STORY-64.1
+// @tdd TDD-A5-GRAPH-API-V1
 // Entity API - project-scoped operations only
 // Delegates to entity service - NO direct DB imports
 

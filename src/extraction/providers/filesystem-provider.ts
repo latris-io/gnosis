@@ -1,6 +1,7 @@
 // src/extraction/providers/filesystem-provider.ts
 // @implements STORY-64.1
 // @satisfies AC-64.1.5, AC-64.1.7
+// @tdd TDD-A1-ENTITY-REGISTRY
 // Filesystem discovery provider - discovers files but does NOT parse AST
 // E06 TechnicalDesign, E11 SourceFile, E27 TestFile
 

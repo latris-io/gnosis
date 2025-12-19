@@ -52,8 +52,8 @@ describe('ONTOLOGY Tests', () => {
   });
 
   // SANITY-002: Track A Relationship Types Exist
-  it('SANITY-002: all 21 Track A relationship type codes registered', () => {
-    expect(RELATIONSHIP_TYPE_CODES.length).toBe(21);
+  it('SANITY-002: all 24 Track A relationship type codes registered', () => {
+    expect(RELATIONSHIP_TYPE_CODES.length).toBe(24);
     
     // Verify by category
     // Hierarchical
@@ -112,7 +112,8 @@ describe('ONTOLOGY Tests', () => {
   it('SANITY-004: relationship name mappings defined', () => {
     // Structural check only - validates mappings exist
     // EMPTY_GRAPH: Structural invariant verified, 0 relationships to validate
-    expect(Object.keys(RELATIONSHIP_TYPE_NAMES).length).toBe(21);
+    // TDD Retrofit: 21 → 24 (added R08, R09, R11)
+    expect(Object.keys(RELATIONSHIP_TYPE_NAMES).length).toBe(24);
     console.log('EMPTY_GRAPH: Structural invariant verified, 0 relationships to validate');
   });
 
@@ -120,8 +121,9 @@ describe('ONTOLOGY Tests', () => {
   it('SANITY-005: entity/relationship type systems consistent', () => {
     // Structural check only - validates type systems align
     // EMPTY_GRAPH: Structural invariant verified, 0 entities to validate
+    // TDD Retrofit: 21 → 24 (added R08, R09, R11)
     expect(ENTITY_TYPE_CODES.length).toBe(16);
-    expect(RELATIONSHIP_TYPE_CODES.length).toBe(21);
+    expect(RELATIONSHIP_TYPE_CODES.length).toBe(24);
     console.log('EMPTY_GRAPH: Structural invariant verified, 0 entities to validate');
   });
 });

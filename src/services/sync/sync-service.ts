@@ -1,6 +1,8 @@
 // src/services/sync/sync-service.ts
 // @implements STORY-64.1
 // @implements STORY-64.2
+// @tdd TDD-A1-ENTITY-REGISTRY
+// @tdd TDD-A2-RELATIONSHIP-REGISTRY
 // Graph sync operations - allowed to import db
 // Syncs entities and relationships from Postgres to Neo4j
 

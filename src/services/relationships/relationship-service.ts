@@ -1,5 +1,6 @@
 // src/services/relationships/relationship-service.ts
 // @implements STORY-64.2
+// @tdd TDD-A2-RELATIONSHIP-REGISTRY
 // Relationship upsert service with content_hash change detection
 // Implements ENTRY.md Upsert Rule: ON CONFLICT (project_id, instance_id) DO UPDATE
 // NO-OP if content_hash unchanged

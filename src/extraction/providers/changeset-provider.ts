@@ -1,5 +1,6 @@
 // src/extraction/providers/changeset-provider.ts
 // @implements STORY-64.1
+// @tdd TDD-A1-ENTITY-REGISTRY
 // ChangeSet derivation provider - groups commits by story reference
 // E52 ChangeSet (derived, not directly extracted)
 

@@ -1,5 +1,6 @@
 // src/extraction/providers/module-derivation-provider.ts
 // @implements STORY-64.1
+// @tdd TDD-A1-ENTITY-REGISTRY
 // Derives E15 Module entities from E11 SourceFile directory structure
 // Provider purity: NO imports from src/db/*
 

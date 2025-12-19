@@ -116,11 +116,10 @@
 > of E11 SourceFile entities. R04 now correctly uses `Module (E15) → SourceFile (E11)`
 > per BRD V20.6.3 Appendix I.
 >
-> **Other deviations** (R03, R14, R16, R18, R36) remain as documented pending
-> design-layer entity implementation. These will be reconciled when E06/E08
-> extraction is fully implemented.
+> **TDD Retrofit (v2.0.0):** R08, R09, R11, R14 are now derived from TDD frontmatter.
+> R14 semantics changed from "Story → Function/Class" to "TechnicalDesign → SourceFile".
 
-### Relationships to Implement (21)
+### Relationships to Implement (24)
 
 | ID | Name | From → To |
 |----|------|-----------|
@@ -131,9 +130,12 @@
 | R05 | CONTAINS_ENTITY | SourceFile → Function/Class |
 | R06 | CONTAINS_SUITE | TestFile → TestSuite |
 | R07 | CONTAINS_CASE | TestSuite → TestCase |
-| R14 | IMPLEMENTED_BY | Story → Function/Class |
+| R08 | DESIGNED_IN | Story → TechnicalDesign |
+| R09 | SPECIFIED_IN | AcceptanceCriterion → TechnicalDesign |
+| R11 | DEFINES_SCHEMA | Story → DataSchema |
+| R14 | IMPLEMENTED_BY | TechnicalDesign → SourceFile |
 | R16 | DEFINED_IN | Function/Class → SourceFile |
-| R18 | IMPLEMENTS | Function/Class → Story |
+| R18 | IMPLEMENTS | SourceFile → Story |
 | R19 | SATISFIES | Function/Class → AcceptanceCriterion |
 | R21 | IMPORTS | SourceFile → SourceFile |
 | R22 | CALLS | Function → Function |

@@ -20,28 +20,32 @@ const EXPECTED = {
   R02_HAS_AC: 2849,     // One R02 per AC
 };
 
-// Track A relationship codes (exactly 21)
+// Track A relationship codes (exactly 24)
 const TRACK_A_REL_CODES = [
   'R01', 'R02', 'R03', 'R04', 'R05', 'R06', 'R07',
+  'R08', 'R09', 'R11',
   'R14', 'R16', 'R18', 'R19',
   'R21', 'R22', 'R23', 'R24', 'R26',
   'R36', 'R37',
   'R63', 'R67', 'R70',
 ] as const;
 
-// Track A relationship endpoints per ENTRY.md "Relationships to Implement (21)"
+// Track A relationship endpoints per ENTRY.md "Relationships to Implement (24)"
 // Supports polymorphic endpoints via arrays
 const REL_ENDPOINTS: Record<string, { from: string | string[]; to: string | string[] }> = {
   R01: { from: 'E01', to: 'E02' },                 // Epic -> Story
   R02: { from: 'E02', to: 'E03' },                 // Story -> AC
   R03: { from: 'E03', to: 'E04' },                 // AC -> Constraint (Track A deviation)
-  R04: { from: 'E11', to: 'E11' },                 // SourceFile -> SourceFile (Track A deviation)
+  R04: { from: 'E15', to: 'E11' },                 // Module -> SourceFile
   R05: { from: 'E11', to: ['E12', 'E13'] },        // SourceFile -> Function|Class
   R06: { from: 'E27', to: 'E28' },                 // TestFile -> TestSuite
   R07: { from: 'E28', to: 'E29' },                 // TestSuite -> TestCase
-  R14: { from: 'E02', to: ['E12', 'E13'] },        // Story -> Function|Class (Track A deviation)
+  R08: { from: 'E02', to: 'E06' },                 // Story -> TechnicalDesign (TDD Bridge)
+  R09: { from: 'E03', to: 'E06' },                 // AC -> TechnicalDesign (TDD Bridge)
+  R11: { from: 'E02', to: 'E08' },                 // Story -> DataSchema (TDD Bridge)
+  R14: { from: 'E06', to: 'E11' },                 // TechnicalDesign -> SourceFile (TDD Bridge)
   R16: { from: ['E12', 'E13'], to: 'E11' },        // Function|Class -> SourceFile
-  R18: { from: ['E12', 'E13'], to: 'E02' },        // Function|Class -> Story
+  R18: { from: 'E11', to: 'E02' },                 // SourceFile -> Story (marker-derived)
   R19: { from: ['E12', 'E13'], to: 'E03' },        // Function|Class -> AC
   R21: { from: 'E11', to: 'E11' },                 // SourceFile -> SourceFile
   R22: { from: 'E12', to: 'E12' },                 // Function -> Function

@@ -1,6 +1,7 @@
 // src/extraction/providers/brd-provider.ts
 // @implements STORY-64.1
 // @satisfies AC-64.1.1, AC-64.1.2, AC-64.1.3, AC-64.1.4
+// @tdd TDD-A1-ENTITY-REGISTRY
 // BRD Provider - extracts E01 Epic, E02 Story, E03 AcceptanceCriterion, E04 Constraint from BRD
 
 import * as fs from 'fs/promises';

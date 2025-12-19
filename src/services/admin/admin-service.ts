@@ -1,5 +1,6 @@
 // src/services/admin/admin-service.ts
 // @implements STORY-64.1
+// @tdd TDD-A1-ENTITY-REGISTRY
 // Administrative database operations - allowed to import db
 // For infrastructure scripts only, not for normal application flow
 

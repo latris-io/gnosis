@@ -1,5 +1,6 @@
 // src/extraction/providers/git-provider.ts
 // @implements STORY-64.1
+// @tdd TDD-A1-ENTITY-REGISTRY
 // Git extraction provider - extracts from git history
 // E49 ReleaseVersion, E50 Commit
 

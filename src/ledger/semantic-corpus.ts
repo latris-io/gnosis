@@ -1,5 +1,6 @@
 // src/ledger/semantic-corpus.ts
 // @implements STORY-64.1
+// @tdd TDD-A1-ENTITY-REGISTRY
 // Semantic signals for Track C readiness
 // Minimum 50 signals must be captured during A1 execution
 

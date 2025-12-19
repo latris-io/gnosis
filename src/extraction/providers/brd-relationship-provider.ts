@@ -1,6 +1,7 @@
 // src/extraction/providers/brd-relationship-provider.ts
 // @implements STORY-64.2
 // @satisfies AC-64.2.1, AC-64.2.2, AC-64.2.3
+// @tdd TDD-A2-RELATIONSHIP-REGISTRY
 
 import type { ExtractedRelationship } from '../types.js';
 import { RELATIONSHIP_TYPE_NAMES } from '../../schema/track-a/relationships.js';
