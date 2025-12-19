@@ -1,6 +1,5 @@
 // src/ledger/shadow-ledger.ts
 // @implements STORY-64.1
-// @satisfies AC-64.1.16
 // Append-only JSONL ledger for entity CREATE/UPDATE operations
 // NO emission on NO-OP (when content_hash unchanged)
 

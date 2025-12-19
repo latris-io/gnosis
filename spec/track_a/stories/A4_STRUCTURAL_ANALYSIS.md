@@ -21,18 +21,29 @@
 
 ---
 
-## Acceptance Criteria
+## BRD Linkage
 
-| AC | Description | Pillar | Verification (REQUIRED) |
-|----|-------------|--------|-------------------------|
-| AC-64.4.1 | Orchestrate all extraction providers | Shadow Ledger | VERIFY-PIPELINE-01 |
-| AC-64.4.2 | Execute providers in dependency order | Shadow Ledger | VERIFY-PIPELINE-02 |
-| AC-64.4.3 | Handle provider failures gracefully | API Boundary | VERIFY-PIPELINE-03 |
-| AC-64.4.4 | Report extraction statistics | Semantic Learning | VERIFY-PIPELINE-04 |
-| AC-64.4.5 | Validate graph integrity post-extraction | Shadow Ledger | VERIFY-PIPELINE-05 |
-| AC-64.4.6 | Support incremental extraction | Shadow Ledger | VERIFY-PIPELINE-06 |
-| AC-64.4.7 | Create snapshot before extraction | Shadow Ledger | VERIFY-PIPELINE-07 |
-| AC-64.4.8 | All pipeline operations logged | Shadow Ledger | RULE-LEDGER-004 |
+This story implements **STORY-64.4** (Structural Analysis Pipeline).
+For BRD acceptance criteria, see BRD V20.6.3 §Epic 64, Story 64.4.
+
+> **Governance Rule:** Track docs reference BRD stories but do not define or redefine AC-* identifiers. See Verification Spec Part XVII (Marker Governance).
+
+---
+
+## Execution Obligations
+
+The following obligations must be satisfied for A4 completion. These derive from organ docs.
+
+| Obligation | Organ Source | Verification |
+|------------|--------------|--------------|
+| Orchestrate all extraction providers | Verification Spec §9.1 | VERIFY-PIPELINE-01 |
+| Execute providers in dependency order | UTG Schema §Analysis Pipeline | VERIFY-PIPELINE-02 |
+| Handle provider failures gracefully | Roadmap §Track A Pillars | VERIFY-PIPELINE-03 |
+| Report extraction statistics | Roadmap §Semantic Learning | VERIFY-PIPELINE-04 |
+| Validate graph integrity post-extraction | Verification Spec §Integrity | VERIFY-PIPELINE-05 |
+| Support incremental extraction | UTG Schema §Extraction | VERIFY-PIPELINE-06 |
+| Create snapshot before extraction | Verification Spec §Evidence | VERIFY-PIPELINE-07 |
+| All pipeline operations logged | Roadmap §Track A Pillars | Ledger count > 0 |
 
 ---
 

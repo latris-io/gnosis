@@ -291,7 +291,7 @@ describe('INTEGRITY Tests', () => {
     const CANONICAL_DOCS = [
       { path: 'docs/BRD_V20_6_3_COMPLETE.md', expected: '20.6.3' },
       { path: 'docs/UNIFIED_TRACEABILITY_GRAPH_SCHEMA_V20_6_1.md', expected: '20.6.1' },
-      { path: 'docs/UNIFIED_VERIFICATION_SPECIFICATION_V20_6_4.md', expected: '20.6.4' },
+      { path: 'docs/UNIFIED_VERIFICATION_SPECIFICATION_V20_6_5.md', expected: '20.6.5' },
       { path: 'docs/GNOSIS_TO_SOPHIA_MASTER_ROADMAP_V20_6_4.md', expected: '20.6.4' },
     ];
 

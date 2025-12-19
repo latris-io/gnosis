@@ -1,10 +1,11 @@
 # Track A Exit Criteria
 
-**Version:** 1.3.0  
+**Version:** 1.4.0  
 **Implements:** Roadmap V20.6.4 Track A Exit  
 **Purpose:** Verification checklist before HGR-1 (Human Gate Review 1)  
 **Canonical Source:** GNOSIS_TO_SOPHIA_MASTER_ROADMAP_V20_6_4.md §Track A
 
+> **v1.4.0:** Added Marker Governance Verification (SANITY-053/054, lint:markers)
 > **v1.3.0:** Pre-A2 Hardening - Added SANITY-017/045, R36/R37 deferral to A3, relationship evidence requirement  
 > **v1.2.2:** Added semantic signal diversity governance note  
 > **v1.2.1:** Added SANITY model clarification note  
@@ -130,8 +131,30 @@ npm run test:sanity
 
 > **Model:** EXIT.md uses broad category ranges (e.g., 001-009) to accommodate future test additions within each category. ENTRY.md specifies the minimum subset required for Track A entry.
 
-- [ ] All gate-critical SANITY tests pass (001-005, 010-017, 020-024, 030-033, 040-045, 055-057)
+- [ ] All gate-critical SANITY tests pass (001-005, 010-017, 020-024, 030-033, 040-049, 053-057)
 - [ ] All 4 dormant SANITY tests return `{skipped: true}`
+
+---
+
+## Marker Governance Verification
+
+Per Verification Spec Part XVII:
+
+```bash
+# Tier A: Structural lint (fast, no DB)
+npm run lint:markers
+
+# Tier B: Authoritative DB-backed tests (part of SANITY suite)
+PROJECT_ID=$PROJECT_ID npm run test -- test/sanity/marker-governance.test.ts
+```
+
+| Check | Command | Status |
+|-------|---------|--------|
+| Structural lint | `npm run lint:markers` | [ ] Pass |
+| SANITY-053 (AC integrity) | In SANITY suite | [ ] Pass |
+| SANITY-054 (Story integrity) | In SANITY suite | [ ] Pass |
+
+All `@satisfies AC-*` and `@implements STORY-*` markers must resolve to entities in the database.
 
 ---
 

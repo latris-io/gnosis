@@ -20,20 +20,31 @@
 
 ---
 
-## Acceptance Criteria
+## BRD Linkage
 
-| AC | Description | Pillar | Verification (REQUIRED) |
-|----|-------------|--------|-------------------------|
-| AC-64.5.1 | Entity CRUD operations | API Boundary | VERIFY-API-01 |
-| AC-64.5.2 | Relationship CRUD operations | API Boundary | VERIFY-API-02 |
-| AC-64.5.3 | Type-safe query interface | API Boundary | VERIFY-API-03 |
-| AC-64.5.4 | Graph traversal operations | API Boundary | VERIFY-API-04 |
-| AC-64.5.5 | Impact analysis queries | API Boundary | VERIFY-API-05 |
-| AC-64.5.6 | Coverage queries | API Boundary | VERIFY-API-06 |
-| AC-64.5.7 | All operations logged to shadow ledger | Shadow Ledger | RULE-LEDGER-005 |
-| AC-64.5.8 | API versioning (v1 namespace) | API Boundary | VERIFY-API-07 |
-| AC-64.5.9 | No direct database access outside API | API Boundary | G-API |
-| AC-64.5.10 | Pagination for large result sets | API Boundary | VERIFY-API-08 |
+This story implements **STORY-64.5** (Graph API v1).
+For BRD acceptance criteria, see BRD V20.6.3 §Epic 64, Story 64.5.
+
+> **Governance Rule:** Track docs reference BRD stories but do not define or redefine AC-* identifiers. See Verification Spec Part XVII (Marker Governance).
+
+---
+
+## Execution Obligations
+
+The following obligations must be satisfied for A5 completion. These derive from organ docs.
+
+| Obligation | Organ Source | Verification |
+|------------|--------------|--------------|
+| Entity CRUD operations | Verification Spec §8.3 G-API | VERIFY-API-01 |
+| Relationship CRUD operations | Verification Spec §8.3 G-API | VERIFY-API-02 |
+| Type-safe query interface | UTG Schema §API Specification | VERIFY-API-03 |
+| Graph traversal operations | Verification Spec §8.3 G-API | VERIFY-API-04 |
+| Impact analysis queries | UTG Schema §Analysis | VERIFY-API-05 |
+| Coverage queries | Verification Spec §Coverage | VERIFY-API-06 |
+| All operations logged to shadow ledger | Roadmap §Track A Pillars | Ledger count > 0 |
+| API versioning (v1 namespace) | Verification Spec §8.3 | VERIFY-API-07 |
+| No direct database access outside API | Verification Spec §8.3 G-API | G-API gate |
+| Pagination for large result sets | UTG Schema §API | VERIFY-API-08 |
 
 ---
 

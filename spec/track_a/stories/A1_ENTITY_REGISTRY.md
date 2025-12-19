@@ -24,36 +24,35 @@
 
 > **Note:** 16 entity types are in Track A scope. 15 are extractable; E14 Interface extraction is deferred to a later track. Relationships referencing E14 (e.g., R24 IMPLEMENTS_INTERFACE) will carry reduced confidence until E14 is populated.
 
-> **DEVIATION NOTE (Track A Acceptance IDs):**
-> Track A uses identifiers in the form `AC-64.1.x` as **Track A implementation acceptance IDs** for extraction and validation tasks in this packet.
-> These identifiers support `@satisfies AC-64.1.x` marker extraction and do **not** redefine or override the BRD's semantic meaning for similarly numbered acceptance criteria.
-> When interpreting BRD semantics, the BRD remains authoritative.
+---
+
+## BRD Linkage
+
+This story implements **STORY-64.1** (Entity Registry Foundation).
+For BRD acceptance criteria, see BRD V20.6.3 §Epic 64, Story 64.1.
+
+> **Governance Rule:** Track docs reference BRD stories but do not define or redefine AC-* identifiers. See Verification Spec Part XVII (Marker Governance).
 
 ---
 
-## Acceptance Criteria
+## Execution Obligations
 
-| AC | Description | Pillar | Verification (REQUIRED) |
-|----|-------------|--------|-------------------------|
-| AC-64.1.1 | Track A: Extract Epic entities (E01) from BRD | Shadow Ledger | VERIFY-E01 |
-| AC-64.1.2 | Track A: Extract Story entities (E02) from BRD | Shadow Ledger | VERIFY-E02 |
-| AC-64.1.3 | Track A: Extract AcceptanceCriterion entities (E03) from BRD | Shadow Ledger | VERIFY-E03 |
-| AC-64.1.4 | Track A: Extract Constraint entities (E04) from BRD content when present | Shadow Ledger | VERIFY-E04 |
-| AC-64.1.5 | Track A: Extract TechnicalDesign entities (E06) from ADRs | Shadow Ledger | VERIFY-E06 |
-| AC-64.1.6 | Track A: Extract DataSchema entities (E08) from module analysis | Shadow Ledger | VERIFY-E08 |
-| AC-64.1.7 | Track A: Extract SourceFile entities (E11) from filesystem | Shadow Ledger | VERIFY-E11 |
-| AC-64.1.8 | Track A: Extract Function entities (E12) from AST | Shadow Ledger | VERIFY-E12 |
-| AC-64.1.9 | Track A: Extract Class entities (E13) from AST | Shadow Ledger | VERIFY-E13 |
-| AC-64.1.10 | Track A: Extract Module entities (E15) from directory structure | Shadow Ledger | VERIFY-E15 |
-| AC-64.1.11 | Track A: Extract TestFile entities (E27) from test directory | Shadow Ledger | VERIFY-E27 |
-| AC-64.1.12 | Track A: Extract TestSuite entities (E28) from describe blocks | Shadow Ledger | VERIFY-E28 |
-| AC-64.1.13 | Track A: Extract TestCase entities (E29) from it blocks | Shadow Ledger | VERIFY-E29 |
-| AC-64.1.14 | Track A: Extract ReleaseVersion entities (E49) from git tags | Shadow Ledger | VERIFY-E49 |
-| AC-64.1.15 | Track A: Extract Commit entities (E50) from git log | Shadow Ledger | VERIFY-E50 |
-| AC-64.1.16 | Track A: All extractions logged to shadow ledger | Shadow Ledger | RULE-LEDGER-001 |
-| AC-64.1.17 | Track A: All entities have evidence anchors | Evidence | SANITY-044 |
-| AC-64.1.18 | Track A: Semantic corpus initialized for Track C | Semantic Learning | VERIFY-CORPUS-01 |
-| AC-64.1.19 | Track A: Derive ChangeSet entities (E52) from commit groupings | Shadow Ledger | VERIFY-E52 |
+The following obligations must be satisfied for A1 completion. These derive from organ docs.
+
+| Obligation | Organ Source | Verification |
+|------------|--------------|--------------|
+| E01-E03 extracted from BRD | Verification Spec §9.2 | VERIFY-E01, VERIFY-E02, VERIFY-E03 |
+| E11 SourceFile from filesystem | Verification Spec §9.2 E11 | VERIFY-E11 |
+| E12 Function from AST | Verification Spec §9.2 E12 | VERIFY-E12 |
+| E13 Class from AST | Verification Spec §9.2 E13 | VERIFY-E13 |
+| E15 Module from directory structure | Verification Spec §9.2 E15 | SANITY-046 |
+| E27-E29 Test entities from AST | Verification Spec §9.2 | VERIFY-E27, VERIFY-E28, VERIFY-E29 |
+| E49 ReleaseVersion from git tags | Verification Spec §9.2 E49 | VERIFY-E49 |
+| E50 Commit from git log | Verification Spec §9.2 E50 | VERIFY-E50 |
+| E52 ChangeSet derived from commits | Verification Spec §9.2 E52 | VERIFY-E52 |
+| All entities logged to shadow ledger | Roadmap §Track A Pillars | Ledger count > 0 |
+| All entities have evidence anchors | Verification Spec §Evidence | SANITY-044 |
+| Semantic corpus initialized | Roadmap §Track A Exit | Signal count >= 50 |
 
 ---
 
@@ -212,7 +211,7 @@ export class BRDProvider implements ExtractionProvider {
 ```typescript
 // src/extraction/providers/ast-provider.ts
 // @implements STORY-64.1
-// @satisfies AC-64.1.8, AC-64.1.9
+// @satisfies AC-64.1.6, AC-64.1.8
 
 import { Project, SyntaxKind } from 'ts-morph';
 import { ExtractionProvider, RepoSnapshot, ExtractionResult, ExtractedEntity } from '../types';
@@ -282,7 +281,6 @@ export class ASTProvider implements ExtractionProvider {
 ```typescript
 // src/ledger/shadow-ledger.ts
 // @implements STORY-64.1
-// @satisfies AC-64.1.17
 
 import * as fs from 'fs/promises';
 import * as path from 'path';
@@ -341,7 +339,6 @@ export const shadowLedger = new ShadowLedger();
 ```typescript
 // src/ledger/semantic-corpus.ts
 // @implements STORY-64.1
-// @satisfies AC-64.1.18
 
 import * as fs from 'fs/promises';
 import * as path from 'path';
@@ -496,7 +493,6 @@ export async function queryByType(projectId: string, entityType: EntityTypeCode)
 ```typescript
 // src/extraction/providers/changeset-provider.ts
 // @implements STORY-64.1
-// @satisfies AC-64.1.19
 
 import { ExtractionProvider, RepoSnapshot, ExtractionResult, ExtractedEntity } from '../types';
 import { execSync } from 'child_process';
@@ -573,7 +569,6 @@ export class ChangeSetProvider implements ExtractionProvider {
 ```typescript
 // src/api/v1/entities.ts
 // @implements STORY-64.1
-// @satisfies AC-64.1.1 through AC-64.1.15
 
 import * as entityService from '../../services/entities/entity-service';
 import type { Entity, EntityTypeCode } from '../../schema/track-a/entities';

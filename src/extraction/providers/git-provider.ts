@@ -1,6 +1,5 @@
 // src/extraction/providers/git-provider.ts
 // @implements STORY-64.1
-// @satisfies AC-64.1.14, AC-64.1.15
 // Git extraction provider - extracts from git history
 // E49 ReleaseVersion, E50 Commit
 

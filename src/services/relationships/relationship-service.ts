@@ -29,7 +29,6 @@ const RELATIONSHIP_INSTANCE_ID_PATTERN = /^R\d{2}:.+:.+$/;
 /**
  * Validate relationship instance_id format.
  * Throws if invalid - fail fast before any DB operation.
- * @satisfies AC-64.2.23
  */
 export function validateRelationshipInstanceId(instanceId: string): void {
   if (!RELATIONSHIP_INSTANCE_ID_PATTERN.test(instanceId)) {
@@ -101,7 +100,6 @@ async function resolveEntityId(
  * 
  * @param projectId - Project UUID for RLS isolation
  * @param extracted - Extracted relationship data (must include evidence fields)
- * @satisfies AC-64.2.22, AC-64.2.23
  */
 export async function upsert(
   projectId: string,
@@ -425,7 +423,6 @@ export interface BatchUpsertAndSyncResult {
  * @param projectId - Project scope
  * @param relationships - Relationships to upsert
  * @returns Results array + Neo4j sync stats
- * @satisfies AC-64.2.22, AC-64.2.23
  */
 export async function batchUpsertAndSync(
   projectId: string,

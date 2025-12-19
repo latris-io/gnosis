@@ -1,6 +1,5 @@
 // src/extraction/providers/changeset-provider.ts
 // @implements STORY-64.1
-// @satisfies AC-64.1.19
 // ChangeSet derivation provider - groups commits by story reference
 // E52 ChangeSet (derived, not directly extracted)
 

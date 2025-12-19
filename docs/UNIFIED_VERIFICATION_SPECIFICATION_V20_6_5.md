@@ -1,7 +1,7 @@
 # Unified Verification Specification
 
-**Version:** 20.6.4 (Organ Alignment Edition)  
-**Date:** December 14, 2025  
+**Version:** 20.6.5 (Marker Governance Edition)  
+**Date:** December 17, 2025  
 **Status:** Authoritative Verification Reference  
 **Scope:** Complete verification for Gnosis → Sophia (67 Base Entities + Extensions, 114 Relationships, 21 Gates, 4 Tracks, 9 Track D Stories)
 **Companion Documents:**
@@ -10,6 +10,23 @@
 - GNOSIS_TO_SOPHIA_MASTER_ROADMAP_V20_6_4.md
 - CURSOR_IMPLEMENTATION_PLAN_V20_8_5.md (implements V20.6.4)
 - EP-D-002_RUNTIME_RECONCILIATION_V20_6_1.md
+
+---
+
+## What's New in V20.6.5
+
+This version establishes **Marker Governance** — rules for traceability markers in source code and the relationship between organ docs and track docs.
+
+### Key Changes
+
+| Change | Description | Impact |
+|--------|-------------|--------|
+| **Part XVII** | Marker Governance specification added | New spec section |
+| **SANITY-053** | AC marker integrity test | +1 test |
+| **SANITY-054** | Story marker integrity test | +1 test |
+| **Canonical Namespaces** | AC-*, STORY-*, E*, R*, G-*, SANITY-*, VERIFY-* defined | Governance rules |
+
+**Note:** This is governance + enforcement specification. No entity/relationship/gate changes.
 
 ---
 
@@ -4408,6 +4425,87 @@ Legend: ✅ Complete | ⚠️ Outlined (needs expansion)
    - EP-D-001 proposal
    - Track D entity/relationship full specs
    - Track D story cards
+
+---
+
+# PART XVII: MARKER GOVERNANCE
+
+**Version:** 1.0.0 (Added V20.6.5)
+
+This part establishes rules for traceability markers in source code and the relationship between organ docs and track docs.
+
+## 17.1 The Organ Truth Invariant
+
+> **Organ docs define truth. Track docs demonstrate compliance with truth.**
+
+| Document Type | Role | May Define |
+|---------------|------|------------|
+| BRD | Requirements truth | AC-*, STORY-* |
+| Verification Spec | Correctness truth | E*, R*, VERIFY-*, SANITY-* |
+| UTG Schema | Schema truth | Entity/Relationship structure |
+| Roadmap | Process truth | Gates, Tracks, Pillars |
+| Track Docs | Execution | Nothing canonical - only references |
+
+## 17.2 Canonical Identifier Namespaces
+
+| Namespace | Meaning | Defined In | Example |
+|-----------|---------|------------|---------|
+| `AC-X.Y.Z` | Acceptance Criterion | BRD | AC-64.1.3 |
+| `STORY-X.Y` | Story | BRD | STORY-64.1 |
+| `E##` | Entity Type | Verification Spec | E15 |
+| `R##` | Relationship Type | Verification Spec | R04 |
+| `G-*` | Gate | Roadmap | G-COVERAGE |
+| `SANITY-###` | Sanity Test | Verification Spec | SANITY-046 |
+| `VERIFY-*` | Verification Test | Verification Spec | VERIFY-E15 |
+
+**Rule:** Only organ docs may define identifiers in these namespaces.
+
+## 17.3 Allowed Marker Patterns
+
+| Marker | Usage | Resolves To |
+|--------|-------|-------------|
+| `@implements STORY-X.Y` | File implements story | E02 entity in DB |
+| `@satisfies AC-X.Y.Z` | Function satisfies AC | E03 entity in DB |
+| `@implements E##` | Code implements entity extraction | Verification Spec |
+| `@implements R##` | Code implements relationship extraction | Verification Spec |
+| `@implements SANITY-###` | Test implements sanity check | SANITY suite |
+
+## 17.4 Forbidden Patterns
+
+| Pattern | Why Forbidden | Correct Alternative |
+|---------|---------------|---------------------|
+| `@satisfies AC-X.Y.Z` where AC not in BRD | Creates phantom truth | Remove marker |
+| `@satisfies TAC-*` | Parallel namespace | Use Execution Obligations |
+| `@implements AC-*` | ACs are satisfied, not implemented | `@satisfies AC-*` |
+| Track-defined `AC-*` | Track docs can't define ACs | Reference BRD ACs only |
+
+## 17.5 Track Doc Execution Obligations
+
+Track docs should express implementation requirements as **Execution Obligations**, not acceptance criteria.
+
+**Template:**
+
+| Obligation | Organ Source | Verification |
+|------------|--------------|--------------|
+| [What must be done] | [Spec section] | [SANITY-NNN or VERIFY-X] |
+
+## 17.6 Enforcement
+
+| Check | Test | Severity |
+|-------|------|----------|
+| All `@satisfies AC-*` resolve to E03 | SANITY-053 | ERROR |
+| All `@implements STORY-*` resolve to E02 | SANITY-054 | ERROR |
+| No phantom ACs in Track docs | lint-markers.sh | WARNING |
+
+## 17.7 Rationale
+
+If Track docs could define canonical identifiers:
+- Multiple sources of truth would exist
+- Traceability would be unreliable
+- Audits would be impossible
+- Autonomous systems could invent requirements
+
+The system must be intolerant of ontological violations.
 
 ---
 

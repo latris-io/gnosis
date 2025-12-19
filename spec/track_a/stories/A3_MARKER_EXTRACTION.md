@@ -20,19 +20,30 @@
 
 ---
 
-## Acceptance Criteria
+## BRD Linkage
 
-| AC | Description | Pillar | Verification (REQUIRED) |
-|----|-------------|--------|-------------------------|
-| AC-64.3.1 | Extract @implements STORY-X.Y markers | Shadow Ledger | VERIFY-MARKER-01 |
-| AC-64.3.2 | Extract @satisfies AC-X.Y.Z markers | Shadow Ledger | VERIFY-MARKER-02 |
-| AC-64.3.3 | Link markers to source entities | Shadow Ledger | VERIFY-MARKER-03 |
-| AC-64.3.4 | Create IMPLEMENTS relationships | Shadow Ledger | VERIFY-R-IMPL |
-| AC-64.3.5 | Create SATISFIES relationships | Shadow Ledger | VERIFY-R-SAT |
-| AC-64.3.6 | Validate marker targets exist | API Boundary | VERIFY-MARKER-04 |
-| AC-64.3.7 | Report orphan markers (target not found) | Semantic Learning | VERIFY-MARKER-05 |
-| AC-64.3.8 | Support multiline and block comments | Shadow Ledger | VERIFY-MARKER-06 |
-| AC-64.3.9 | All marker extractions logged | Shadow Ledger | RULE-LEDGER-003 |
+This story implements **STORY-64.3** (Traceability Marker Extraction).
+For BRD acceptance criteria, see BRD V20.6.3 §Epic 64, Story 64.3.
+
+> **Governance Rule:** Track docs reference BRD stories but do not define or redefine AC-* identifiers. See Verification Spec Part XVII (Marker Governance).
+
+---
+
+## Execution Obligations
+
+The following obligations must be satisfied for A3 completion. These derive from organ docs.
+
+| Obligation | Organ Source | Verification |
+|------------|--------------|--------------|
+| Extract @implements STORY-X.Y markers | Verification Spec §SANITY-030 | VERIFY-MARKER-01 |
+| Extract @satisfies AC-X.Y.Z markers | Verification Spec §SANITY-031 | VERIFY-MARKER-02 |
+| Link markers to source entities | UTG Schema §Marker Patterns | VERIFY-MARKER-03 |
+| Create R14/R18 IMPLEMENTS relationships | Verification Spec §10.2 | VERIFY-R14, VERIFY-R18 |
+| Create R19 SATISFIES relationships | Verification Spec §10.2 | VERIFY-R19 |
+| Validate marker targets exist | Verification Spec §Evidence | VERIFY-MARKER-04 |
+| Report orphan markers to semantic corpus | Roadmap §Track A Pillars | Signal count includes ORPHAN_MARKER |
+| Support multiline and block comments | SANITY-030/031 patterns | VERIFY-MARKER-06 |
+| All marker extractions logged | Roadmap §Track A Pillars | Ledger count > 0 |
 
 ---
 

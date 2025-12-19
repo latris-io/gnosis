@@ -179,8 +179,6 @@ export { closeConnections };
  * - Skips root-level files (dirname is '.' or empty)
  * - Witness file: lexicographically smallest instance_id for evidence
  * - Sets attributes.derived_from = 'directory-structure'
- * 
- * @satisfies AC-64.1.10
  */
 export async function extractAndPersistModules(projectId: string): Promise<{
   derived: number;

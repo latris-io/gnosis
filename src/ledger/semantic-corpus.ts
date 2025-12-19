@@ -1,6 +1,5 @@
 // src/ledger/semantic-corpus.ts
 // @implements STORY-64.1
-// @satisfies AC-64.1.18
 // Semantic signals for Track C readiness
 // Minimum 50 signals must be captured during A1 execution
 

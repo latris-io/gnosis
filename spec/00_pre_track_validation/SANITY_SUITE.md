@@ -1,10 +1,11 @@
 # SANITY Test Suite Specification
 
-**Version:** 1.5.2  
-**Implements:** Verification Spec V20.6.4 Part II  
+**Version:** 1.5.3  
+**Implements:** Verification Spec V20.6.5 Part II  
 **Purpose:** Foundational tests that must pass before any track begins  
-**Canonical Source:** UNIFIED_VERIFICATION_SPECIFICATION_V20_6_4.md §Part II
+**Canonical Source:** UNIFIED_VERIFICATION_SPECIFICATION_V20_6_5.md §Part II
 
+> **v1.5.3:** Add SANITY-053/054 (Marker Governance - AC/Story marker integrity)
 > **v1.5.2:** Fix E49/E50 evidence anchors (line_start=1, not 0) + document AMB-5 git entity strategy
 > **v1.5.1:** SANITY-044 anti-vacuity + RLS helper (PROJECT_ID required, rlsQuery, 0 entities = hard fail)
 > **v1.5.0:** RLS structural enforcement - Two-level allowlist in forbidden-actions-harness, test helpers (rls.ts, db-meta.ts), SANITY-018 now diagnostic backstop
@@ -29,8 +30,9 @@ The SANITY suite validates that the development environment, canonical documents
 | CANONICAL | SANITY-010 to 018 | Document presence, version, schema, RLS guardrail |
 | SCHEMA | SANITY-020 to 029 | Entity/relationship definitions parseable |
 | MARKERS | SANITY-030 to 039 | Marker patterns valid |
-| EXTRACTION | SANITY-040 to 045 | Provider interface, evidence anchors |
-| BRD | SANITY-050 to 059 | BRD parseable, counts match |
+| EXTRACTION | SANITY-040 to 049 | Provider interface, evidence anchors, E15 semantics |
+| GOVERNANCE | SANITY-053 to 054 | Marker integrity (AC/Story resolution) |
+| BRD | SANITY-055 to 059 | BRD parseable, counts match |
 | DORMANT | SANITY-080 to 083 | EP-D-002 stubs (return `{pass: true, skipped: true}`) |
 
 ---
@@ -127,7 +129,7 @@ test('SANITY-011: UTG Schema document exists', () => {
 // @implements SANITY-012
 
 test('SANITY-012: Verification Spec document exists', () => {
-  const path = 'docs/UNIFIED_VERIFICATION_SPECIFICATION_V20_6_4.md';
+  const path = 'docs/UNIFIED_VERIFICATION_SPECIFICATION_V20_6_5.md';
   expect(fs.existsSync(path)).toBe(true);
 });
 ```
@@ -170,7 +172,7 @@ test('SANITY-016: All canonical docs have valid version headers', () => {
   const docs = [
     { path: 'docs/BRD_V20_6_3_COMPLETE.md', expected: '20.6.3' },
     { path: 'docs/UNIFIED_TRACEABILITY_GRAPH_SCHEMA_V20_6_1.md', expected: '20.6.1' },
-    { path: 'docs/UNIFIED_VERIFICATION_SPECIFICATION_V20_6_4.md', expected: '20.6.4' },
+    { path: 'docs/UNIFIED_VERIFICATION_SPECIFICATION_V20_6_5.md', expected: '20.6.5' },
     { path: 'docs/GNOSIS_TO_SOPHIA_MASTER_ROADMAP_V20_6_4.md', expected: '20.6.4' },
   ];
   
@@ -665,6 +667,59 @@ test('SANITY-057: Story IDs reference valid epics', async () => {
 
 ---
 
+## GOVERNANCE Tests (SANITY-053 to 054)
+
+### SANITY-053: AC Marker Integrity
+```typescript
+// @implements SANITY-053
+// @satisfies Verification Spec V20.6.5 Part XVII
+
+test('SANITY-053: All @satisfies AC-* markers resolve to E03 entities', async () => {
+  if (!PROJECT_ID) throw new Error('[SANITY-053] PROJECT_ID required');
+
+  // Get valid ACs from database
+  const dbAcs = await rlsQuery(PROJECT_ID, `
+    SELECT instance_id FROM entities WHERE entity_type = 'E03'
+  `);
+  const validAcs = new Set(dbAcs.map((r: { instance_id: string }) => r.instance_id));
+  
+  // Scan src/ and scripts/ for @satisfies AC-* markers (line-start canonical format)
+  // Extract AC-X.Y.Z patterns from matches
+  // Filter for phantoms (not in validAcs)
+  
+  expect(phantoms.length, `Phantom AC markers: ${phantoms.join(', ')}`).toBe(0);
+});
+```
+
+**Scope:** `src/**` and `scripts/**` only (not `test/**` - policy decision)
+**Format:** Match canonical markers at line-start: `^\s*//\s*@satisfies\s+AC-`
+
+### SANITY-054: Story Marker Integrity
+```typescript
+// @implements SANITY-054
+// @satisfies Verification Spec V20.6.5 Part XVII
+
+test('SANITY-054: All @implements STORY-* markers resolve to E02 entities', async () => {
+  if (!PROJECT_ID) throw new Error('[SANITY-054] PROJECT_ID required');
+
+  const dbStories = await rlsQuery(PROJECT_ID, `
+    SELECT instance_id FROM entities WHERE entity_type = 'E02'
+  `);
+  const validStories = new Set(dbStories.map((r: { instance_id: string }) => r.instance_id));
+  
+  // Scan src/ and scripts/ for @implements STORY-* markers
+  // Extract STORY-X.Y patterns from matches
+  // Filter for phantoms (not in validStories)
+  
+  expect(phantoms.length, `Phantom Story markers: ${phantoms.join(', ')}`).toBe(0);
+});
+```
+
+**Scope:** `src/**` and `scripts/**` only
+**Format:** Match canonical markers at line-start: `^\s*//\s*@implements\s+STORY-`
+
+---
+
 ## DORMANT Tests (SANITY-080 to 083)
 
 These tests are **DORMANT** until Track D.9 activation. They MUST return `{pass: true, skipped: true, reason: 'DORMANT'}`.
@@ -733,11 +788,12 @@ All SANITY tests must pass before any track begins:
 - [ ] SANITY-010 to 018: Canonical documents + schema + RLS guardrail ✓
 - [ ] SANITY-020 to 024: Schema definitions + uniqueness ✓
 - [ ] SANITY-030 to 033: Marker patterns ✓
-- [ ] SANITY-040 to 045: Extraction infrastructure + evidence anchors ✓
+- [ ] SANITY-040 to 049: Extraction infrastructure + evidence anchors + E15 semantics ✓
+- [ ] SANITY-053 to 054: Marker governance (AC/Story integrity) ✓
 - [ ] SANITY-055 to 057: BRD parseable ✓
 - [ ] SANITY-080 to 083: Dormant tests return skipped ✓
 
-**Total: 59 active tests + 4 dormant = 63 tests**
+**Total: 61 active tests + 4 dormant = 65 tests**
 
 > **v1.5.0 (RLS Structural Enforcement):** Primary enforcement via forbidden-actions-harness (two-level allowlist); test helpers rls.ts and db-meta.ts; SANITY-018 is now diagnostic backstop
 

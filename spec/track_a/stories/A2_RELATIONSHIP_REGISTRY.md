@@ -30,39 +30,34 @@
 
 ---
 
-## Acceptance Criteria
+## BRD Linkage
 
-| AC | Description | Pillar | Verification (REQUIRED) |
-|----|-------------|--------|-------------------------|
-| AC-64.2.1 | Extract HAS_STORY (Epic→Story) | Shadow Ledger | VERIFY-R01 |
-| AC-64.2.2 | Extract HAS_AC (Story→AC) | Shadow Ledger | VERIFY-R02 |
-| AC-64.2.3 | Extract HAS_CONSTRAINT (AC→Constraint) | Shadow Ledger | VERIFY-R03 |
-| AC-64.2.4 | Extract CONTAINS_FILE (Module→File) | Shadow Ledger | VERIFY-R04 |
-| AC-64.2.5 | Extract CONTAINS_ENTITY (File→Func/Class) | Shadow Ledger | VERIFY-R05 |
-| AC-64.2.6 | Extract CONTAINS_SUITE (TestFile→TestSuite) | Shadow Ledger | VERIFY-R06 |
-| AC-64.2.7 | Extract CONTAINS_CASE (TestSuite→TestCase) | Shadow Ledger | VERIFY-R07 |
-| AC-64.2.8 | Extract IMPLEMENTED_BY (Story→Func/Class) | Shadow Ledger | VERIFY-R14 | **DEFERRED TO A3** |
-| AC-64.2.9 | Extract DEFINED_IN (Func/Class→File) | Shadow Ledger | VERIFY-R16 |
-| AC-64.2.10 | Extract IMPLEMENTS (Func/Class→Story) | Shadow Ledger | VERIFY-R18 | **DEFERRED TO A3** |
-| AC-64.2.11 | Extract SATISFIES (Func/Class→AC) | Shadow Ledger | VERIFY-R19 | **DEFERRED TO A3** |
-| AC-64.2.12 | Extract IMPORTS (File→File) | Shadow Ledger | VERIFY-R21 |
-| AC-64.2.13 | Extract CALLS (Func→Func) | Shadow Ledger | VERIFY-R22 |
-| AC-64.2.14 | Extract EXTENDS (Class→Class) | Shadow Ledger | VERIFY-R23 |
-| AC-64.2.15 | Extract IMPLEMENTS_INTERFACE (Class→Interface) | Shadow Ledger | VERIFY-R24 | **DEFERRED UNTIL E14** |
-| AC-64.2.16 | Extract DEPENDS_ON (Module→Module) | Shadow Ledger | VERIFY-R26 |
-| AC-64.2.17 | Extract TESTED_BY (Func/Class→TestCase) | Shadow Ledger | VERIFY-R36 | **DEFERRED TO A3** |
-| AC-64.2.18 | Extract VERIFIED_BY (AC→TestCase) | Shadow Ledger | VERIFY-R37 | **DEFERRED TO A3** |
-| AC-64.2.19 | Extract INTRODUCED_IN (SourceFile→Commit) | Shadow Ledger | VERIFY-R63 |
-| AC-64.2.20 | Extract MODIFIED_IN (SourceFile→Commit) | Shadow Ledger | VERIFY-R67 |
-| AC-64.2.21 | Extract GROUPS (ChangeSet→Commit) | Shadow Ledger | VERIFY-R70 |
-| AC-64.2.22 | All relationships logged to shadow ledger | Shadow Ledger | RULE-LEDGER-002 |
-| AC-64.2.23 | All relationships have provenance fields | Evidence | SANITY-044 |
+This story implements **STORY-64.2** (Relationship Registry with Confidence).
+For BRD acceptance criteria, see BRD V20.6.3 §Epic 64, Story 64.2.
+
+> **Governance Rule:** Track docs reference BRD stories but do not define or redefine AC-* identifiers. See Verification Spec Part XVII (Marker Governance).
+
+---
+
+## Execution Obligations
+
+The following obligations must be satisfied for A2 completion. These derive from organ docs.
+
+| Obligation | Organ Source | Verification |
+|------------|--------------|--------------|
+| R01-R03 BRD hierarchy relationships | Verification Spec §10.2 | VERIFY-R01, VERIFY-R02, VERIFY-R03 |
+| R04 Module CONTAINS_FILE SourceFile | Verification Spec §10.2 R04 | VERIFY-R04 |
+| R05 SourceFile CONTAINS_ENTITY | Verification Spec §10.2 R05 | VERIFY-R05 |
+| R06 TestFile CONTAINS_SUITE | Verification Spec §10.2 R06 | VERIFY-R06 |
+| R07 TestSuite CONTAINS_CASE | Verification Spec §10.2 R07 | VERIFY-R07 |
+| All relationships logged to shadow ledger | Roadmap §Track A Pillars | Ledger count > 0 |
+| All relationships have evidence anchors | Verification Spec §Evidence | SANITY-045 |
 
 > **Note on Interface Targets:** R05 (CONTAINS_ENTITY) may reference E14 Interface as a target entity type. Since E14 extraction is deferred, R05 relationships targeting interfaces will not be emitted in A2.
 >
 > **R24 IMPLEMENTS_INTERFACE:** Do NOT emit R24 relationships in A2. R24 is deferred until E14 (Interface) entity extraction exists. Confidence stubs are explicitly forbidden for deferred relationships.
 
-> **Endpoint Deviation:** See ENTRY.md §Relationship Endpoint Deviation Notice. Track A uses simplified endpoints optimized for marker-based extraction. This is documented and intentional.
+> **Endpoint Deviation:** See ENTRY.md §Relationship Endpoint Resolution Notice. The R04 endpoint deviation has been corrected as of V1.6.1.
 
 ---
 
@@ -285,7 +280,6 @@ export class BRDRelationshipProvider implements ExtractionProvider {
 ```typescript
 // src/extraction/providers/ast-relationship-provider.ts
 // @implements STORY-64.2
-// @satisfies AC-64.2.9, AC-64.2.12, AC-64.2.13, AC-64.2.14, AC-64.2.15, AC-64.2.16
 
 import type { ExtractedRelationship } from '../types';
 
@@ -449,7 +443,6 @@ export async function upsert(projectId: string, extracted: ExtractedRelationship
 ```typescript
 // src/extraction/providers/git-relationship-provider.ts
 // @implements STORY-64.2
-// @satisfies AC-64.2.19, AC-64.2.20, AC-64.2.21
 
 import type { ExtractedRelationship } from '../types';
 import * as entityService from '../../services/entities/entity-service';
@@ -502,7 +495,6 @@ export class GitRelationshipProvider implements ExtractionProvider {
 ```typescript
 // src/api/v1/relationships.ts
 // @implements STORY-64.2
-// @satisfies AC-64.2.1 through AC-64.2.21
 
 import { upsert as upsertRelationship } from '../../services/relationships/relationship-service';
 import type { Relationship, RelationshipTypeCode } from '../../schema/track-a/relationships';

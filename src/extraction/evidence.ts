@@ -1,6 +1,5 @@
 // src/extraction/evidence.ts
 // @implements STORY-64.1
-// @satisfies AC-64.1.17
 // Centralized EvidenceAnchor creation - all providers MUST use this
 
 import { execSync } from 'child_process';
