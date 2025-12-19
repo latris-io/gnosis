@@ -30,3 +30,4 @@ else
   echo "✗ Total ($TOTAL) does NOT match expected 2,849"
   exit 1
 fi
+

@@ -65,3 +65,4 @@ main().catch((error) => {
   console.error('\x1b[31m[FATAL]\x1b[0m', error);
   process.exit(1);
 });
+
