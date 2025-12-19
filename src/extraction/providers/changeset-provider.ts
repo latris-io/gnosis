@@ -82,8 +82,8 @@ export class ChangeSetProvider implements ExtractionProvider {
             last_commit: commits[0]?.substring(0, 12),
           },
           source_file: '.git',
-          line_start: 0,
-          line_end: 0,
+          line_start: 1,
+          line_end: 1,
         });
 
         await captureCorrectSignal('E52', instanceId, {
