@@ -37,9 +37,9 @@ tdd:
 **Track:** A  
 **Duration:** 2-3 days  
 **Canonical Sources:**
-- BRD V20.7.0 §Epic 64, Story 64.2
-- UTG Schema V20.7.0 §Relationship Registry
-- Verification Spec V20.7.0 §Part IX
+- BRD V20.6.3 §Epic 64, Story 64.2
+- UTG Schema V20.6.1 §Relationship Registry
+- Verification Spec V20.6.5 §Part IX
 
 > **v2.0.0:** TDD Retrofit - Add R08/R09/R11 (TDD Bridge), R14 derived from TDD frontmatter (not deferred), scope expanded to 18 in-scope relationships
 > **v1.6.0:** Organ Patch - Defer R14/R18/R19 to A3 (marker-dependent), defer R24 until E14 exists, scope reduced to 15 in-scope relationships  

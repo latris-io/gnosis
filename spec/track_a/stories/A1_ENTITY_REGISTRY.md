@@ -48,9 +48,9 @@ tdd:
 **Track:** A  
 **Duration:** 2-3 days  
 **Canonical Sources:**
-- BRD V20.7.0 §Epic 64, Story 64.1
-- UTG Schema V20.7.0 §Entity Registry
-- Verification Spec V20.7.0 §Part IX
+- BRD V20.6.3 §Epic 64, Story 64.1
+- UTG Schema V20.6.1 §Entity Registry
+- Verification Spec V20.6.5 §Part IX
 
 > **v2.0.0:** TDD Retrofit - Added TDD frontmatter for E06 TechnicalDesign extraction  
 > **v1.7.0:** Added AC Deviation Note clarifying Track A acceptance IDs vs BRD semantics  

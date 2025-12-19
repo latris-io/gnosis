@@ -22,7 +22,8 @@
     "extract:a1": "npx tsx scripts/run-a1-extraction.ts",
     "sync:neo4j": "npx tsx scripts/sync-to-neo4j.ts",
     "lint:markers": "./scripts/lint-markers.sh",
-    "calibrate:tdds": "npx tsx scripts/calibrate-tdds.ts"
+    "calibrate:tdds": "npx tsx scripts/calibrate-tdds.ts",
+    "verify:organ-parity": "npx tsx scripts/verify-organ-parity.ts"
   },
   "dependencies": {
     "dotenv": "^16.4.1",
@@ -46,3 +47,4 @@
     "node": ">=20.0.0"
   }
 }
+

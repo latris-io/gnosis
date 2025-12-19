@@ -27,9 +27,9 @@ tdd:
 **Track:** A  
 **Duration:** 2-3 days  
 **Canonical Sources:**
-- BRD V20.7.0 §Epic 64, Story 64.4
-- UTG Schema V20.7.0 §Analysis Pipeline
-- Verification Spec V20.7.0 §Part IX
+- BRD V20.6.3 §Epic 64, Story 64.4
+- UTG Schema V20.6.1 §Analysis Pipeline
+- Verification Spec V20.6.5 §Part IX
 
 > **v2.0.0:** TDD Retrofit - Added TDD frontmatter for E06 TechnicalDesign extraction  
 > **v1.3.0:** Added explicit project_id propagation in PipelineConfig, RepoSnapshot, createSnapshot, and create* calls  

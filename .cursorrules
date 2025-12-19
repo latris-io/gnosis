@@ -80,9 +80,38 @@ At HGR-1 (end of Track A):
 - Do NOT proceed on assumption
 - Do NOT interpret lack of rejection as approval
 
-## Canonical Documents (Read-Only Authority)
+### Rule 8: Organ Document Protection (RULE-NOAUTOFIX-001)
 
-These documents define truth. Do not contradict them.
+The six organ documents are **read-only during Cursor sessions** unless explicitly instructed by human with CID reference.
+
+**Protected Files (Organ Docs):**
+- `docs/BRD_*.md`
+- `docs/UNIFIED_TRACEABILITY_GRAPH_SCHEMA_*.md`
+- `docs/UNIFIED_VERIFICATION_SPECIFICATION_*.md`
+- `docs/GNOSIS_TO_SOPHIA_MASTER_ROADMAP_*.md`
+- `docs/CURSOR_IMPLEMENTATION_PLAN_*.md`
+- `docs/integrations/EP-*.md`
+
+**FORBIDDEN without explicit human instruction + CID:**
+- Modifying any organ document
+- "Fixing" version mismatches in organ docs
+- "Correcting" counts, statistics, or cross-references
+- Adding, removing, or rewording any organ doc content
+
+**If you detect organ doc drift:**
+1. REPORT the issue with specific file, line, current value, expected value
+2. DO NOT apply the fix
+3. Wait for human to provide CID reference before making changes
+
+**If human requests organ doc change:**
+1. Require CID reference (e.g., "CID-2025-001")
+2. If no CID provided, respond: "Organ doc changes require a CID reference per RULE-NOAUTOFIX-001. Please provide CID or confirm this is a non-semantic fix."
+
+Violation = HALT. Detection ≠ mutation.
+
+## Canonical Documents (Read-Only Authority — See Rule 8)
+
+These documents define truth. Do not contradict them. Do not modify them without CID.
 
 | Document | Location | Purpose |
 |----------|----------|---------|
@@ -134,6 +163,7 @@ npm run test -- --grep "X"   # Story-specific tests
 npm run verify:gates         # Gate verification
 npm run verify:integrity     # Graph integrity
 npm run report:coverage      # Coverage report
+npm run verify:organ-parity  # Organ doc version/count parity
 ```
 
 ## Error Recovery

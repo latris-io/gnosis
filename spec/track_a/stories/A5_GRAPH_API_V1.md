@@ -27,9 +27,9 @@ tdd:
 **Track:** A  
 **Duration:** 2-3 days  
 **Canonical Sources:**
-- BRD V20.7.0 §Epic 64, Story 64.5
-- UTG Schema V20.7.0 §API Specification
-- Verification Spec V20.7.0 §8.3 (G-API)
+- BRD V20.6.3 §Epic 64, Story 64.5
+- UTG Schema V20.6.1 §API Specification
+- Verification Spec V20.6.5 §8.3 (G-API)
 
 > **v2.0.0:** TDD Retrofit - Added TDD frontmatter for E06 TechnicalDesign extraction  
 > **v1.2.0:** Added scope note clarifying pipeline is not public API surface  
