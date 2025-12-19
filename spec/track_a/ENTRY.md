@@ -50,7 +50,7 @@
 
 - [ ] `docs/BRD_V20_6_3_COMPLETE.md` exists
 - [ ] `docs/UNIFIED_TRACEABILITY_GRAPH_SCHEMA_V20_6_1.md` exists
-- [ ] `docs/UNIFIED_VERIFICATION_SPECIFICATION_V20_6_4.md` exists
+- [ ] `docs/UNIFIED_VERIFICATION_SPECIFICATION_V20_6_5.md` exists
 - [ ] `docs/GNOSIS_TO_SOPHIA_MASTER_ROADMAP_V20_6_4.md` exists
 - [ ] `docs/CURSOR_IMPLEMENTATION_PLAN_V20_8_5.md` exists
 - [ ] `docs/integrations/EP-D-002_RUNTIME_RECONCILIATION_V20_6_1.md` exists

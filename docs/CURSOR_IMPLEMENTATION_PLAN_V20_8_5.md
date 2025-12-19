@@ -91,7 +91,7 @@ All implementation specs derive from these authoritative sources:
 |----------|---------|----------|---------|
 | **BRD** | V20.6.3 | `docs/BRD_V20_6_3_COMPLETE.md` | WHAT (requirements) |
 | **UTG Schema** | V20.6.1 | `docs/UNIFIED_TRACEABILITY_GRAPH_SCHEMA_V20_6_1.md` | HOW (schema) |
-| **Verification Spec** | V20.6.4 | `docs/UNIFIED_VERIFICATION_SPECIFICATION_V20_6_4.md` | PROOF (extraction rules, gates, tests) |
+| **Verification Spec** | V20.6.4 | `docs/UNIFIED_VERIFICATION_SPECIFICATION_V20_6_5.md` | PROOF (extraction rules, gates, tests) |
 | **Roadmap** | V20.6.4 | `docs/GNOSIS_TO_SOPHIA_MASTER_ROADMAP_V20_6_4.md` | WHEN (execution plan) |
 | **This Document** | V20.8.5 | `docs/CURSOR_IMPLEMENTATION_PLAN_V20_8_5.md` | HOW TO EXECUTE |
 | **EP-D-002** | V20.6.1 | `docs/integrations/EP-D-002_RUNTIME_RECONCILIATION_V20_6_1.md` | Runtime Reconciliation spec |
@@ -532,7 +532,7 @@ gnosis/
 ├── docs/                                    # Canonical documents (read-only reference)
 │   ├── BRD_V20_6_3_COMPLETE.md
 │   ├── UNIFIED_TRACEABILITY_GRAPH_SCHEMA_V20_6_1.md
-│   ├── UNIFIED_VERIFICATION_SPECIFICATION_V20_6_4.md
+│   ├── UNIFIED_VERIFICATION_SPECIFICATION_V20_6_5.md
 │   ├── GNOSIS_TO_SOPHIA_MASTER_ROADMAP_V20_6_4.md
 │   ├── CURSOR_IMPLEMENTATION_PLAN_V20_8_0.md
 │   └── integrations/

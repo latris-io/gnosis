@@ -122,7 +122,7 @@ async function main() {
   const canonicalDocs = [
     'docs/BRD_V20_6_3_COMPLETE.md',
     'docs/UNIFIED_TRACEABILITY_GRAPH_SCHEMA_V20_6_1.md',
-    'docs/UNIFIED_VERIFICATION_SPECIFICATION_V20_6_4.md',
+    'docs/UNIFIED_VERIFICATION_SPECIFICATION_V20_6_5.md',
     'docs/GNOSIS_TO_SOPHIA_MASTER_ROADMAP_V20_6_4.md',
     'docs/CURSOR_IMPLEMENTATION_PLAN_V20_8_5.md',
   ];
