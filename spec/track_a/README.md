@@ -18,3 +18,4 @@ Before implementing Track A stories:
 | PROMPTS.md | Cursor execution prompts and architecture rules |
 | HUMAN_GATE_HGR-1.md | Human gate approval requirements |
 | stories/*.md | Individual story specifications |
+

@@ -52,3 +52,4 @@ export async function setProjectContext(client: PoolClient, projectId: string): 
 export async function closePool(): Promise<void> {
   await pool.end();
 }
+

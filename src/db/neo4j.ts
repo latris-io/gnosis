@@ -73,3 +73,4 @@ export async function ensureConstraintsOnce(): Promise<void> {
   await ensureConstraints();
   constraintsInitialized = true;  // Only after success
 }
+
