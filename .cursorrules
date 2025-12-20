@@ -193,3 +193,66 @@ Mismatch = extraction bug. Fix before proceeding.
 You are building infrastructure, not an oracle. Every claim must be evidence-bounded. Confidence ≠ truth. Alignment ≠ understanding.
 
 When in doubt: read the spec, follow the spec, verify against the spec.
+
+---
+
+## TRACK STATE LOCK — A1/A2 VERIFIED
+
+### Checkpoint Metadata
+
+| Field | Value |
+|-------|-------|
+| **Phase** | A2 (Relationship Registry) COMPLETE |
+| **Verified** | 2025-12-20T23:42:54.691Z |
+| **Git SHA** | `2fd63a5d2d5d708fb5444448fcbd83cd1c491b6d` |
+| **Project ID** | `6df2f456-440d-4958-b475-d9808775ff69` |
+| **State Doc** | `docs/verification/TRACK_A_A2_VERIFIED_STATE.md` |
+
+### Locked Invariants
+
+These invariants were verified and MUST NOT drift:
+
+1. **BRD counts:** E01=65, E02=351, E03=2849
+2. **Cross-store parity:** PostgreSQL = Neo4j = 3887 relationships
+3. **Neo4j property model:** Single `:RELATIONSHIP` type with `r.relationship_type` property
+4. **Determinism:** Entity and relationship instance_ids are stable and reproducible
+5. **Evidence anchors:** All R16/R63/R67 have complete evidence
+
+### Locked Surfaces
+
+**DO NOT MODIFY without explicit human instruction + re-verification:**
+
+| Surface | Files |
+|---------|-------|
+| Entity extraction | `src/extraction/providers/ast-provider.ts`, `filesystem-provider.ts` |
+| Relationship derivation | `src/extraction/providers/*-derivation-provider.ts`, `*-relationship-provider.ts` |
+| Schema definitions | `src/schema/track-a/*` |
+| Database migrations | `migrations/*.sql`, `migrations/neo4j/*` |
+| Sync logic | `src/services/sync/sync-service.ts` |
+| ID format rules | `src/schema/track-a/id-formats.ts` |
+
+### Lock Enforcement
+
+**If a change request touches locked surfaces:**
+
+1. **WARN:** "This would invalidate the A2 verified checkpoint (SHA: 2fd63a5d)."
+2. **LIST:** Show which invariants may be affected.
+3. **ASK:** "Confirm you want to proceed. Changes require re-running `scripts/run-foundation-validation.ts`."
+4. **PROCEED:** Only with explicit human confirmation.
+
+**If you detect invariant drift during any operation:**
+
+1. **HALT** immediately.
+2. **REPORT:** "A1/A2 invariant violation detected: [specific invariant]"
+3. **DO NOT** attempt to fix without human instruction.
+
+### Verification Scripts
+
+To re-verify after approved changes:
+
+```bash
+npx tsx scripts/run-foundation-validation.ts  # All A1/A2 automated checks
+npx tsx scripts/determinism-check.ts          # Determinism verification
+```
+
+Both must exit 0 for checkpoint to remain valid.
