@@ -195,3 +195,187 @@ async function detectDuplicateRelationships(
     );
   }
 }
+
+/**
+ * Replace-by-project relationship sync.
+ * Deletes ALL Neo4j relationships for project_id, then re-inserts from Postgres.
+ * This ensures Neo4j is an exact mirror of Postgres relationships.
+ * 
+ * Use this instead of syncRelationshipsToNeo4j when:
+ * - Stale relationships exist in Neo4j (from old extraction logic)
+ * - You need guaranteed parity, not incremental sync
+ * 
+ * @param projectId - Project scope
+ * @returns Sync statistics including deleted count
+ */
+export async function replaceRelationshipsInNeo4j(
+  projectId: string
+): Promise<{ deleted: number; synced: number; skipped: number }> {
+  await ensureConstraintsOnce();
+
+  let client: PoolClient | null = null;
+  let session: Session | null = null;
+
+  try {
+    session = getSession();
+    client = await getClient();
+    await setProjectContext(client, projectId);
+
+    // Step 1: Delete ALL existing relationships for this project
+    const deleteResult = await session.run(`
+      MATCH ()-[r:RELATIONSHIP {project_id: $projectId}]->()
+      WITH r, r.instance_id AS id
+      DELETE r
+      RETURN count(id) AS deletedCount
+    `, { projectId });
+
+    const deleted = deleteResult.records[0]?.get('deletedCount')?.toNumber() ?? 0;
+
+    // Step 2: Query all relationships from Postgres
+    const result = await client.query(`
+      SELECT 
+        r.instance_id,
+        r.relationship_type,
+        r.name,
+        r.confidence,
+        r.source_file,
+        r.line_start,
+        r.line_end,
+        from_e.instance_id AS from_instance_id,
+        to_e.instance_id AS to_instance_id
+      FROM relationships r
+      JOIN entities from_e ON r.from_entity_id = from_e.id
+      JOIN entities to_e ON r.to_entity_id = to_e.id
+      WHERE r.project_id = $1
+    `, [projectId]);
+
+    const relationships = result.rows;
+    
+    if (relationships.length === 0) {
+      return { deleted, synced: 0, skipped: 0 };
+    }
+
+    // Step 3: Re-insert all relationships from Postgres
+    const mergeResult = await session.run(`
+      UNWIND $rels AS rel
+      MATCH (from:Entity {instance_id: rel.fromInstanceId, project_id: $projectId})
+      MATCH (to:Entity {instance_id: rel.toInstanceId, project_id: $projectId})
+      CREATE (from)-[r:RELATIONSHIP {
+        project_id: $projectId,
+        instance_id: rel.instanceId,
+        relationship_type: rel.type,
+        name: rel.name,
+        confidence: rel.confidence,
+        source_file: rel.sourceFile,
+        line_start: rel.lineStart,
+        line_end: rel.lineEnd,
+        synced_at: datetime()
+      }]->(to)
+      WITH count(r) AS createdCount
+      RETURN createdCount
+    `, {
+      projectId,
+      rels: relationships.map(rel => ({
+        instanceId: rel.instance_id,
+        fromInstanceId: rel.from_instance_id,
+        toInstanceId: rel.to_instance_id,
+        type: rel.relationship_type,
+        name: rel.name,
+        confidence: rel.confidence,
+        sourceFile: rel.source_file,
+        lineStart: rel.line_start,
+        lineEnd: rel.line_end,
+      })),
+    });
+
+    const synced = mergeResult.records[0]?.get('createdCount')?.toNumber() ?? 0;
+    const skipped = relationships.length - synced;
+
+    // Post-sync duplicate detection gate
+    await detectDuplicateRelationships(session, projectId);
+
+    return { deleted, synced, skipped };
+  } finally {
+    client?.release();
+    if (session) await session.close();
+  }
+}
+
+/**
+ * Verify relationship parity between Postgres and Neo4j.
+ * Read-only comparison of relationship counts by type.
+ * 
+ * @param projectId - Project scope
+ * @returns Parity check result with counts by relationship_type
+ */
+export async function verifyRelationshipParity(
+  projectId: string
+): Promise<{
+  consistent: boolean;
+  postgres: { total: number; byType: Record<string, number> };
+  neo4j: { total: number; byType: Record<string, number> };
+  mismatches: Array<{ type: string; pg: number; neo4j: number }>;
+}> {
+  let client: PoolClient | null = null;
+  let session: Session | null = null;
+
+  try {
+    session = getSession();
+    client = await getClient();
+    await setProjectContext(client, projectId);
+
+    // Postgres counts by type
+    const pgResult = await client.query(`
+      SELECT relationship_type, COUNT(*)::int AS count
+      FROM relationships
+      WHERE project_id = $1
+      GROUP BY relationship_type
+      ORDER BY relationship_type
+    `, [projectId]);
+
+    const pgByType: Record<string, number> = {};
+    let pgTotal = 0;
+    for (const row of pgResult.rows) {
+      pgByType[row.relationship_type] = row.count;
+      pgTotal += row.count;
+    }
+
+    // Neo4j counts by type (using r.relationship_type property)
+    const neo4jResult = await session.run(`
+      MATCH ()-[r:RELATIONSHIP {project_id: $projectId}]->()
+      RETURN r.relationship_type AS type, count(r) AS count
+      ORDER BY type
+    `, { projectId });
+
+    const neo4jByType: Record<string, number> = {};
+    let neo4jTotal = 0;
+    for (const record of neo4jResult.records) {
+      const type = record.get('type');
+      const count = record.get('count').toNumber();
+      neo4jByType[type] = count;
+      neo4jTotal += count;
+    }
+
+    // Find mismatches
+    const allTypes = new Set([...Object.keys(pgByType), ...Object.keys(neo4jByType)]);
+    const mismatches: Array<{ type: string; pg: number; neo4j: number }> = [];
+
+    for (const type of allTypes) {
+      const pgCount = pgByType[type] || 0;
+      const neo4jCount = neo4jByType[type] || 0;
+      if (pgCount !== neo4jCount) {
+        mismatches.push({ type, pg: pgCount, neo4j: neo4jCount });
+      }
+    }
+
+    return {
+      consistent: mismatches.length === 0 && pgTotal === neo4jTotal,
+      postgres: { total: pgTotal, byType: pgByType },
+      neo4j: { total: neo4jTotal, byType: neo4jByType },
+      mismatches,
+    };
+  } finally {
+    client?.release();
+    if (session) await session.close();
+  }
+}

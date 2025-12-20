@@ -1,21 +1,28 @@
 // src/extraction/providers/changeset-provider.ts
 // @implements STORY-64.1
+// @implements STORY-64.2
+// @satisfies AC-64.2.5
 // @tdd TDD-A1-ENTITY-REGISTRY
+// @tdd TDD-A2-RELATIONSHIP-REGISTRY
 // ChangeSet derivation provider - groups commits by story reference
 // E52 ChangeSet (derived, not directly extracted)
+// R70 GROUPS (ChangeSet → Commit)
 
 import { execSync } from 'child_process';
-import type { ExtractionProvider, RepoSnapshot, ExtractionResult, ExtractedEntity } from '../types.js';
+import type { ExtractionProvider, RepoSnapshot, ExtractionResult, ExtractedEntity, ExtractedRelationship } from '../types.js';
 import { captureCorrectSignal, captureIncorrectSignal } from '../../ledger/semantic-corpus.js';
 
 /**
- * ChangeSet Provider - derives ChangeSet entities from commit groupings.
+ * ChangeSet Provider - derives ChangeSet entities and R70 relationships.
  * 
  * Entities derived:
  * - E52 ChangeSet: groups commits by story reference (STORY-X.Y in commit message)
  * 
+ * Relationships emitted:
+ * - R70 GROUPS: ChangeSet → Commit (one for each commit in the changeset)
+ * 
  * Note: E52 is DERIVED, not directly extracted. ChangeSets group commits
- * that reference the same story. R70 GROUPS relationships are created in A2.
+ * that reference the same story.
  */
 export class ChangeSetProvider implements ExtractionProvider {
   name = 'changeset-provider';
@@ -27,6 +34,7 @@ export class ChangeSetProvider implements ExtractionProvider {
   async extract(snapshot: RepoSnapshot): Promise<ExtractionResult> {
     const rootPath = snapshot.root_path;
     const entities: ExtractedEntity[] = [];
+    const relationships: ExtractedRelationship[] = [];
     const ref = snapshot.commit_sha || 'HEAD';
 
     try {
@@ -68,11 +76,11 @@ export class ChangeSetProvider implements ExtractionProvider {
 
       for (const storyId of sortedStoryIds) {
         const commits = commitsByStory.get(storyId)!;
-        const instanceId = `CHGSET-STORY-${storyId}`;
+        const changesetInstanceId = `CHGSET-STORY-${storyId}`;
 
         entities.push({
           entity_type: 'E52',
-          instance_id: instanceId,
+          instance_id: changesetInstanceId,
           name: `ChangeSet for STORY-${storyId}`,
           attributes: {
             story_id: `STORY-${storyId}`,
@@ -86,7 +94,28 @@ export class ChangeSetProvider implements ExtractionProvider {
           line_end: 1,
         });
 
-        await captureCorrectSignal('E52', instanceId, {
+        // R70 GROUPS: ChangeSet → Commit (one relationship per commit)
+        // @satisfies AC-64.2.5 - R70 GROUPS extraction
+        for (const sha of commits) {
+          const shortSha = sha.substring(0, 12);
+          const commitInstanceId = `COMMIT-${shortSha}`;
+          const relationshipInstanceId = `R70:${changesetInstanceId}:${commitInstanceId}`;
+
+          relationships.push({
+            relationship_type: 'R70',
+            instance_id: relationshipInstanceId,
+            name: 'GROUPS',
+            from_instance_id: changesetInstanceId,
+            to_instance_id: commitInstanceId,
+            confidence: 1.0, // Deterministic derivation
+            // Evidence anchor - synthetic .git source per AMB-5
+            source_file: '.git',
+            line_start: 1,
+            line_end: 1,
+          });
+        }
+
+        await captureCorrectSignal('E52', changesetInstanceId, {
           story_id: storyId,
           commit_count: commits.length,
         });
@@ -97,7 +126,7 @@ export class ChangeSetProvider implements ExtractionProvider {
       });
     }
 
-    return { entities, relationships: [], evidence: [] };
+    return { entities, relationships, evidence: [] };
   }
 
   /**

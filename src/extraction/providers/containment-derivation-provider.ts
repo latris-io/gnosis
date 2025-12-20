@@ -1,8 +1,8 @@
 // src/extraction/providers/containment-derivation-provider.ts
 // @implements STORY-64.2
-// @satisfies AC-64.2.4, AC-64.2.5, AC-64.2.6, AC-64.2.7
+// @satisfies AC-64.2.4, AC-64.2.5, AC-64.2.6, AC-64.2.7, AC-64.2.8
 // @tdd TDD-A2-RELATIONSHIP-REGISTRY
-// Derives containment relationships (R04-R07) from entity data
+// Derives containment relationships (R04-R07) and R16 from entity data
 // Provider purity: NO imports from src/db/*
 
 import * as path from 'path';
@@ -301,6 +301,67 @@ export function deriveR07(
 }
 
 /**
+ * Derive R16: Function/Class DEFINED_IN SourceFile
+ * 
+ * Links E12 Function and E13 Class entities to their containing E11 SourceFile.
+ * Per Track A canon (ENTRY.md line 137): R16 | DEFINED_IN | Function/Class → SourceFile
+ * 
+ * @param codeUnits E12 Function and E13 Class entities
+ * @param files E11 SourceFile entities
+ */
+export function deriveR16(
+  codeUnits: EntityInput[],
+  files: EntityInput[]
+): ExtractedRelationship[] {
+  const relationships: ExtractedRelationship[] = [];
+  
+  // Build file lookup by path
+  const fileByPath = new Map<string, EntityInput>();
+  for (const file of files) {
+    const filePath = getFilePathFromInstanceId(file.instance_id);
+    if (filePath) {
+      fileByPath.set(filePath, file);
+    }
+  }
+  
+  for (const unit of codeUnits) {
+    // Only process E12 (Function) and E13 (Class)
+    if (unit.entity_type !== 'E12' && unit.entity_type !== 'E13') {
+      continue;
+    }
+    
+    // Extract file path from unit's instance_id (FUNC-path:name or CLASS-path:name)
+    const filePath = getFilePathFromInstanceId(unit.instance_id);
+    if (!filePath) {
+      continue;
+    }
+    
+    const file = fileByPath.get(filePath);
+    if (!file) {
+      // No matching file entity
+      continue;
+    }
+    
+    const relationshipInstanceId = `R16:${unit.instance_id}:${file.instance_id}`;
+    
+    relationships.push({
+      relationship_type: 'R16',
+      instance_id: relationshipInstanceId,
+      name: 'DEFINED_IN',
+      from_instance_id: unit.instance_id,
+      to_instance_id: file.instance_id,
+      confidence: 1.0,
+      // Evidence from FROM entity (Function/Class)
+      source_file: unit.source_file,
+      line_start: unit.line_start,
+      line_end: unit.line_end,
+    });
+  }
+  
+  return relationships;
+}
+
+/**
  * Validate evidence anchors for entities that should have native evidence.
  * Throws on invalid anchors for E11, E12, E13, E28, E29.
  */
@@ -369,6 +430,13 @@ export class ContainmentDerivationProvider {
    */
   deriveR07(suites: EntityInput[], cases: EntityInput[]): ExtractedRelationship[] {
     return deriveR07(suites, cases);
+  }
+  
+  /**
+   * Derive R16: Function/Class DEFINED_IN SourceFile
+   */
+  deriveR16(codeUnits: EntityInput[], files: EntityInput[]): ExtractedRelationship[] {
+    return deriveR16(codeUnits, files);
   }
   
   /**

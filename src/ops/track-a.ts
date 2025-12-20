@@ -44,12 +44,20 @@ import {
   deriveR05, 
   deriveR06, 
   deriveR07,
+  deriveR16,
   type EntityInput 
 } from '../extraction/providers/containment-derivation-provider.js';
 import {
   parseFrontmatter,
   discoverTDDs,
 } from '../extraction/providers/tdd-frontmatter-provider.js';
+import {
+  deriveR63,
+  deriveR67,
+  type SourceFileInput as GitSourceFileInput,
+  type CommitInput,
+} from '../extraction/providers/git-relationship-provider.js';
+import { ChangeSetProvider } from '../extraction/providers/changeset-provider.js';
 import {
   deriveTDDRelationships,
   flattenRelationships,
@@ -374,23 +382,25 @@ export async function verifyContainmentPrerequisites(projectId: string): Promise
 }
 
 /**
- * Extract and persist containment relationships (R04-R07).
+ * Extract and persist containment relationships (R04-R07) and R16.
  * 
  * Derives from existing entities:
  * - R04: Module CONTAINS_FILE SourceFile
  * - R05: SourceFile CONTAINS_ENTITY Function/Class
  * - R06: TestFile CONTAINS_SUITE TestSuite
  * - R07: TestSuite CONTAINS_CASE TestCase
+ * - R16: Function/Class DEFINED_IN SourceFile (per Track A canon ENTRY.md)
  * 
- * Evidence comes from the TO entity in each relationship.
+ * Evidence comes from the TO entity (R04-R07) or FROM entity (R16).
  * 
- * @satisfies AC-64.2.4, AC-64.2.5, AC-64.2.6, AC-64.2.7
+ * @satisfies AC-64.2.4, AC-64.2.5, AC-64.2.6, AC-64.2.7, AC-64.2.8
  */
 export async function extractAndPersistContainmentRelationships(projectId: string): Promise<{
   r04: { extracted: number; persisted: number };
   r05: { extracted: number; persisted: number };
   r06: { extracted: number; persisted: number };
   r07: { extracted: number; persisted: number };
+  r16: { extracted: number; persisted: number };
   total: { extracted: number; persisted: number; synced: number };
 }> {
   // Query all required entity types via api/v1 (G-API compliant)
@@ -427,8 +437,10 @@ export async function extractAndPersistContainmentRelationships(projectId: strin
   const r05Rels = deriveR05(files, [...functions, ...classes]);
   const r06Rels = deriveR06(testFiles, suites);
   const r07Rels = deriveR07(suites, cases);
+  // R16: Function/Class → SourceFile (per Track A canon, not DataSchema → SourceFile)
+  const r16Rels = deriveR16([...functions, ...classes], files);
   
-  const allRelationships = [...r04Rels, ...r05Rels, ...r06Rels, ...r07Rels];
+  const allRelationships = [...r04Rels, ...r05Rels, ...r06Rels, ...r07Rels, ...r16Rels];
   
   if (allRelationships.length === 0) {
     return {
@@ -436,6 +448,7 @@ export async function extractAndPersistContainmentRelationships(projectId: strin
       r05: { extracted: 0, persisted: 0 },
       r06: { extracted: 0, persisted: 0 },
       r07: { extracted: 0, persisted: 0 },
+      r16: { extracted: 0, persisted: 0 },
       total: { extracted: 0, persisted: 0, synced: 0 },
     };
   }
@@ -454,6 +467,7 @@ export async function extractAndPersistContainmentRelationships(projectId: strin
     r05: { extracted: r05Rels.length, persisted: countPersisted('R05:') },
     r06: { extracted: r06Rels.length, persisted: countPersisted('R06:') },
     r07: { extracted: r07Rels.length, persisted: countPersisted('R07:') },
+    r16: { extracted: r16Rels.length, persisted: countPersisted('R16:') },
     total: {
       extracted: allRelationships.length,
       persisted: persistResult.results.filter(r => r.operation !== 'NO-OP').length,
@@ -608,6 +622,92 @@ export async function extractAndPersistTddRelationships(
     extracted: { ...counts, total: allRelationships.length },
     persisted,
     synced: result.neo4jSync?.synced ?? 0,
+  };
+}
+
+// ============================================================================
+// Git Relationship Extraction (R63, R67, R70)
+// ============================================================================
+
+/**
+ * Extract and persist git-based relationships (R63, R67, R70).
+ * 
+ * Per Track A canon (ENTRY.md):
+ * - R63: SourceFile INTRODUCED_IN Commit (Track A deviation from global canon)
+ * - R67: SourceFile MODIFIED_IN Commit
+ * - R70: ChangeSet GROUPS Commit
+ * 
+ * @satisfies AC-64.2.9, AC-64.2.10
+ */
+export async function extractAndPersistGitRelationships(projectId: string): Promise<{
+  r63: { extracted: number; persisted: number };
+  r67: { extracted: number; persisted: number };
+  r70: { extracted: number; persisted: number };
+  total: { extracted: number; persisted: number; synced: number };
+}> {
+  const rootPath = process.cwd();
+  
+  // Query required entity types via api/v1 (G-API compliant)
+  const [e11s, e50s] = await Promise.all([
+    queryEntities(projectId, 'E11'),
+    queryEntities(projectId, 'E50'),
+  ]);
+  
+  // Normalize to input types
+  const sourceFiles: GitSourceFileInput[] = e11s.map((e: any) => ({
+    instance_id: e.instance_id ?? e.instanceId,
+    source_file: e.source_file ?? e.sourceFile,
+  }));
+  
+  const commits: CommitInput[] = e50s.map((e: any) => ({
+    instance_id: e.instance_id ?? e.instanceId,
+    sha: e.attributes?.sha ?? '',
+  }));
+  
+  // Derive R63: SourceFile INTRODUCED_IN Commit (Track A canon)
+  const r63Rels = deriveR63(sourceFiles, commits, rootPath);
+  
+  // Derive R67: SourceFile MODIFIED_IN Commit
+  const r67Rels = deriveR67(sourceFiles, commits, rootPath);
+  
+  // Derive R70: ChangeSet GROUPS Commit (via changeset provider)
+  const changesetProvider = new ChangeSetProvider();
+  const changesetResult = await changesetProvider.extract({
+    id: 'git-rel-extraction',
+    root_path: rootPath,
+    timestamp: new Date(),
+  });
+  const r70Rels = changesetResult.relationships;
+  
+  const allRelationships = [...r63Rels, ...r67Rels, ...r70Rels];
+  
+  if (allRelationships.length === 0) {
+    return {
+      r63: { extracted: 0, persisted: 0 },
+      r67: { extracted: 0, persisted: 0 },
+      r70: { extracted: 0, persisted: 0 },
+      total: { extracted: 0, persisted: 0, synced: 0 },
+    };
+  }
+  
+  // Persist and sync
+  const persistResult = await persistRelationshipsAndSync(projectId, allRelationships);
+  
+  // Count persisted by relationship type
+  const countPersisted = (prefix: string) => 
+    persistResult.results.filter(r => 
+      r.relationship?.instance_id?.startsWith(prefix) && r.operation !== 'NO-OP'
+    ).length;
+  
+  return {
+    r63: { extracted: r63Rels.length, persisted: countPersisted('R63:') },
+    r67: { extracted: r67Rels.length, persisted: countPersisted('R67:') },
+    r70: { extracted: r70Rels.length, persisted: countPersisted('R70:') },
+    total: {
+      extracted: allRelationships.length,
+      persisted: persistResult.results.filter(r => r.operation !== 'NO-OP').length,
+      synced: persistResult.neo4jSync?.synced ?? 0,
+    },
   };
 }
 
