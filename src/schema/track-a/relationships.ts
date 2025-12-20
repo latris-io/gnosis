@@ -22,7 +22,7 @@ export type RelationshipTypeCode =
   | 'R11'   // DEFINES_SCHEMA: Story → DataSchema
   // Design→Impl (R14, R16)
   | 'R14'   // IMPLEMENTED_BY: TechnicalDesign → SourceFile
-  | 'R16'   // DEFINED_IN: DataSchema → SourceFile
+  | 'R16'   // DEFINED_IN: Function/Class → SourceFile (Track A canon per ENTRY.md)
   // Req→Impl (R18-R19)
   | 'R18'   // IMPLEMENTS: SourceFile → Story
   | 'R19'   // SATISFIES: Function/Class → AcceptanceCriterion

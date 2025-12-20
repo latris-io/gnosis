@@ -23,7 +23,10 @@
     "sync:neo4j": "npx tsx scripts/sync-to-neo4j.ts",
     "lint:markers": "./scripts/lint-markers.sh",
     "calibrate:tdds": "npx tsx scripts/calibrate-tdds.ts",
-    "verify:organ-parity": "npx tsx scripts/verify-organ-parity.ts"
+    "verify:organ-parity": "npx tsx scripts/verify-organ-parity.ts",
+    "verify:track-milestone": "npx tsx scripts/verification/verify-track-milestone.ts",
+    "verify:expectation-drift": "npx tsx scripts/verification/expectations/drift-detector.ts",
+    "verify:cross-store": "npx tsx scripts/verification/reconcilers/cross-store-reconciler.ts"
   },
   "dependencies": {
     "dotenv": "^16.4.1",
