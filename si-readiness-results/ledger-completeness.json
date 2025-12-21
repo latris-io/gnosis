@@ -1,0 +1,229 @@
+{
+  "timestamp": "2025-12-21T20:21:51.882Z",
+  "invariant": {
+    "db_entities": 3830,
+    "db_relationships": 3825,
+    "db_total": 7655,
+    "ledger_unique_entities": 3830,
+    "ledger_unique_relationships": 3825,
+    "ledger_total": 7655,
+    "entities_missing": 0,
+    "relationships_missing": 0,
+    "total_missing": 0,
+    "pass": true
+  },
+  "entity_type_coverage": [
+    {
+      "type": "E01",
+      "db_count": 65,
+      "ledger_count": 65,
+      "missing": 0,
+      "coverage_pct": 100,
+      "pass": true
+    },
+    {
+      "type": "E02",
+      "db_count": 351,
+      "ledger_count": 351,
+      "missing": 0,
+      "coverage_pct": 100,
+      "pass": true
+    },
+    {
+      "type": "E03",
+      "db_count": 2849,
+      "ledger_count": 2849,
+      "missing": 0,
+      "coverage_pct": 100,
+      "pass": true
+    },
+    {
+      "type": "E06",
+      "db_count": 6,
+      "ledger_count": 6,
+      "missing": 0,
+      "coverage_pct": 100,
+      "pass": true
+    },
+    {
+      "type": "E08",
+      "db_count": 4,
+      "ledger_count": 4,
+      "missing": 0,
+      "coverage_pct": 100,
+      "pass": true
+    },
+    {
+      "type": "E11",
+      "db_count": 34,
+      "ledger_count": 34,
+      "missing": 0,
+      "coverage_pct": 100,
+      "pass": true
+    },
+    {
+      "type": "E12",
+      "db_count": 141,
+      "ledger_count": 141,
+      "missing": 0,
+      "coverage_pct": 100,
+      "pass": true
+    },
+    {
+      "type": "E13",
+      "db_count": 10,
+      "ledger_count": 10,
+      "missing": 0,
+      "coverage_pct": 100,
+      "pass": true
+    },
+    {
+      "type": "E15",
+      "db_count": 15,
+      "ledger_count": 15,
+      "missing": 0,
+      "coverage_pct": 100,
+      "pass": true
+    },
+    {
+      "type": "E27",
+      "db_count": 21,
+      "ledger_count": 21,
+      "missing": 0,
+      "coverage_pct": 100,
+      "pass": true
+    },
+    {
+      "type": "E28",
+      "db_count": 77,
+      "ledger_count": 77,
+      "missing": 0,
+      "coverage_pct": 100,
+      "pass": true
+    },
+    {
+      "type": "E29",
+      "db_count": 179,
+      "ledger_count": 179,
+      "missing": 0,
+      "coverage_pct": 100,
+      "pass": true
+    },
+    {
+      "type": "E49",
+      "db_count": 5,
+      "ledger_count": 5,
+      "missing": 0,
+      "coverage_pct": 100,
+      "pass": true
+    },
+    {
+      "type": "E50",
+      "db_count": 73,
+      "ledger_count": 73,
+      "missing": 0,
+      "coverage_pct": 100,
+      "pass": true
+    }
+  ],
+  "relationship_type_coverage": [
+    {
+      "type": "R01",
+      "db_count": 351,
+      "ledger_count": 351,
+      "missing": 0,
+      "coverage_pct": 100,
+      "pass": true
+    },
+    {
+      "type": "R02",
+      "db_count": 2849,
+      "ledger_count": 2849,
+      "missing": 0,
+      "coverage_pct": 100,
+      "pass": true
+    },
+    {
+      "type": "R04",
+      "db_count": 34,
+      "ledger_count": 34,
+      "missing": 0,
+      "coverage_pct": 100,
+      "pass": true
+    },
+    {
+      "type": "R05",
+      "db_count": 151,
+      "ledger_count": 151,
+      "missing": 0,
+      "coverage_pct": 100,
+      "pass": true
+    },
+    {
+      "type": "R06",
+      "db_count": 77,
+      "ledger_count": 77,
+      "missing": 0,
+      "coverage_pct": 100,
+      "pass": true
+    },
+    {
+      "type": "R08",
+      "db_count": 4,
+      "ledger_count": 4,
+      "missing": 0,
+      "coverage_pct": 100,
+      "pass": true
+    },
+    {
+      "type": "R09",
+      "db_count": 24,
+      "ledger_count": 24,
+      "missing": 0,
+      "coverage_pct": 100,
+      "pass": true
+    },
+    {
+      "type": "R11",
+      "db_count": 4,
+      "ledger_count": 4,
+      "missing": 0,
+      "coverage_pct": 100,
+      "pass": true
+    },
+    {
+      "type": "R14",
+      "db_count": 25,
+      "ledger_count": 25,
+      "missing": 0,
+      "coverage_pct": 100,
+      "pass": true
+    },
+    {
+      "type": "R16",
+      "db_count": 151,
+      "ledger_count": 151,
+      "missing": 0,
+      "coverage_pct": 100,
+      "pass": true
+    },
+    {
+      "type": "R63",
+      "db_count": 34,
+      "ledger_count": 34,
+      "missing": 0,
+      "coverage_pct": 100,
+      "pass": true
+    },
+    {
+      "type": "R67",
+      "db_count": 121,
+      "ledger_count": 121,
+      "missing": 0,
+      "coverage_pct": 100,
+      "pass": true
+    }
+  ],
+  "all_types_pass": true,
+  "verdict": "PASS"
+}

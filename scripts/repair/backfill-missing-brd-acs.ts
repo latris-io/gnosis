@@ -3,6 +3,7 @@
 // Uses entity-service and relationship-service to ensure ledger coverage
 import 'dotenv/config';
 import * as fs from 'fs';
+import { execSync } from 'child_process';
 import pg from 'pg';
 import { parseBRD } from '../../src/extraction/parsers/brd-parser.js';
 import { upsert as upsertEntity, batchUpsert as batchUpsertEntities } from '../../src/services/entities/entity-service.js';
@@ -11,17 +12,44 @@ import type { ExtractedEntity, ExtractedRelationship } from '../../src/extractio
 
 const { Pool } = pg;
 
-interface LedgerDelta {
-  timestamp: string;
-  e03_inserted: number;
-  e03_updated: number;
-  e03_noop: number;
-  r02_inserted: number;
-  r02_updated: number;
-  r02_noop: number;
-  ledger_entries_before: number;
-  ledger_entries_after: number;
-  ledger_delta: number;
+interface LedgerDeltaReport {
+  // Run header
+  run_header: {
+    timestamp: string;
+    git_sha: string;
+    project_id: string;
+    script: string;
+  };
+  // Baseline state
+  baseline: {
+    ledger_line_count: number;
+    db_entity_count: number;
+    db_relationship_count: number;
+  };
+  // E03 results (explicit idempotence)
+  e03: {
+    inserted: number;
+    already_exists: number;
+    ledger_appended: number;
+  };
+  // R02 results (explicit idempotence)
+  r02: {
+    inserted: number;
+    already_exists: number;
+    ledger_appended: number;
+  };
+  // Ending state
+  ending: {
+    ledger_line_count: number;
+    db_entity_count: number;
+    db_relationship_count: number;
+  };
+  // Verification
+  verification: {
+    ledger_delta: number;
+    expected_delta: number;
+    match: boolean;
+  };
 }
 
 async function main() {
@@ -38,21 +66,35 @@ async function main() {
   const brdPath = 'docs/BRD_V20_6_3_COMPLETE.md';
   const relativePath = 'docs/BRD_V20_6_3_COMPLETE.md';
 
-  // Load detection report
-  console.log('Loading detection report...');
-  const report = JSON.parse(fs.readFileSync('si-readiness-results/missing-e03.json', 'utf-8'));
-  console.log(`  Missing E03s: ${report.missing_count}`);
+  // Capture run header
+  const gitSha = execSync('git rev-parse HEAD', { encoding: 'utf-8' }).trim();
+  const timestamp = new Date().toISOString();
+  console.log('Run Header:');
+  console.log(`  Timestamp: ${timestamp}`);
+  console.log(`  Git SHA: ${gitSha}`);
+  console.log(`  Project ID: ${projectId}`);
 
-  if (report.missing_count === 0) {
+  // Load detection report
+  console.log('\nLoading detection report...');
+  const detectionReport = JSON.parse(fs.readFileSync('si-readiness-results/missing-e03.json', 'utf-8'));
+  console.log(`  Missing E03s: ${detectionReport.missing_count}`);
+
+  // Capture baseline state
+  const ledgerBefore = fs.readFileSync('shadow-ledger/ledger.jsonl', 'utf-8')
+    .split('\n').filter(l => l.trim()).length;
+  const baselineEntities = await pool.query('SELECT COUNT(*)::int AS c FROM entities');
+  const baselineRels = await pool.query('SELECT COUNT(*)::int AS c FROM relationships');
+  
+  console.log('\nBaseline State:');
+  console.log(`  Ledger entries: ${ledgerBefore}`);
+  console.log(`  DB entities: ${baselineEntities.rows[0].c}`);
+  console.log(`  DB relationships: ${baselineRels.rows[0].c}`);
+
+  if (detectionReport.missing_count === 0) {
     console.log('\nNo missing E03s. Nothing to backfill.');
     await pool.end();
     return;
   }
-
-  // Get ledger count before
-  const ledgerBefore = fs.readFileSync('shadow-ledger/ledger.jsonl', 'utf-8')
-    .split('\n').filter(l => l.trim()).length;
-  console.log(`  Ledger entries before: ${ledgerBefore}`);
 
   // Parse BRD to get full AC data
   console.log('\nParsing BRD for full AC data...');
@@ -122,24 +164,26 @@ async function main() {
 
   // Insert entities
   console.log('\n─────────────────────────────────────────────────────────────────');
-  console.log('Inserting E03 entities...');
-  let e03Inserted = 0, e03Updated = 0, e03Noop = 0;
+  console.log('Upserting E03 entities...');
+  let e03Inserted = 0, e03AlreadyExists = 0;
 
   const entityResults = await batchUpsertEntities(projectId, entitiesToInsert);
   for (const result of entityResults) {
     if (result.operation === 'CREATE') e03Inserted++;
-    else if (result.operation === 'UPDATE') e03Updated++;
-    else e03Noop++;
+    else e03AlreadyExists++; // UPDATE or NO-OP means entity already existed
   }
 
-  console.log(`  Inserted: ${e03Inserted}`);
-  console.log(`  Updated: ${e03Updated}`);
-  console.log(`  No-op: ${e03Noop}`);
+  // Ledger appended = newly inserted (CREATE triggers ledger write)
+  const e03LedgerAppended = e03Inserted;
+
+  console.log(`  inserted: ${e03Inserted}`);
+  console.log(`  already_exists: ${e03AlreadyExists}`);
+  console.log(`  ledger_appended: ${e03LedgerAppended}`);
 
   // Insert relationships
   console.log('\n─────────────────────────────────────────────────────────────────');
-  console.log('Inserting R02 relationships...');
-  let r02Inserted = 0, r02Updated = 0, r02Noop = 0;
+  console.log('Upserting R02 relationships...');
+  let r02Inserted = 0, r02AlreadyExists = 0;
 
   // Process in batches of 50 (no Neo4j sync - will do that separately)
   const batchSize = 50;
@@ -149,57 +193,98 @@ async function main() {
     const results = await batchUpsertRelationships(projectId, batch);
     for (const result of results) {
       if (result.operation === 'CREATE') r02Inserted++;
-      else if (result.operation === 'UPDATE') r02Updated++;
-      else r02Noop++;
+      else r02AlreadyExists++; // UPDATE or NO-OP means relationship already existed
     }
   }
 
-  console.log(`  Inserted: ${r02Inserted}`);
-  console.log(`  Updated: ${r02Updated}`);
-  console.log(`  No-op: ${r02Noop}`);
+  // Ledger appended = newly inserted (CREATE triggers ledger write)
+  const r02LedgerAppended = r02Inserted;
 
-  // Get ledger count after
+  console.log(`  inserted: ${r02Inserted}`);
+  console.log(`  already_exists: ${r02AlreadyExists}`);
+  console.log(`  ledger_appended: ${r02LedgerAppended}`);
+
+  // Capture ending state
   const ledgerAfter = fs.readFileSync('shadow-ledger/ledger.jsonl', 'utf-8')
     .split('\n').filter(l => l.trim()).length;
+  const endingEntities = await pool.query('SELECT COUNT(*)::int AS c FROM entities');
+  const endingRels = await pool.query('SELECT COUNT(*)::int AS c FROM relationships');
 
-  // Generate ledger delta report
-  const ledgerDelta: LedgerDelta = {
-    timestamp: new Date().toISOString(),
-    e03_inserted: e03Inserted,
-    e03_updated: e03Updated,
-    e03_noop: e03Noop,
-    r02_inserted: r02Inserted,
-    r02_updated: r02Updated,
-    r02_noop: r02Noop,
-    ledger_entries_before: ledgerBefore,
-    ledger_entries_after: ledgerAfter,
-    ledger_delta: ledgerAfter - ledgerBefore,
+  const ledgerDelta = ledgerAfter - ledgerBefore;
+  const expectedDelta = e03LedgerAppended + r02LedgerAppended;
+
+  // Generate comprehensive report
+  const report: LedgerDeltaReport = {
+    run_header: {
+      timestamp,
+      git_sha: gitSha,
+      project_id: projectId,
+      script: 'scripts/repair/backfill-missing-brd-acs.ts',
+    },
+    baseline: {
+      ledger_line_count: ledgerBefore,
+      db_entity_count: baselineEntities.rows[0].c,
+      db_relationship_count: baselineRels.rows[0].c,
+    },
+    e03: {
+      inserted: e03Inserted,
+      already_exists: e03AlreadyExists,
+      ledger_appended: e03LedgerAppended,
+    },
+    r02: {
+      inserted: r02Inserted,
+      already_exists: r02AlreadyExists,
+      ledger_appended: r02LedgerAppended,
+    },
+    ending: {
+      ledger_line_count: ledgerAfter,
+      db_entity_count: endingEntities.rows[0].c,
+      db_relationship_count: endingRels.rows[0].c,
+    },
+    verification: {
+      ledger_delta: ledgerDelta,
+      expected_delta: expectedDelta,
+      match: ledgerDelta === expectedDelta,
+    },
   };
 
-  fs.writeFileSync('si-readiness-results/ledger-delta.json', JSON.stringify(ledgerDelta, null, 2));
+  fs.writeFileSync('si-readiness-results/ledger-delta.json', JSON.stringify(report, null, 2));
 
   // Summary
   console.log('\n═══════════════════════════════════════════════════════════════');
   console.log('BACKFILL COMPLETE');
   console.log('═══════════════════════════════════════════════════════════════\n');
 
-  console.log(`E03: ${e03Inserted} inserted, ${e03Updated} updated, ${e03Noop} no-op`);
-  console.log(`R02: ${r02Inserted} inserted, ${r02Updated} updated, ${r02Noop} no-op`);
-  console.log(`Ledger delta: ${ledgerDelta.ledger_delta} entries`);
-  console.log(`Expected delta: ${e03Inserted + e03Updated + r02Inserted + r02Updated}`);
+  console.log('E03:');
+  console.log(`  inserted: ${e03Inserted}`);
+  console.log(`  already_exists: ${e03AlreadyExists}`);
+  console.log(`  ledger_appended: ${e03LedgerAppended}`);
+  
+  console.log('\nR02:');
+  console.log(`  inserted: ${r02Inserted}`);
+  console.log(`  already_exists: ${r02AlreadyExists}`);
+  console.log(`  ledger_appended: ${r02LedgerAppended}`);
 
-  // Verify counts
+  console.log('\nEnding State:');
+  console.log(`  Ledger entries: ${ledgerAfter}`);
+  console.log(`  DB entities: ${endingEntities.rows[0].c}`);
+  console.log(`  DB relationships: ${endingRels.rows[0].c}`);
+
+  console.log('\nVerification:');
+  console.log(`  Ledger delta: ${ledgerDelta}`);
+  console.log(`  Expected delta: ${expectedDelta}`);
+  if (report.verification.match) {
+    console.log('  ✓ MATCH: Ledger delta equals expected');
+  } else {
+    console.log('  ✗ MISMATCH: Ledger delta does not match expected!');
+  }
+
+  // Verify E03 count
   const e03Count = await pool.query('SELECT COUNT(*)::int AS c FROM entities WHERE entity_type = $1', ['E03']);
-  const r02Count = await pool.query('SELECT COUNT(*)::int AS c FROM relationships WHERE relationship_type = $1', ['R02']);
-
-  console.log(`\nFinal counts:`);
-  console.log(`  E03 in DB: ${e03Count.rows[0].c} (expected: 2849)`);
-  console.log(`  R02 in DB: ${r02Count.rows[0].c}`);
-
   if (e03Count.rows[0].c === 2849) {
     console.log('\n✓ E03 count matches canonical 2849');
   } else {
-    console.log('\n✗ E03 count mismatch!');
+    console.log(`\n✗ E03 count mismatch: ${e03Count.rows[0].c} (expected 2849)`);
   }
 
   await pool.end();
