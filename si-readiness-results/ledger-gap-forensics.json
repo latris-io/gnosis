@@ -1,0 +1,10 @@
+{
+  "timestamp": "2025-12-21T20:01:01.411Z",
+  "backfilled_count": 137,
+  "backfilled_with_ledger": 137,
+  "backfilled_without_ledger": 0,
+  "total_e03_in_ledger": 2849,
+  "total_e03_in_db": 2849,
+  "ledger_gap": 0,
+  "gap_instance_ids": []
+}

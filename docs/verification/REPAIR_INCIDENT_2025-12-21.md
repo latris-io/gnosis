@@ -58,6 +58,17 @@ All gates passed after repair:
 ✓ PASS: Corpus Keying (99 valid refs)
 ```
 
+## Ledger Gap Investigation (2025-12-21)
+
+A potential ledger gap was flagged because `ledger-delta.json` showed `e03_inserted: 0` while 137 E03s were present in the DB.
+
+**Forensic Finding**: No gap exists. The `ledger-delta.json` was captured during the SECOND backfill run. The FIRST run (which was aborted after R02 errors) successfully inserted and logged all 137 E03s.
+
+Evidence:
+- `scripts/repair/diagnose-ledger-gap.ts` verified all 137 backfilled E03s have ledger entries
+- `scripts/si-readiness/ledger-coverage-audit.ts` confirms 100% coverage (7655/7655)
+- E03 in ledger: 2849 (canonical count)
+
 ## Artifacts
 
 | Artifact | Path |
