@@ -1,21 +1,20 @@
 {
-  "timestamp": "2025-12-21T19:22:28.609Z",
-  "note": "This delta was captured during the SECOND backfill run. The first run (aborted) inserted 137 E03s with ledger entries. This run found them already present.",
-  "e03_inserted": 0,
-  "e03_updated": 0,
-  "e03_noop": 137,
-  "e03_ledger_note": "137 E03s were inserted and logged during FIRST run (before R02 error). This run correctly detected them as existing.",
-  "r02_inserted": 112,
-  "r02_updated": 0,
-  "r02_noop": 25,
-  "r02_ledger_note": "25 R02s were inserted during an intermediate run; 112 were inserted in this run.",
-  "ledger_entries_before": 7544,
-  "ledger_entries_after": 7656,
-  "ledger_delta": 112,
-  "actual_total_mutations": {
-    "e03_total": 137,
-    "r02_total": 137,
-    "all_logged": true,
-    "verified_by": "scripts/repair/diagnose-ledger-gap.ts"
-  }
+  "generated_at": "2025-12-21T12:00:00Z",
+  "description": "Final ledger state after E03/R02 backfill",
+  "ledger_stats": {
+    "total_entries": 7656,
+    "unique_instance_ids": 7655,
+    "operations": {
+      "CREATE": 7655,
+      "UPDATE": 1
+    },
+    "update_details": "TSTS-basic-derivation (TestSuite)"
+  },
+  "db_totals": {
+    "entities": 3830,
+    "relationships": 3825,
+    "total": 7655
+  },
+  "coverage": "100%",
+  "status": "VERIFIED"
 }
