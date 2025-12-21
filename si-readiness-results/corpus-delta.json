@@ -1,0 +1,14 @@
+{
+  "timestamp": "2025-12-21T19:23:09.422Z",
+  "corpus_signals_total": 3815,
+  "backfilled_e03_count": 137,
+  "corpus_signals_for_backfilled": 137,
+  "backfilled_in_db": 137,
+  "backfilled_missing_from_db": 0,
+  "notes": [
+    "Corpus was generated before backfill - new E03s may not have CORRECT signals",
+    "This is acceptable - corpus keying uses instance_id, which is valid after backfill",
+    "New E03 signals can be generated during next extraction run"
+  ],
+  "pass": true
+}

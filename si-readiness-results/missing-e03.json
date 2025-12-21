@@ -1,0 +1,1263 @@
+{
+  "timestamp": "2025-12-21T19:13:57.086Z",
+  "canonical_source": "docs/BRD_V20_6_3_COMPLETE.md",
+  "parser_e03_count": 2849,
+  "db_e03_count": 2712,
+  "missing_count": 137,
+  "missing_by_epic": {
+    "64": 116,
+    "65": 21
+  },
+  "missing_by_story": {
+    "STORY-64.4": 6,
+    "STORY-64.5": 10,
+    "STORY-64.6": 10,
+    "STORY-64.7": 10,
+    "STORY-64.8": 10,
+    "STORY-64.9": 10,
+    "STORY-64.10": 10,
+    "STORY-64.11": 10,
+    "STORY-64.12": 10,
+    "STORY-64.13": 10,
+    "STORY-64.14": 10,
+    "STORY-64.15": 10,
+    "STORY-65.1": 7,
+    "STORY-65.2": 7,
+    "STORY-65.3": 7
+  },
+  "missing_acs": [
+    {
+      "instance_id": "AC-64.4.5",
+      "epic_number": 64,
+      "story_number": 4,
+      "ac_number": 5,
+      "description": "Parse package.json dependencies → R27 DEPENDS_EXTERNAL (confidence: 0.99)",
+      "line_start": 10953,
+      "line_end": 10953
+    },
+    {
+      "instance_id": "AC-64.4.6",
+      "epic_number": 64,
+      "story_number": 4,
+      "ac_number": 6,
+      "description": "Parse route definitions → R31 EXPOSES (confidence: 0.95)",
+      "line_start": 10954,
+      "line_end": 10954
+    },
+    {
+      "instance_id": "AC-64.4.7",
+      "epic_number": 64,
+      "story_number": 4,
+      "ac_number": 7,
+      "description": "Parse SQL/ORM queries → R28 READS_FROM, R29 WRITES_TO (confidence: 0.85)",
+      "line_start": 10955,
+      "line_end": 10955
+    },
+    {
+      "instance_id": "AC-64.4.8",
+      "epic_number": 64,
+      "story_number": 4,
+      "ac_number": 8,
+      "description": "Parse migration files → R30 MIGRATES (confidence: 0.95)",
+      "line_start": 10956,
+      "line_end": 10956
+    },
+    {
+      "instance_id": "AC-64.4.9",
+      "epic_number": 64,
+      "story_number": 4,
+      "ac_number": 9,
+      "description": "Parse config access → R33 USES_CONFIG (confidence: 0.90)",
+      "line_start": 10957,
+      "line_end": 10957
+    },
+    {
+      "instance_id": "AC-64.4.10",
+      "epic_number": 64,
+      "story_number": 4,
+      "ac_number": 10,
+      "description": "Analysis completes <10 minutes for 100K LOC",
+      "line_start": 10958,
+      "line_end": 10958
+    },
+    {
+      "instance_id": "AC-64.5.1",
+      "epic_number": 64,
+      "story_number": 5,
+      "ac_number": 1,
+      "description": "Single-hop query: `GET /api/graph/{id}/relationships`",
+      "line_start": 10975,
+      "line_end": 10975
+    },
+    {
+      "instance_id": "AC-64.5.2",
+      "epic_number": 64,
+      "story_number": 5,
+      "ac_number": 2,
+      "description": "Multi-hop query: `POST /api/graph/traverse` with depth parameter",
+      "line_start": 10976,
+      "line_end": 10976
+    },
+    {
+      "instance_id": "AC-64.5.3",
+      "epic_number": 64,
+      "story_number": 5,
+      "ac_number": 3,
+      "description": "Confidence filter parameter: `?min_confidence=0.7`",
+      "line_start": 10977,
+      "line_end": 10977
+    },
+    {
+      "instance_id": "AC-64.5.4",
+      "epic_number": 64,
+      "story_number": 5,
+      "ac_number": 4,
+      "description": "Provenance filter: `?provenance=explicit,structural`",
+      "line_start": 10978,
+      "line_end": 10978
+    },
+    {
+      "instance_id": "AC-64.5.5",
+      "epic_number": 64,
+      "story_number": 5,
+      "ac_number": 5,
+      "description": "Impact query: `GET /api/graph/{id}/impact` returns blast radius",
+      "line_start": 10979,
+      "line_end": 10979
+    },
+    {
+      "instance_id": "AC-64.5.6",
+      "epic_number": 64,
+      "story_number": 5,
+      "ac_number": 6,
+      "description": "Coverage query: `GET /api/graph/coverage/{type}` returns percentage",
+      "line_start": 10980,
+      "line_end": 10980
+    },
+    {
+      "instance_id": "AC-64.5.7",
+      "epic_number": 64,
+      "story_number": 5,
+      "ac_number": 7,
+      "description": "Orphan query: `GET /api/graph/orphans/{type}` returns unlinked entities",
+      "line_start": 10981,
+      "line_end": 10981
+    },
+    {
+      "instance_id": "AC-64.5.8",
+      "epic_number": 64,
+      "story_number": 5,
+      "ac_number": 8,
+      "description": "Response <500ms for single-entity queries",
+      "line_start": 10982,
+      "line_end": 10982
+    },
+    {
+      "instance_id": "AC-64.5.9",
+      "epic_number": 64,
+      "story_number": 5,
+      "ac_number": 9,
+      "description": "Response <5s for full impact analysis",
+      "line_start": 10983,
+      "line_end": 10983
+    },
+    {
+      "instance_id": "AC-64.5.10",
+      "epic_number": 64,
+      "story_number": 5,
+      "ac_number": 10,
+      "description": "Cypher query support for complex ad-hoc queries",
+      "line_start": 10984,
+      "line_end": 10984
+    },
+    {
+      "instance_id": "AC-64.6.1",
+      "epic_number": 64,
+      "story_number": 6,
+      "ac_number": 1,
+      "description": "G01: storyCodeCoverage ≥99% enforced",
+      "line_start": 11001,
+      "line_end": 11001
+    },
+    {
+      "instance_id": "AC-64.6.2",
+      "epic_number": 64,
+      "story_number": 6,
+      "ac_number": 2,
+      "description": "G02: acCodeCoverage ≥95% enforced",
+      "line_start": 11002,
+      "line_end": 11002
+    },
+    {
+      "instance_id": "AC-64.6.3",
+      "epic_number": 64,
+      "story_number": 6,
+      "ac_number": 3,
+      "description": "G03: codeStoryBinding = 100% enforced (no orphan code)",
+      "line_start": 11003,
+      "line_end": 11003
+    },
+    {
+      "instance_id": "AC-64.6.4",
+      "epic_number": 64,
+      "story_number": 6,
+      "ac_number": 4,
+      "description": "G04: storyTestCoverage ≥99% enforced",
+      "line_start": 11004,
+      "line_end": 11004
+    },
+    {
+      "instance_id": "AC-64.6.5",
+      "epic_number": 64,
+      "story_number": 6,
+      "ac_number": 5,
+      "description": "G05: acTestCoverage ≥95% enforced",
+      "line_start": 11005,
+      "line_end": 11005
+    },
+    {
+      "instance_id": "AC-64.6.6",
+      "epic_number": 64,
+      "story_number": 6,
+      "ac_number": 6,
+      "description": "G06: testACBinding = 100% enforced (no orphan tests)",
+      "line_start": 11006,
+      "line_end": 11006
+    },
+    {
+      "instance_id": "AC-64.6.7",
+      "epic_number": 64,
+      "story_number": 6,
+      "ac_number": 7,
+      "description": "G08: tier1PolicyEnforcement = 100% enforced",
+      "line_start": 11007,
+      "line_end": 11007
+    },
+    {
+      "instance_id": "AC-64.6.8",
+      "epic_number": 64,
+      "story_number": 6,
+      "ac_number": 8,
+      "description": "G10: Only confidence ≥0.7 relationships in certification evidence",
+      "line_start": 11008,
+      "line_end": 11008
+    },
+    {
+      "instance_id": "AC-64.6.9",
+      "epic_number": 64,
+      "story_number": 6,
+      "ac_number": 9,
+      "description": "Gate failures block CI/CD pipeline with detailed report",
+      "line_start": 11009,
+      "line_end": 11009
+    },
+    {
+      "instance_id": "AC-64.6.10",
+      "epic_number": 64,
+      "story_number": 6,
+      "ac_number": 10,
+      "description": "Exclusion patterns configurable (e.g., exclude STORY-*.0 meta-stories)",
+      "line_start": 11010,
+      "line_end": 11010
+    },
+    {
+      "instance_id": "AC-64.7.1",
+      "epic_number": 64,
+      "story_number": 7,
+      "ac_number": 1,
+      "description": "Input: Any entity ID (story, AC, file, function, etc.)",
+      "line_start": 11027,
+      "line_end": 11027
+    },
+    {
+      "instance_id": "AC-64.7.2",
+      "epic_number": 64,
+      "story_number": 7,
+      "ac_number": 2,
+      "description": "Output: Affected entities grouped by category",
+      "line_start": 11028,
+      "line_end": 11028
+    },
+    {
+      "instance_id": "AC-64.7.3",
+      "epic_number": 64,
+      "story_number": 7,
+      "ac_number": 3,
+      "description": "Include confidence score for each impact edge",
+      "line_start": 11029,
+      "line_end": 11029
+    },
+    {
+      "instance_id": "AC-64.7.4",
+      "epic_number": 64,
+      "story_number": 7,
+      "ac_number": 4,
+      "description": "Filter by min_confidence (exclude low-confidence impacts)",
+      "line_start": 11030,
+      "line_end": 11030
+    },
+    {
+      "instance_id": "AC-64.7.5",
+      "epic_number": 64,
+      "story_number": 7,
+      "ac_number": 5,
+      "description": "Impact categories: Code, Test, Doc, Data, API",
+      "line_start": 11031,
+      "line_end": 11031
+    },
+    {
+      "instance_id": "AC-64.7.6",
+      "epic_number": 64,
+      "story_number": 7,
+      "ac_number": 6,
+      "description": "Impact categories: Risk, Policy, Gate",
+      "line_start": 11032,
+      "line_end": 11032
+    },
+    {
+      "instance_id": "AC-64.7.7",
+      "epic_number": 64,
+      "story_number": 7,
+      "ac_number": 7,
+      "description": "Configurable depth (1-hop to full transitive closure)",
+      "line_start": 11033,
+      "line_end": 11033
+    },
+    {
+      "instance_id": "AC-64.7.8",
+      "epic_number": 64,
+      "story_number": 7,
+      "ac_number": 8,
+      "description": "Output formats: JSON and Markdown",
+      "line_start": 11034,
+      "line_end": 11034
+    },
+    {
+      "instance_id": "AC-64.7.9",
+      "epic_number": 64,
+      "story_number": 7,
+      "ac_number": 9,
+      "description": "Calculation completes <10 seconds",
+      "line_start": 11035,
+      "line_end": 11035
+    },
+    {
+      "instance_id": "AC-64.7.10",
+      "epic_number": 64,
+      "story_number": 7,
+      "ac_number": 10,
+      "description": "Hypothesized impacts flagged separately",
+      "line_start": 11036,
+      "line_end": 11036
+    },
+    {
+      "instance_id": "AC-64.8.1",
+      "epic_number": 64,
+      "story_number": 8,
+      "ac_number": 1,
+      "description": "`POST /api/simulate/change` endpoint accepts proposed changes",
+      "line_start": 11053,
+      "line_end": 11053
+    },
+    {
+      "instance_id": "AC-64.8.2",
+      "epic_number": 64,
+      "story_number": 8,
+      "ac_number": 2,
+      "description": "Simulate new requirement addition (what needs implementing)",
+      "line_start": 11054,
+      "line_end": 11054
+    },
+    {
+      "instance_id": "AC-64.8.3",
+      "epic_number": 64,
+      "story_number": 8,
+      "ac_number": 3,
+      "description": "Simulate requirement modification (what breaks)",
+      "line_start": 11055,
+      "line_end": 11055
+    },
+    {
+      "instance_id": "AC-64.8.4",
+      "epic_number": 64,
+      "story_number": 8,
+      "ac_number": 4,
+      "description": "Simulate deprecation (orphan detection)",
+      "line_start": 11056,
+      "line_end": 11056
+    },
+    {
+      "instance_id": "AC-64.8.5",
+      "epic_number": 64,
+      "story_number": 8,
+      "ac_number": 5,
+      "description": "No graph mutations during simulation (read-only)",
+      "line_start": 11057,
+      "line_end": 11057
+    },
+    {
+      "instance_id": "AC-64.8.6",
+      "epic_number": 64,
+      "story_number": 8,
+      "ac_number": 6,
+      "description": "Include effort estimate based on impact size",
+      "line_start": 11058,
+      "line_end": 11058
+    },
+    {
+      "instance_id": "AC-64.8.7",
+      "epic_number": 64,
+      "story_number": 8,
+      "ac_number": 7,
+      "description": "Include risk assessment based on policy violations",
+      "line_start": 11059,
+      "line_end": 11059
+    },
+    {
+      "instance_id": "AC-64.8.8",
+      "epic_number": 64,
+      "story_number": 8,
+      "ac_number": 8,
+      "description": "Simulation completes <30 seconds",
+      "line_start": 11060,
+      "line_end": 11060
+    },
+    {
+      "instance_id": "AC-64.8.9",
+      "epic_number": 64,
+      "story_number": 8,
+      "ac_number": 9,
+      "description": "Results cached for review session",
+      "line_start": 11061,
+      "line_end": 11061
+    },
+    {
+      "instance_id": "AC-64.8.10",
+      "epic_number": 64,
+      "story_number": 8,
+      "ac_number": 10,
+      "description": "Transition to execution with approval workflow",
+      "line_start": 11062,
+      "line_end": 11062
+    },
+    {
+      "instance_id": "AC-64.9.1",
+      "epic_number": 64,
+      "story_number": 9,
+      "ac_number": 1,
+      "description": "Snapshot graph with Merkle hash after each build",
+      "line_start": 11079,
+      "line_end": 11079
+    },
+    {
+      "instance_id": "AC-64.9.2",
+      "epic_number": 64,
+      "story_number": 9,
+      "ac_number": 2,
+      "description": "Compare consecutive snapshots for changes",
+      "line_start": 11080,
+      "line_end": 11080
+    },
+    {
+      "instance_id": "AC-64.9.3",
+      "epic_number": 64,
+      "story_number": 9,
+      "ac_number": 3,
+      "description": "FAIL: Unexpected requirement removal (prevents accidental deletion)",
+      "line_start": 11081,
+      "line_end": 11081
+    },
+    {
+      "instance_id": "AC-64.9.4",
+      "epic_number": 64,
+      "story_number": 9,
+      "ac_number": 4,
+      "description": "WARN: Unexpected requirement addition (scope creep alert)",
+      "line_start": 11082,
+      "line_end": 11082
+    },
+    {
+      "instance_id": "AC-64.9.5",
+      "epic_number": 64,
+      "story_number": 9,
+      "ac_number": 5,
+      "description": "FAIL: Broken relationships (dangling references)",
+      "line_start": 11083,
+      "line_end": 11083
+    },
+    {
+      "instance_id": "AC-64.9.6",
+      "epic_number": 64,
+      "story_number": 9,
+      "ac_number": 6,
+      "description": "FAIL: Coverage regression (coverage dropped below threshold)",
+      "line_start": 11084,
+      "line_end": 11084
+    },
+    {
+      "instance_id": "AC-64.9.7",
+      "epic_number": 64,
+      "story_number": 9,
+      "ac_number": 7,
+      "description": "Drift report generation with specific changes identified",
+      "line_start": 11085,
+      "line_end": 11085
+    },
+    {
+      "instance_id": "AC-64.9.8",
+      "epic_number": 64,
+      "story_number": 9,
+      "ac_number": 8,
+      "description": "Automatic check in CI/CD pipeline",
+      "line_start": 11086,
+      "line_end": 11086
+    },
+    {
+      "instance_id": "AC-64.9.9",
+      "epic_number": 64,
+      "story_number": 9,
+      "ac_number": 9,
+      "description": "Manual check API: `POST /api/graph/drift-check`",
+      "line_start": 11087,
+      "line_end": 11087
+    },
+    {
+      "instance_id": "AC-64.9.10",
+      "epic_number": 64,
+      "story_number": 9,
+      "ac_number": 10,
+      "description": "Historical drift trend tracking",
+      "line_start": 11088,
+      "line_end": 11088
+    },
+    {
+      "instance_id": "AC-64.10.1",
+      "epic_number": 64,
+      "story_number": 10,
+      "ac_number": 1,
+      "description": "Track INTRODUCED_IN (R63): Story → ReleaseVersion",
+      "line_start": 11105,
+      "line_end": 11105
+    },
+    {
+      "instance_id": "AC-64.10.2",
+      "epic_number": 64,
+      "story_number": 10,
+      "ac_number": 2,
+      "description": "Track CHANGED_IN (R64): AC → ReleaseVersion",
+      "line_start": 11106,
+      "line_end": 11106
+    },
+    {
+      "instance_id": "AC-64.10.3",
+      "epic_number": 64,
+      "story_number": 10,
+      "ac_number": 3,
+      "description": "Track DEPRECATED_IN (R65): Story → ReleaseVersion",
+      "line_start": 11107,
+      "line_end": 11107
+    },
+    {
+      "instance_id": "AC-64.10.4",
+      "epic_number": 64,
+      "story_number": 10,
+      "ac_number": 4,
+      "description": "Track IMPLEMENTED_IN (R66): Story → Commit",
+      "line_start": 11108,
+      "line_end": 11108
+    },
+    {
+      "instance_id": "AC-64.10.5",
+      "epic_number": 64,
+      "story_number": 10,
+      "ac_number": 5,
+      "description": "Track MODIFIED_IN (R67): SourceFile → Commit",
+      "line_start": 11109,
+      "line_end": 11109
+    },
+    {
+      "instance_id": "AC-64.10.6",
+      "epic_number": 64,
+      "story_number": 10,
+      "ac_number": 6,
+      "description": "Track GROUPS (R70) and ADDRESSES (R71) for ChangeSets",
+      "line_start": 11110,
+      "line_end": 11110
+    },
+    {
+      "instance_id": "AC-64.10.7",
+      "epic_number": 64,
+      "story_number": 10,
+      "ac_number": 7,
+      "description": "Query: \"When was STORY-XX introduced?\" → Release version",
+      "line_start": 11111,
+      "line_end": 11111
+    },
+    {
+      "instance_id": "AC-64.10.8",
+      "epic_number": 64,
+      "story_number": 10,
+      "ac_number": 8,
+      "description": "Query: \"What commits implemented STORY-XX?\" → Commit list",
+      "line_start": 11112,
+      "line_end": 11112
+    },
+    {
+      "instance_id": "AC-64.10.9",
+      "epic_number": 64,
+      "story_number": 10,
+      "ac_number": 9,
+      "description": "Query: \"What changed between V2.65 and V2.7?\" → Diff list",
+      "line_start": 11113,
+      "line_end": 11113
+    },
+    {
+      "instance_id": "AC-64.10.10",
+      "epic_number": 64,
+      "story_number": 10,
+      "ac_number": 10,
+      "description": "Provenance is immutable (append-only)",
+      "line_start": 11114,
+      "line_end": 11114
+    },
+    {
+      "instance_id": "AC-64.11.1",
+      "epic_number": 64,
+      "story_number": 11,
+      "ac_number": 1,
+      "description": "Verify all entities have required attributes",
+      "line_start": 11131,
+      "line_end": 11131
+    },
+    {
+      "instance_id": "AC-64.11.2",
+      "epic_number": 64,
+      "story_number": 11,
+      "ac_number": 2,
+      "description": "Verify all relationships have valid source/target",
+      "line_start": 11132,
+      "line_end": 11132
+    },
+    {
+      "instance_id": "AC-64.11.3",
+      "epic_number": 64,
+      "story_number": 11,
+      "ac_number": 3,
+      "description": "Verify no orphan entities (unless explicitly excluded)",
+      "line_start": 11133,
+      "line_end": 11133
+    },
+    {
+      "instance_id": "AC-64.11.4",
+      "epic_number": 64,
+      "story_number": 11,
+      "ac_number": 4,
+      "description": "Verify no circular hierarchies (Epic→Story→AC)",
+      "line_start": 11134,
+      "line_end": 11134
+    },
+    {
+      "instance_id": "AC-64.11.5",
+      "epic_number": 64,
+      "story_number": 11,
+      "ac_number": 5,
+      "description": "Verify Merkle root matches computed hash",
+      "line_start": 11135,
+      "line_end": 11135
+    },
+    {
+      "instance_id": "AC-64.11.6",
+      "epic_number": 64,
+      "story_number": 11,
+      "ac_number": 6,
+      "description": "Verify entity counts match ground truth manifest",
+      "line_start": 11136,
+      "line_end": 11136
+    },
+    {
+      "instance_id": "AC-64.11.7",
+      "epic_number": 64,
+      "story_number": 11,
+      "ac_number": 7,
+      "description": "Integrity check completes <60 seconds",
+      "line_start": 11137,
+      "line_end": 11137
+    },
+    {
+      "instance_id": "AC-64.11.8",
+      "epic_number": 64,
+      "story_number": 11,
+      "ac_number": 8,
+      "description": "Issues report generated with specific violations",
+      "line_start": 11138,
+      "line_end": 11138
+    },
+    {
+      "instance_id": "AC-64.11.9",
+      "epic_number": 64,
+      "story_number": 11,
+      "ac_number": 9,
+      "description": "Integrity API: `GET /api/graph/integrity`",
+      "line_start": 11139,
+      "line_end": 11139
+    },
+    {
+      "instance_id": "AC-64.11.10",
+      "epic_number": 64,
+      "story_number": 11,
+      "ac_number": 10,
+      "description": "Integrity failure blocks certification",
+      "line_start": 11140,
+      "line_end": 11140
+    },
+    {
+      "instance_id": "AC-64.12.1",
+      "epic_number": 64,
+      "story_number": 12,
+      "ac_number": 1,
+      "description": "Ingest Incident entities from monitoring/alerting systems",
+      "line_start": 11157,
+      "line_end": 11157
+    },
+    {
+      "instance_id": "AC-64.12.2",
+      "epic_number": 64,
+      "story_number": 12,
+      "ac_number": 2,
+      "description": "Ingest BugReport entities from issue tracking",
+      "line_start": 11158,
+      "line_end": 11158
+    },
+    {
+      "instance_id": "AC-64.12.3",
+      "epic_number": 64,
+      "story_number": 12,
+      "ac_number": 3,
+      "description": "Ingest UserFeedback entities from support channels",
+      "line_start": 11159,
+      "line_end": 11159
+    },
+    {
+      "instance_id": "AC-64.12.4",
+      "epic_number": 64,
+      "story_number": 12,
+      "ac_number": 4,
+      "description": "Ingest ProductionMetric entities from observability",
+      "line_start": 11160,
+      "line_end": 11160
+    },
+    {
+      "instance_id": "AC-64.12.5",
+      "epic_number": 64,
+      "story_number": 12,
+      "ac_number": 5,
+      "description": "Create REPORTED_AGAINST (R72): BugReport → Story/AC",
+      "line_start": 11161,
+      "line_end": 11161
+    },
+    {
+      "instance_id": "AC-64.12.6",
+      "epic_number": 64,
+      "story_number": 12,
+      "ac_number": 6,
+      "description": "Create ROOT_CAUSE (R73): Incident → SourceFile/Function as hypothesis",
+      "line_start": 11162,
+      "line_end": 11162
+    },
+    {
+      "instance_id": "AC-64.12.7",
+      "epic_number": 64,
+      "story_number": 12,
+      "ac_number": 7,
+      "description": "Create CONTRIBUTED_TO (R74): SourceFile/Function → Incident as hypothesis",
+      "line_start": 11163,
+      "line_end": 11163
+    },
+    {
+      "instance_id": "AC-64.12.8",
+      "epic_number": 64,
+      "story_number": 12,
+      "ac_number": 8,
+      "description": "Create VALIDATES_CONSTRAINT (R76): ProductionMetric → Constraint",
+      "line_start": 11164,
+      "line_end": 11164
+    },
+    {
+      "instance_id": "AC-64.12.9",
+      "epic_number": 64,
+      "story_number": 12,
+      "ac_number": 9,
+      "description": "Create INVALIDATES_AC (R77): Incident → AC as hypothesis",
+      "line_start": 11165,
+      "line_end": 11165
+    },
+    {
+      "instance_id": "AC-64.12.10",
+      "epic_number": 64,
+      "story_number": 12,
+      "ac_number": 10,
+      "description": "Integration lag <5 minutes from event to graph",
+      "line_start": 11166,
+      "line_end": 11166
+    },
+    {
+      "instance_id": "AC-64.13.1",
+      "epic_number": 64,
+      "story_number": 13,
+      "ac_number": 1,
+      "description": "Hypotheses have expiration (default: 7 days from creation)",
+      "line_start": 11183,
+      "line_end": 11183
+    },
+    {
+      "instance_id": "AC-64.13.2",
+      "epic_number": 64,
+      "story_number": 13,
+      "ac_number": 2,
+      "description": "Verification workflow: hypothesis → verified/rejected",
+      "line_start": 11184,
+      "line_end": 11184
+    },
+    {
+      "instance_id": "AC-64.13.3",
+      "epic_number": 64,
+      "story_number": 13,
+      "ac_number": 3,
+      "description": "Verified hypotheses become permanent (confidence upgraded)",
+      "line_start": 11185,
+      "line_end": 11185
+    },
+    {
+      "instance_id": "AC-64.13.4",
+      "epic_number": 64,
+      "story_number": 13,
+      "ac_number": 4,
+      "description": "Expired hypotheses are auto-removed from graph",
+      "line_start": 11186,
+      "line_end": 11186
+    },
+    {
+      "instance_id": "AC-64.13.5",
+      "epic_number": 64,
+      "story_number": 13,
+      "ac_number": 5,
+      "description": "Dashboard of pending hypotheses with expiration countdown",
+      "line_start": 11187,
+      "line_end": 11187
+    },
+    {
+      "instance_id": "AC-64.13.6",
+      "epic_number": 64,
+      "story_number": 13,
+      "ac_number": 6,
+      "description": "Alert when hypotheses near expiration (24h warning)",
+      "line_start": 11188,
+      "line_end": 11188
+    },
+    {
+      "instance_id": "AC-64.13.7",
+      "epic_number": 64,
+      "story_number": 13,
+      "ac_number": 7,
+      "description": "Confidence adjustment on verification (hypothesis→verified = confidence → 1.0)",
+      "line_start": 11189,
+      "line_end": 11189
+    },
+    {
+      "instance_id": "AC-64.13.8",
+      "epic_number": 64,
+      "story_number": 13,
+      "ac_number": 8,
+      "description": "Audit trail of hypothesis lifecycle (created, verified/expired, by whom)",
+      "line_start": 11190,
+      "line_end": 11190
+    },
+    {
+      "instance_id": "AC-64.13.9",
+      "epic_number": 64,
+      "story_number": 13,
+      "ac_number": 9,
+      "description": "Hypotheses excluded from certification evidence (G10 gate)",
+      "line_start": 11191,
+      "line_end": 11191
+    },
+    {
+      "instance_id": "AC-64.13.10",
+      "epic_number": 64,
+      "story_number": 13,
+      "ac_number": 10,
+      "description": "Query: \"Hypotheses needing attention\" → sorted by expiration",
+      "line_start": 11192,
+      "line_end": 11192
+    },
+    {
+      "instance_id": "AC-64.14.1",
+      "epic_number": 64,
+      "story_number": 14,
+      "ac_number": 1,
+      "description": "Ingest Vulnerability entities from CVE database/scanner",
+      "line_start": 11209,
+      "line_end": 11209
+    },
+    {
+      "instance_id": "AC-64.14.2",
+      "epic_number": 64,
+      "story_number": 14,
+      "ac_number": 2,
+      "description": "Ingest License entities from package metadata",
+      "line_start": 11210,
+      "line_end": 11210
+    },
+    {
+      "instance_id": "AC-64.14.3",
+      "epic_number": 64,
+      "story_number": 14,
+      "ac_number": 3,
+      "description": "Create HAS_VULNERABILITY (R78): ExternalPackage → Vulnerability",
+      "line_start": 11211,
+      "line_end": 11211
+    },
+    {
+      "instance_id": "AC-64.14.4",
+      "epic_number": 64,
+      "story_number": 14,
+      "ac_number": 4,
+      "description": "Create LICENSED_AS (R79): ExternalPackage → License",
+      "line_start": 11212,
+      "line_end": 11212
+    },
+    {
+      "instance_id": "AC-64.14.5",
+      "epic_number": 64,
+      "story_number": 14,
+      "ac_number": 5,
+      "description": "Create VIOLATES_POLICY (R80): License → PolicyRule",
+      "line_start": 11213,
+      "line_end": 11213
+    },
+    {
+      "instance_id": "AC-64.14.6",
+      "epic_number": 64,
+      "story_number": 14,
+      "ac_number": 6,
+      "description": "Create REMEDIATES (R81): Commit → Vulnerability",
+      "line_start": 11214,
+      "line_end": 11214
+    },
+    {
+      "instance_id": "AC-64.14.7",
+      "epic_number": 64,
+      "story_number": 14,
+      "ac_number": 7,
+      "description": "G09 gate: No critical vulnerabilities in production",
+      "line_start": 11215,
+      "line_end": 11215
+    },
+    {
+      "instance_id": "AC-64.14.8",
+      "epic_number": 64,
+      "story_number": 14,
+      "ac_number": 8,
+      "description": "License compliance: No unapproved copyleft in proprietary code",
+      "line_start": 11216,
+      "line_end": 11216
+    },
+    {
+      "instance_id": "AC-64.14.9",
+      "epic_number": 64,
+      "story_number": 14,
+      "ac_number": 9,
+      "description": "Vulnerability scan triggers on dependency change",
+      "line_start": 11217,
+      "line_end": 11217
+    },
+    {
+      "instance_id": "AC-64.14.10",
+      "epic_number": 64,
+      "story_number": 14,
+      "ac_number": 10,
+      "description": "Security posture dashboard with vulnerability timeline",
+      "line_start": 11218,
+      "line_end": 11218
+    },
+    {
+      "instance_id": "AC-64.15.1",
+      "epic_number": 64,
+      "story_number": 15,
+      "ac_number": 1,
+      "description": "Monitor API responses vs InterfaceContract schemas",
+      "line_start": 11235,
+      "line_end": 11235
+    },
+    {
+      "instance_id": "AC-64.15.2",
+      "epic_number": 64,
+      "story_number": 15,
+      "ac_number": 2,
+      "description": "Monitor DB schema vs DatabaseSchema entities",
+      "line_start": 11236,
+      "line_end": 11236
+    },
+    {
+      "instance_id": "AC-64.15.3",
+      "epic_number": 64,
+      "story_number": 15,
+      "ac_number": 3,
+      "description": "Monitor config values vs ConfigKey defaults",
+      "line_start": 11237,
+      "line_end": 11237
+    },
+    {
+      "instance_id": "AC-64.15.4",
+      "epic_number": 64,
+      "story_number": 15,
+      "ac_number": 4,
+      "description": "Monitor feature flags vs FeatureFlag entities",
+      "line_start": 11238,
+      "line_end": 11238
+    },
+    {
+      "instance_id": "AC-64.15.5",
+      "epic_number": 64,
+      "story_number": 15,
+      "ac_number": 5,
+      "description": "Alert on API contract violation",
+      "line_start": 11239,
+      "line_end": 11239
+    },
+    {
+      "instance_id": "AC-64.15.6",
+      "epic_number": 64,
+      "story_number": 15,
+      "ac_number": 6,
+      "description": "Alert on schema drift (column added/removed without migration)",
+      "line_start": 11240,
+      "line_end": 11240
+    },
+    {
+      "instance_id": "AC-64.15.7",
+      "epic_number": 64,
+      "story_number": 15,
+      "ac_number": 7,
+      "description": "Alert on config drift (value differs from documented default)",
+      "line_start": 11241,
+      "line_end": 11241
+    },
+    {
+      "instance_id": "AC-64.15.8",
+      "epic_number": 64,
+      "story_number": 15,
+      "ac_number": 8,
+      "description": "Monitoring checks every 5 minutes",
+      "line_start": 11242,
+      "line_end": 11242
+    },
+    {
+      "instance_id": "AC-64.15.9",
+      "epic_number": 64,
+      "story_number": 15,
+      "ac_number": 9,
+      "description": "Drift creates Incident entity in feedback layer",
+      "line_start": 11243,
+      "line_end": 11243
+    },
+    {
+      "instance_id": "AC-64.15.10",
+      "epic_number": 64,
+      "story_number": 15,
+      "ac_number": 10,
+      "description": "Runtime drift dashboard with trend analysis",
+      "line_start": 11244,
+      "line_end": 11244
+    },
+    {
+      "instance_id": "AC-65.1.1",
+      "epic_number": 65,
+      "story_number": 1,
+      "ac_number": 1,
+      "description": "Service entity (E91) captures deployable units with name, version, health status",
+      "line_start": 11462,
+      "line_end": 11462
+    },
+    {
+      "instance_id": "AC-65.1.2",
+      "epic_number": 65,
+      "story_number": 1,
+      "ac_number": 2,
+      "description": "Deployment entity (E92) tracks release instances with timestamp, environment, status",
+      "line_start": 11463,
+      "line_end": 11463
+    },
+    {
+      "instance_id": "AC-65.1.3",
+      "epic_number": 65,
+      "story_number": 1,
+      "ac_number": 3,
+      "description": "SLO entity (E93) defines service level objectives with target, window, measurement",
+      "line_start": 11464,
+      "line_end": 11464
+    },
+    {
+      "instance_id": "AC-65.1.4",
+      "epic_number": 65,
+      "story_number": 1,
+      "ac_number": 4,
+      "description": "ErrorBudget entity (E94) tracks remaining error allowance with consumed, remaining, window",
+      "line_start": 11465,
+      "line_end": 11465
+    },
+    {
+      "instance_id": "AC-65.1.5",
+      "epic_number": 65,
+      "story_number": 1,
+      "ac_number": 5,
+      "description": "Alert entity (E95) captures monitoring triggers with severity, condition, state",
+      "line_start": 11466,
+      "line_end": 11466
+    },
+    {
+      "instance_id": "AC-65.1.6",
+      "epic_number": 65,
+      "story_number": 1,
+      "ac_number": 6,
+      "description": "Runbook entity (E96) links operational procedures to incident types",
+      "line_start": 11467,
+      "line_end": 11467
+    },
+    {
+      "instance_id": "AC-65.1.7",
+      "epic_number": 65,
+      "story_number": 1,
+      "ac_number": 7,
+      "description": "All operations entities link bidirectionally to existing Epic 64 graph entities",
+      "line_start": 11468,
+      "line_end": 11468
+    },
+    {
+      "instance_id": "AC-65.2.1",
+      "epic_number": 65,
+      "story_number": 2,
+      "ac_number": 1,
+      "description": "SimulationRun entity (E97) tracks each simulation execution with id, start, end, status",
+      "line_start": 11487,
+      "line_end": 11487
+    },
+    {
+      "instance_id": "AC-65.2.2",
+      "epic_number": 65,
+      "story_number": 2,
+      "ac_number": 2,
+      "description": "Simulation metrics (drift, gate failures, violations) stored in graph per run",
+      "line_start": 11488,
+      "line_end": 11488
+    },
+    {
+      "instance_id": "AC-65.2.3",
+      "epic_number": 65,
+      "story_number": 2,
+      "ac_number": 3,
+      "description": "Drift tracked across simulation cycles with per-entity-type breakdown",
+      "line_start": 11489,
+      "line_end": 11489
+    },
+    {
+      "instance_id": "AC-65.2.4",
+      "epic_number": 65,
+      "story_number": 2,
+      "ac_number": 4,
+      "description": "Policy violations logged per simulation run with rule ID and context",
+      "line_start": 11490,
+      "line_end": 11490
+    },
+    {
+      "instance_id": "AC-65.2.5",
+      "epic_number": 65,
+      "story_number": 2,
+      "ac_number": 5,
+      "description": "Automatic rollback triggers defined when simulation detects unsafe behavior",
+      "line_start": 11491,
+      "line_end": 11491
+    },
+    {
+      "instance_id": "AC-65.2.6",
+      "epic_number": 65,
+      "story_number": 2,
+      "ac_number": 6,
+      "description": "Pattern extraction identifies failure modes from simulation history",
+      "line_start": 11492,
+      "line_end": 11492
+    },
+    {
+      "instance_id": "AC-65.2.7",
+      "epic_number": 65,
+      "story_number": 2,
+      "ac_number": 7,
+      "description": "G-SIMULATION gate validates: 1000 cycles completed, <1% drift, 0 policy violations",
+      "line_start": 11493,
+      "line_end": 11493
+    },
+    {
+      "instance_id": "AC-65.3.1",
+      "epic_number": 65,
+      "story_number": 3,
+      "ac_number": 1,
+      "description": "G-COGNITIVE gate defined with health check criteria",
+      "line_start": 11512,
+      "line_end": 11512
+    },
+    {
+      "instance_id": "AC-65.3.2",
+      "epic_number": 65,
+      "story_number": 3,
+      "ac_number": 2,
+      "description": "LLM connectivity verified with timeout and retry logic",
+      "line_start": 11513,
+      "line_end": 11513
+    },
+    {
+      "instance_id": "AC-65.3.3",
+      "epic_number": 65,
+      "story_number": 3,
+      "ac_number": 3,
+      "description": "Response latency monitored with P50, P95, P99 thresholds",
+      "line_start": 11514,
+      "line_end": 11514
+    },
+    {
+      "instance_id": "AC-65.3.4",
+      "epic_number": 65,
+      "story_number": 3,
+      "ac_number": 4,
+      "description": "Token usage tracked per request with budget awareness",
+      "line_start": 11515,
+      "line_end": 11515
+    },
+    {
+      "instance_id": "AC-65.3.5",
+      "epic_number": 65,
+      "story_number": 3,
+      "ac_number": 5,
+      "description": "Fallback triggers defined when primary model degrades",
+      "line_start": 11516,
+      "line_end": 11516
+    },
+    {
+      "instance_id": "AC-65.3.6",
+      "epic_number": 65,
+      "story_number": 3,
+      "ac_number": 6,
+      "description": "Health metrics recorded in graph for trend analysis",
+      "line_start": 11517,
+      "line_end": 11517
+    },
+    {
+      "instance_id": "AC-65.3.7",
+      "epic_number": 65,
+      "story_number": 3,
+      "ac_number": 7,
+      "description": "Alerts generated on cognitive engine degradation",
+      "line_start": 11518,
+      "line_end": 11518
+    }
+  ]
+}

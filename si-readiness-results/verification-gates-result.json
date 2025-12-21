@@ -1,18 +1,18 @@
 {
-  "timestamp": "2025-12-21T17:20:20.431Z",
+  "timestamp": "2025-12-21T19:31:46.977Z",
   "project_id": "6df2f456-440d-4958-b475-d9808775ff69",
   "gates": {
     "Entity Counts": {
       "pass": true,
-      "details": "3693 entities"
+      "details": "3830 entities"
     },
     "Relationship Counts": {
       "pass": true,
-      "details": "3688 relationships"
+      "details": "3825 relationships"
     },
     "Neo4j Parity": {
       "pass": true,
-      "details": "PG=3688, Neo4j=3688"
+      "details": "PG=3825, Neo4j=3825"
     },
     "No Null Instance IDs": {
       "pass": true,

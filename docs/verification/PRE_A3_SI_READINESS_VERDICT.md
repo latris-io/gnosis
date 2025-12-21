@@ -18,12 +18,12 @@ All verification gates pass. The system has achieved 100% shadow ledger coverage
 
 | Gate | Status | Details |
 |------|--------|---------|
-| Entity Counts | ✓ PASS | 3693 entities (14 types) |
-| Relationship Counts | ✓ PASS | 3688 relationships (12 types) |
-| Neo4j Parity | ✓ PASS | PostgreSQL=3688, Neo4j=3688 |
+| Entity Counts | ✓ PASS | 3830 entities (14 types) |
+| Relationship Counts | ✓ PASS | 3825 relationships (12 types) |
+| Neo4j Parity | ✓ PASS | PostgreSQL=3825, Neo4j=3825 |
 | No Null Instance IDs | ✓ PASS | 0 nulls |
 | No Duplicate Instance IDs | ✓ PASS | 0 duplicates |
-| Ledger Coverage | ✓ PASS | 100% (7381/7381) |
+| Ledger Coverage | ✓ PASS | 100% (7656/7656) |
 | Corpus Keying | ✓ PASS | 99% valid refs |
 
 ---
@@ -34,7 +34,7 @@ All verification gates pass. The system has achieved 100% shadow ledger coverage
 |-------------|-------|-------------|
 | E01 | 65 | Epics |
 | E02 | 351 | Stories |
-| E03 | 2712 | Acceptance Criteria |
+| E03 | 2849 | Acceptance Criteria |
 | E06 | 6 | Technical Designs |
 | E08 | 4 | Data Schemas |
 | E11 | 34 | Source Files |
@@ -54,7 +54,7 @@ All verification gates pass. The system has achieved 100% shadow ledger coverage
 | Relationship Type | Count | Description |
 |-------------------|-------|-------------|
 | R01 | 351 | HAS_STORY (Epic→Story) |
-| R02 | 2712 | HAS_AC (Story→AC) |
+| R02 | 2849 | HAS_AC (Story→AC) |
 | R04 | 34 | CONTAINS_FILE |
 | R05 | 151 | CONTAINS_ENTITY |
 | R06 | 77 | CONTAINS_SUITE |
@@ -74,8 +74,8 @@ All verification gates pass. The system has achieved 100% shadow ledger coverage
 
 | Metric | Value |
 |--------|-------|
-| Total Mutations in DB | 7381 |
-| Ledger Entries | 7382 |
+| Total Mutations in DB | 7656 |
+| Ledger Entries | 7656 |
 | Missing from Ledger | 0 |
 | Coverage | 100.0% |
 
@@ -126,6 +126,14 @@ Extraction is deterministic:
 1. **Semantic Corpus Contrast Classes**: Only CORRECT signals; need INCORRECT/PARTIAL signals before Track C
 2. **Missing Entity Types**: E52 (ChangeSet), SCHEMA-* entities not yet extracted (not in A1/A2 scope)
 3. **Missing Relationship Types**: R03, R07, R70 (R03=HAS_CONSTRAINT not in BRD, R07/R70 require missing entity types)
+
+---
+
+## Repair History
+
+| Date | Issue | Resolution |
+|------|-------|------------|
+| 2025-12-21 | 137 E03/R02 missing due to interrupted genesis extraction | Backfilled via `scripts/repair/backfill-missing-brd-acs.ts`. See `REPAIR_INCIDENT_2025-12-21.md`. |
 
 ---
 
