@@ -111,7 +111,7 @@ async function main() {
   console.log(`  Stories in DB: ${storyMap.size}`);
 
   // Build set of missing instance_ids for quick lookup
-  const missingIds = new Set(report.missing_acs.map((ac: any) => ac.instance_id));
+  const missingIds = new Set(detectionReport.missing_acs.map((ac: any) => ac.instance_id));
 
   // Prepare entities and relationships
   const entitiesToInsert: ExtractedEntity[] = [];
