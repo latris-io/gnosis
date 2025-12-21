@@ -1,0 +1,35 @@
+{
+  "timestamp": "2025-12-21T17:20:20.431Z",
+  "project_id": "6df2f456-440d-4958-b475-d9808775ff69",
+  "gates": {
+    "Entity Counts": {
+      "pass": true,
+      "details": "3693 entities"
+    },
+    "Relationship Counts": {
+      "pass": true,
+      "details": "3688 relationships"
+    },
+    "Neo4j Parity": {
+      "pass": true,
+      "details": "PG=3688, Neo4j=3688"
+    },
+    "No Null Instance IDs": {
+      "pass": true,
+      "details": "E=0, R=0"
+    },
+    "No Duplicate Instance IDs": {
+      "pass": true,
+      "details": "E=0, R=0"
+    },
+    "Ledger Coverage": {
+      "pass": true,
+      "details": "100% coverage"
+    },
+    "Corpus Keying": {
+      "pass": true,
+      "details": "99 valid refs"
+    }
+  },
+  "all_pass": true
+}

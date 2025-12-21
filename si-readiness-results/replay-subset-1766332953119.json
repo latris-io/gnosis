@@ -1,0 +1,68 @@
+{
+  "timestamp": "2025-12-21T16:02:33.118Z",
+  "git_sha": "070d3005ab45d20fcda80a594fd43ff9a0629e3b",
+  "subset_files": [
+    "src/db/postgres.ts",
+    "src/db/neo4j.ts",
+    "src/db/neo4j-migrate.ts",
+    "src/ops/track-a.ts",
+    "src/extraction/providers/ast-provider.ts",
+    "src/extraction/providers/filesystem-provider.ts",
+    "src/extraction/providers/containment-derivation-provider.ts",
+    "src/extraction/providers/git-relationship-provider.ts",
+    "src/schema/track-a/entities.ts",
+    "src/schema/track-a/relationships.ts"
+  ],
+  "brd_slice": {
+    "epics": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "stories_pattern": "STORY-1..5.*",
+    "acs_pattern": "AC-1..5.*"
+  },
+  "entity_counts": {
+    "replay": 457,
+    "db": 444,
+    "symmetric_diff": 13
+  },
+  "relationship_counts": {
+    "replay": 100,
+    "db": 76,
+    "symmetric_diff": 24
+  },
+  "entity_diff": {
+    "only_in_replay": [
+      "FILE-src/extraction/providers/git-relationship-provider.ts",
+      "FUNC-src/ops/track-a.ts:applyTddRelationshipInvariants",
+      "FUNC-src/ops/track-a.ts:extractAndPersistTddEntities",
+      "FUNC-src/ops/track-a.ts:extractAndPersistTddRelationships",
+      "FUNC-src/ops/track-a.ts:extractAndPersistGitRelationships",
+      "FUNC-src/extraction/providers/git-relationship-provider.ts:deriveR67",
+      "FUNC-src/extraction/providers/git-relationship-provider.ts:deriveR63",
+      "CLASS-src/extraction/providers/git-relationship-provider.ts:GitRelationshipProvider",
+      "FUNC-src/extraction/providers/containment-derivation-provider.ts:getDirectoryFromFileInstanceId",
+      "FUNC-src/extraction/providers/containment-derivation-provider.ts:getFilePathFromInstanceId"
+    ],
+    "only_in_db": []
+  },
+  "relationship_diff": {
+    "only_in_replay": [
+      "R05:FILE-src/ops/track-a.ts:FUNC-src/ops/track-a.ts:applyTddRelationshipInvariants",
+      "R05:FILE-src/ops/track-a.ts:FUNC-src/ops/track-a.ts:extractAndPersistTddEntities",
+      "R05:FILE-src/ops/track-a.ts:FUNC-src/ops/track-a.ts:extractAndPersistTddRelationships",
+      "R05:FILE-src/ops/track-a.ts:FUNC-src/ops/track-a.ts:extractAndPersistGitRelationships",
+      "R05:FILE-src/extraction/providers/git-relationship-provider.ts:FUNC-src/extraction/providers/git-relationship-provider.ts:deriveR67",
+      "R05:FILE-src/extraction/providers/git-relationship-provider.ts:FUNC-src/extraction/providers/git-relationship-provider.ts:deriveR63",
+      "R05:FILE-src/extraction/providers/git-relationship-provider.ts:CLASS-src/extraction/providers/git-relationship-provider.ts:GitRelationshipProvider",
+      "R05:FILE-src/extraction/providers/containment-derivation-provider.ts:FUNC-src/extraction/providers/containment-derivation-provider.ts:getDirectoryFromFileInstanceId",
+      "R05:FILE-src/extraction/providers/containment-derivation-provider.ts:FUNC-src/extraction/providers/containment-derivation-provider.ts:getFilePathFromInstanceId",
+      "R05:FILE-src/extraction/providers/containment-derivation-provider.ts:FUNC-src/extraction/providers/containment-derivation-provider.ts:deriveR16"
+    ],
+    "only_in_db": []
+  },
+  "verdict": "FAIL"
+}

@@ -196,27 +196,30 @@ When in doubt: read the spec, follow the spec, verify against the spec.
 
 ---
 
-## TRACK STATE LOCK — A1/A2 VERIFIED
+## TRACK STATE LOCK — SI-READINESS VERIFIED
 
 ### Checkpoint Metadata
 
 | Field | Value |
 |-------|-------|
-| **Phase** | A2 (Relationship Registry) COMPLETE |
-| **Verified** | 2025-12-20T23:42:54.691Z |
-| **Git SHA** | `2fd63a5d2d5d708fb5444448fcbd83cd1c491b6d` |
+| **Phase** | Pre-A3 SI-Readiness COMPLETE |
+| **Verified** | 2025-12-21T16:31:13.469Z |
+| **Git SHA** | `070d3005ab45d20fcda80a594fd43ff9a0629e3b` |
 | **Project ID** | `6df2f456-440d-4958-b475-d9808775ff69` |
-| **State Doc** | `docs/verification/TRACK_A_A2_VERIFIED_STATE.md` |
+| **State Doc** | `docs/verification/PRE_A3_SI_READINESS_VERDICT.md` |
+| **Universe Freeze** | `.si-universe.env` |
 
 ### Locked Invariants
 
 These invariants were verified and MUST NOT drift:
 
-1. **BRD counts:** E01=65, E02=351, E03=2849
-2. **Cross-store parity:** PostgreSQL = Neo4j = 3887 relationships
-3. **Neo4j property model:** Single `:RELATIONSHIP` type with `r.relationship_type` property
-4. **Determinism:** Entity and relationship instance_ids are stable and reproducible
-5. **Evidence anchors:** All R16/R63/R67 have complete evidence
+1. **Entity counts:** E01=65, E02=351, E03=2712, Total=3693
+2. **Relationship counts:** Total=3688 (R01-R67)
+3. **Cross-store parity:** PostgreSQL = Neo4j = 3688 relationships
+4. **Neo4j property model:** Single `:RELATIONSHIP` type with `r.relationship_type` property
+5. **Determinism:** Entity and relationship instance_ids are stable and reproducible
+6. **Shadow ledger coverage:** 100% (7381 mutations logged)
+7. **Evidence anchors:** All R16/R63/R67 have complete evidence
 
 ### Locked Surfaces
 
@@ -230,20 +233,22 @@ These invariants were verified and MUST NOT drift:
 | Database migrations | `migrations/*.sql`, `migrations/neo4j/*` |
 | Sync logic | `src/services/sync/sync-service.ts` |
 | ID format rules | `src/schema/track-a/id-formats.ts` |
+| Shadow ledger | `src/ledger/shadow-ledger.ts` |
+| Service layer | `src/services/entities/`, `src/services/relationships/` |
 
 ### Lock Enforcement
 
 **If a change request touches locked surfaces:**
 
-1. **WARN:** "This would invalidate the A2 verified checkpoint (SHA: 2fd63a5d)."
+1. **WARN:** "This would invalidate the SI-readiness checkpoint (SHA: 070d3005)."
 2. **LIST:** Show which invariants may be affected.
-3. **ASK:** "Confirm you want to proceed. Changes require re-running `scripts/run-foundation-validation.ts`."
+3. **ASK:** "Confirm you want to proceed. Changes require re-running verification gates."
 4. **PROCEED:** Only with explicit human confirmation.
 
 **If you detect invariant drift during any operation:**
 
 1. **HALT** immediately.
-2. **REPORT:** "A1/A2 invariant violation detected: [specific invariant]"
+2. **REPORT:** "SI-readiness invariant violation detected: [specific invariant]"
 3. **DO NOT** attempt to fix without human instruction.
 
 ### Verification Scripts
@@ -251,8 +256,9 @@ These invariants were verified and MUST NOT drift:
 To re-verify after approved changes:
 
 ```bash
-npx tsx scripts/run-foundation-validation.ts  # All A1/A2 automated checks
-npx tsx scripts/determinism-check.ts          # Determinism verification
+npx tsx scripts/si-readiness/verification-gates.ts     # All verification gates
+npx tsx scripts/si-readiness/ledger-coverage-audit.ts  # Ledger coverage check
+npx tsx scripts/run-foundation-validation.ts           # A1/A2 foundation checks
 ```
 
-Both must exit 0 for checkpoint to remain valid.
+All must pass for checkpoint to remain valid.

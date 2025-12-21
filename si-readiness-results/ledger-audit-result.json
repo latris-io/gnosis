@@ -1,0 +1,12 @@
+{
+  "timestamp": "2025-12-21T17:17:49.752Z",
+  "ledger_entries": 7382,
+  "db_entities": 3693,
+  "db_relationships": 3688,
+  "ledger_entities": 3693,
+  "ledger_relationships": 3688,
+  "missing_entities": 0,
+  "missing_relationships": 0,
+  "coverage_percent": 100,
+  "pass": true
+}

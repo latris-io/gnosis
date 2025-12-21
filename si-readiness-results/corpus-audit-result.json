@@ -1,0 +1,41 @@
+{
+  "timestamp": "2025-12-21T17:18:37.419Z",
+  "total_signals": 3815,
+  "by_type": {
+    "CORRECT": 3815
+  },
+  "unique_instance_ids": 3814,
+  "entity_types": [
+    "E01",
+    "E02",
+    "E03",
+    "E06",
+    "E08",
+    "E11",
+    "E12",
+    "E13",
+    "E27",
+    "E28",
+    "E29",
+    "E49",
+    "E50",
+    "E52",
+    "MILESTONE"
+  ],
+  "keying_validation": {
+    "sample_size": 100,
+    "valid_refs": 99,
+    "invalid_refs": 1,
+    "pass": true
+  },
+  "contrast_classes": {
+    "has_correct": true,
+    "has_incorrect": false,
+    "has_partial": false,
+    "has_orphan": false,
+    "has_ambiguous": false,
+    "has_contrast": false
+  },
+  "pass": true,
+  "governance_debt": "Missing contrast classes for Track C"
+}
