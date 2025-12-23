@@ -1,13 +1,12 @@
 // @ts-nocheck
 // Backfill script: insert missing E03 entities and R02 relationships
-// Uses entity-service and relationship-service to ensure ledger coverage
+// Uses ops layer to ensure ledger coverage (G-API compliant)
 import 'dotenv/config';
 import * as fs from 'fs';
 import { execSync } from 'child_process';
 import pg from 'pg';
 import { parseBRD } from '../../src/extraction/parsers/brd-parser.js';
-import { upsert as upsertEntity, batchUpsert as batchUpsertEntities } from '../../src/services/entities/entity-service.js';
-import { batchUpsert as batchUpsertRelationships } from '../../src/services/relationships/relationship-service.js';
+import { persistEntities, persistRelationships } from '../../src/ops/track-a.js';
 import type { ExtractedEntity, ExtractedRelationship } from '../../src/extraction/types.js';
 
 const { Pool } = pg;
@@ -190,7 +189,7 @@ async function main() {
   for (let i = 0; i < relationshipsToInsert.length; i += batchSize) {
     const batch = relationshipsToInsert.slice(i, i + batchSize);
     console.log(`  Processing batch ${Math.floor(i/batchSize) + 1}/${Math.ceil(relationshipsToInsert.length/batchSize)}...`);
-    const results = await batchUpsertRelationships(projectId, batch);
+    const results = await persistRelationships(projectId, batch);
     for (const result of results) {
       if (result.operation === 'CREATE') r02Inserted++;
       else r02AlreadyExists++; // UPDATE or NO-OP means relationship already existed

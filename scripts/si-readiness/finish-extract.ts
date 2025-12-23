@@ -9,9 +9,8 @@ import {
   extractAndPersistContainmentRelationships,
   extractAndPersistTddRelationships,
   extractAndPersistGitRelationships,
+  replaceAllRelationshipsInNeo4j,
 } from '../../src/ops/track-a.js';
-
-import { replaceRelationshipsInNeo4j } from '../../src/services/sync/sync-service.js';
 
 const { Pool } = pg;
 
@@ -56,7 +55,7 @@ async function main() {
   
   // Neo4j rebuild
   console.log('Neo4j rebuild...');
-  const neo = await replaceRelationshipsInNeo4j(projectId);
+  const neo = await replaceAllRelationshipsInNeo4j(projectId);
   console.log('  Deleted:', neo.deleted);
   console.log('  Synced:', neo.synced);
   

@@ -1,30 +1,28 @@
 // @ts-nocheck
 // Script to perform replace-by-project relationship sync and verify parity
-// Usage: npx tsx scripts/sync-relationships-replace.ts
+// Usage: PROJECT_ID=<uuid> npx tsx scripts/sync-relationships-replace.ts
+// Or:    PROJECT_SLUG=<slug> npx tsx scripts/sync-relationships-replace.ts
 
 import 'dotenv/config';
-import { replaceRelationshipsInNeo4j, verifyRelationshipParity } from '../src/services/sync/sync-service.js';
-import { pool } from '../src/db/postgres.js';
-import { driver } from '../src/db/neo4j.js';
+import {
+  initProject,
+  replaceAllRelationshipsInNeo4j,
+  verifyNeo4jParity,
+  closeConnections,
+} from '../src/ops/track-a.js';
 
 async function main() {
   try {
-    // Get project ID
-    const projectResult = await pool.query(`
-      SELECT id FROM projects LIMIT 1
-    `);
-    
-    if (projectResult.rows.length === 0) {
-      console.error('No project found');
-      process.exit(1);
-    }
-    
-    const projectId = projectResult.rows[0].id;
+    // Get project ID from environment
+    const { id: projectId } = await initProject({
+      projectId: process.env.PROJECT_ID,
+      projectSlug: process.env.PROJECT_SLUG || 'gnosis-default',
+    });
     console.log(`Project ID: ${projectId}\n`);
 
     // Step 1: Show current state
     console.log('=== BEFORE SYNC ===\n');
-    const beforeParity = await verifyRelationshipParity(projectId);
+    const beforeParity = await verifyNeo4jParity(projectId);
     console.log('Postgres:');
     console.log(`  Total: ${beforeParity.postgres.total}`);
     for (const [type, count] of Object.entries(beforeParity.postgres.byType).sort()) {
@@ -45,14 +43,14 @@ async function main() {
 
     // Step 2: Run replace sync
     console.log('\n=== RUNNING REPLACE SYNC ===\n');
-    const syncResult = await replaceRelationshipsInNeo4j(projectId);
-    console.log(`Deleted from Neo4j: ${syncResult.deleted}`);
+    const syncResult = await replaceAllRelationshipsInNeo4j(projectId);
+    console.log(`Deleted from Neo4j: ${(syncResult as any).deleted ?? 'N/A'}`);
     console.log(`Synced from Postgres: ${syncResult.synced}`);
-    console.log(`Skipped (missing endpoints): ${syncResult.skipped}`);
+    console.log(`Skipped (missing endpoints): ${(syncResult as any).skipped ?? 'N/A'}`);
 
     // Step 3: Verify parity after sync
     console.log('\n=== AFTER SYNC ===\n');
-    const afterParity = await verifyRelationshipParity(projectId);
+    const afterParity = await verifyNeo4jParity(projectId);
     console.log('Postgres:');
     console.log(`  Total: ${afterParity.postgres.total}`);
     for (const [type, count] of Object.entries(afterParity.postgres.byType).sort()) {
@@ -80,8 +78,7 @@ async function main() {
     console.log(`Parity: ${afterParity.consistent ? 'PASS' : 'FAIL'}`);
 
   } finally {
-    await pool.end();
-    await driver.close();
+    await closeConnections();
   }
 }
 

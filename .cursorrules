@@ -27,6 +27,10 @@ This system IS a traceability-first verification engine. Its purpose is to:
 
 ### Rule 3: Database Access Boundary (G-API)
 ```
+ARCHITECTURE LAYERS:
+  scripts → ops → services → db
+  (imports flow right-to-left; data flows left-to-right)
+
 ALLOWED:
 - src/db/** may be imported ONLY by src/services/**
 - src/services/** may import from src/db/**
@@ -41,6 +45,14 @@ FORBIDDEN:
 - src/extraction/providers/** importing from src/db/** or src/services/**
 - Tests importing from src/db/** or src/services/**
 - Scripts importing from src/db/** or src/services/**
+
+SCRIPTS BOUNDARY (Option A - Zero Exceptions):
+- Scripts MAY import: src/ops/**, src/config/**, src/schema/**, pure utils
+- Scripts MUST NOT import: src/services/**, src/db/**
+- NO EXCEPTIONS. Even read-only queries must go through src/ops/** entrypoints.
+- If ops layer lacks needed function, add it to ops first.
+- Legacy exceptions: mark with @g-api-exception in JSDoc, document reason.
+- Enforcement: npm run verify:scripts-boundary
 ```
 Violation = HALT and fix immediately.
 

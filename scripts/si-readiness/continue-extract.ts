@@ -15,12 +15,12 @@ import {
   extractAndPersistTddRelationships,
   extractAndPersistGitRelationships,
   syncToNeo4j,
+  replaceAllRelationshipsInNeo4j,
 } from '../../src/ops/track-a.js';
 
 import { FilesystemProvider } from '../../src/extraction/providers/filesystem-provider.js';
 import { ASTProvider } from '../../src/extraction/providers/ast-provider.js';
 import { GitProvider } from '../../src/extraction/providers/git-provider.js';
-import { replaceRelationshipsInNeo4j } from '../../src/services/sync/sync-service.js';
 
 const { Pool } = pg;
 
@@ -128,7 +128,7 @@ async function main() {
   console.log('└────────────────────────────────────────────────────────────────┘\n');
 
   console.log('5.1: Replace relationships in Neo4j...');
-  const replaceResult = await replaceRelationshipsInNeo4j(projectId!);
+  const replaceResult = await replaceAllRelationshipsInNeo4j(projectId!);
   console.log(`  Deleted: ${replaceResult.deleted}, Synced: ${replaceResult.synced}`);
 
   // ═══════════════════════════════════════════════════════════════════════════

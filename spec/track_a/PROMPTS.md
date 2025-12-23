@@ -32,6 +32,14 @@ FORBIDDEN:
 ENFORCEMENT:
 - G-API gate will fail if violated
 - Cursor must halt and fix if direct DB import detected
+
+SCRIPTS BOUNDARY (Option A - Zero Exceptions):
+- Scripts must call src/ops/** entrypoints for ALL DB operations (reads AND writes)
+- Scripts must NOT import from src/services/** or src/db/**
+- This ensures shadow ledger coverage and auditable DB access
+- NO EXCEPTIONS - use ops read entrypoints for queries
+- Legacy exceptions: mark with @g-api-exception in JSDoc, document reason
+- Enforcement: npm run verify:scripts-boundary
 ```
 
 ---

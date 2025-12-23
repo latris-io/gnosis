@@ -2,6 +2,15 @@
 /**
  * Pre-A2 Phase 2 Verification Script
  * 
+ * @deprecated This script is from pre-A2 Phase 2 and uses raw DB access.
+ * It is marked as a G-API exception because:
+ * 1. It's test-only (NODE_ENV=test guard)
+ * 2. It does complex read-only SQL queries for verification
+ * 3. A2 Phase 2 is now complete
+ * 
+ * TODO: Refactor to use ops entrypoints if still needed.
+ * @g-api-exception LEGACY_VERIFICATION_SCRIPT
+ * 
  * Verifies all A2 Phase 1 invariants before proceeding to Phase 2.
  * READ-ONLY: No extraction, no writes. Fails fast with clear errors.
  * 

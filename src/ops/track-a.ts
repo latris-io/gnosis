@@ -18,7 +18,9 @@ import {
 } from '../services/relationships/relationship-service.js';
 import { 
   syncEntitiesToNeo4j, 
-  syncRelationshipsToNeo4j as serviceSyncRelationships 
+  syncRelationshipsToNeo4j as serviceSyncRelationships,
+  replaceRelationshipsInNeo4j as serviceReplaceRelationships,
+  verifyRelationshipParity as serviceVerifyParity,
 } from '../services/sync/sync-service.js';
 import { closeConnections } from '../services/connections/connection-service.js';
 import {
@@ -746,7 +748,36 @@ export { closeAdminPool };
 // have been moved to src/services/admin/admin-test-only.ts with NODE_ENV guard.
 // Tests should import from test/utils/admin-test-only.ts
 
-// NOTE: getEntityCounts NOT included - scripts count in-memory, tests use api/v1
+// ============================================================================
+// Neo4j Sync Operations (for scripts)
+// Re-exported from sync-service for ops layer access
+// ============================================================================
+
+/**
+ * Replace all relationships in Neo4j for a project.
+ * Uses replace-by-project strategy: deletes all existing relationships then recreates.
+ * 
+ * @param projectId - Project UUID to sync
+ * @returns Sync results with entity and relationship counts
+ */
+export async function replaceAllRelationshipsInNeo4j(projectId: string): Promise<{
+  synced: number;
+  entitiesSynced: number;
+}> {
+  return serviceReplaceRelationships(projectId);
+}
+
+/**
+ * Verify PostgreSQL and Neo4j relationship parity.
+ * Returns detailed parity information for verification scripts.
+ * 
+ * @param projectId - Project UUID to verify
+ * @returns Full parity check results from sync-service
+ */
+export async function verifyNeo4jParity(projectId: string) {
+  return serviceVerifyParity(projectId);
+}
+
 
 // ============================================================================
 // Admin Delete Operations (for remediation scripts)

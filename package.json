@@ -26,7 +26,8 @@
     "verify:organ-parity": "npx tsx scripts/verify-organ-parity.ts",
     "verify:track-milestone": "npx tsx scripts/verification/verify-track-milestone.ts",
     "verify:expectation-drift": "npx tsx scripts/verification/expectations/drift-detector.ts",
-    "verify:cross-store": "npx tsx scripts/verification/reconcilers/cross-store-reconciler.ts"
+    "verify:cross-store": "npx tsx scripts/verification/reconcilers/cross-store-reconciler.ts",
+    "verify:scripts-boundary": "npx tsx scripts/verify-scripts-boundary.ts"
   },
   "dependencies": {
     "dotenv": "^16.4.1",
