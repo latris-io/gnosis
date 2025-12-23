@@ -314,12 +314,21 @@ function checkGAPIViolation(filePath: string, content: string, lines: string[]):
   // Exception: test/utils/admin-test-only.ts is allowed to import from services/admin/admin-test-only.ts
   const isTestUtilsAdminTestOnly = filePath.includes('/test/utils/admin-test-only.');
   
+  // Exception: Unit tests that mock services are allowed to import them for mocking
+  // These tests use vi.mock() to replace the actual implementations
+  const isUnitTestWithMocks = filePath.includes('/test/markers/') && content.includes('vi.mock(');
+  
   while ((match = SERVICES_IMPORT_REGEX.exec(content)) !== null) {
     const lineNumber = content.substring(0, match.index).split('\n').length;
     const lineContent = lines[lineNumber - 1] || '';
     
     // Allow test/utils/admin-test-only.ts to import from services/admin/admin-test-only
     if (isTestUtilsAdminTestOnly && lineContent.includes('admin-test-only')) {
+      continue;
+    }
+    
+    // Allow unit tests with mocks to import services for mocking purposes
+    if (isUnitTestWithMocks) {
       continue;
     }
     

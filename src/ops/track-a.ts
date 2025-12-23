@@ -639,7 +639,6 @@ export async function extractAndPersistTddRelationships(
  * - R67: SourceFile MODIFIED_IN Commit
  * - R70: ChangeSet GROUPS Commit
  * 
- * @satisfies AC-64.2.9, AC-64.2.10
  */
 export async function extractAndPersistGitRelationships(projectId: string): Promise<{
   r63: { extracted: number; persisted: number };

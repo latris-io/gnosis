@@ -2,14 +2,10 @@
 /**
  * G-API Scripts Boundary Verification
  * 
- * Verifies that no script imports from src/services/** or src/db/**.
- * This enforces Option A: scripts must use src/ops/** entrypoints only.
+ * Verifies that no script imports from src/services or src/db.
+ * This enforces Option A: scripts must use src/ops entrypoints only.
  * 
- * Detects ALL import forms:
- * - ESM: import { x } from '../../src/services/...'
- * - ESM: import { x } from '@gnosis/services/...' (if aliases exist)
- * - CJS: require('../../src/services/...')
- * - Dynamic: await import('../../src/services/...')
+ * Detects ALL import forms: ESM static, ESM aliases, CJS, and dynamic.
  * 
  * Exit 0 if clean, exit 1 if violations found.
  * Output: file:line for each violation.
@@ -185,3 +181,4 @@ main().catch((err) => {
   console.error('Error:', err);
   process.exit(1);
 });
+

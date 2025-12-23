@@ -1,7 +1,10 @@
 // src/ledger/shadow-ledger.ts
 // @implements STORY-64.1
+// @implements STORY-64.3
 // @tdd TDD-A1-ENTITY-REGISTRY
+// @tdd TDD-A3-MARKER-EXTRACTION
 // Append-only JSONL ledger for entity CREATE/UPDATE operations
+// and DECISION entries for non-mutation outcomes (A3 marker extraction)
 // NO emission on NO-OP (when content_hash unchanged)
 
 import * as fs from 'fs/promises';
@@ -9,17 +12,25 @@ import * as path from 'path';
 import type { EvidenceAnchor } from '../extraction/types.js';
 
 /**
- * Ledger entry operations - CREATE or UPDATE only.
+ * Ledger entry operations - CREATE, UPDATE, or DECISION.
  * DELETE is not used in Track A (entities are never deleted, only updated).
  * NO-OP is not logged - if content_hash unchanged, no entry is created.
+ * DECISION is for non-mutation outcomes (ORPHAN, TDD_COHERENCE_OK, TDD_COHERENCE_MISMATCH).
  */
-export type LedgerOperation = 'CREATE' | 'UPDATE';
+export type LedgerOperation = 'CREATE' | 'UPDATE' | 'DECISION';
 
 /**
- * Entry kind distinguishes entity vs relationship mutations.
+ * Entry kind distinguishes entity vs relationship vs decision entries.
  * Added in Pre-A2 Hardening to support relationship logging.
+ * Extended in A3 for decision logging.
  */
-export type LedgerEntryKind = 'entity' | 'relationship';
+export type LedgerEntryKind = 'entity' | 'relationship' | 'decision';
+
+/**
+ * Decision types for DECISION entries.
+ * Added in A3 for marker extraction decision logging.
+ */
+export type DecisionType = 'ORPHAN' | 'TDD_COHERENCE_OK' | 'TDD_COHERENCE_MISMATCH';
 
 /**
  * A shadow ledger entry captures the provenance of an entity mutation.
@@ -27,12 +38,32 @@ export type LedgerEntryKind = 'entity' | 'relationship';
 export interface LedgerEntry {
   timestamp: string;          // ISO 8601 timestamp
   operation: LedgerOperation;
-  kind?: LedgerEntryKind;     // 'entity' | 'relationship' (undefined = entity for backwards compat)
+  kind?: LedgerEntryKind;     // 'entity' | 'relationship' | 'decision'
   entity_type: string;        // E-code (E01, E02, etc.) or R-code for relationships
   entity_id: string;          // UUID of the entity or relationship
   instance_id: string;        // Business key (EPIC-1, STORY-1.1, R01:..., etc.)
   content_hash: string;       // SHA-256 hash of content
   evidence: EvidenceAnchor;
+  project_id: string;
+}
+
+/**
+ * A decision entry captures a non-mutation decision outcome.
+ * Used for marker extraction decisions (ORPHAN, TDD coherence).
+ * Added in A3 per plan: every marker emits a decision or mutation entry.
+ */
+export interface DecisionEntry {
+  timestamp: string;           // ISO 8601 timestamp
+  operation: 'DECISION';
+  kind: 'decision';
+  decision: DecisionType;      // ORPHAN, TDD_COHERENCE_OK, TDD_COHERENCE_MISMATCH
+  marker_type: string;         // 'implements' | 'satisfies' | 'tdd'
+  target_id: string;           // Target of marker (STORY-X.Y, AC-X.Y.Z, TDD-*)
+  source_entity_id: string;    // Source entity instance_id
+  source_file: string;         // Source file path
+  line_start: number;          // File-absolute line start
+  line_end: number;            // File-absolute line end
+  reason?: string;             // Validation error message (for ORPHAN/MISMATCH)
   project_id: string;
 }
 
@@ -172,6 +203,29 @@ export class ShadowLedger {
       evidence,
       project_id: projectId,
     });
+  }
+
+  /**
+   * Log a DECISION entry for non-mutation outcomes.
+   * Added in A3 for marker extraction decision logging.
+   * 
+   * Per A3 plan: every marker processed emits exactly one of:
+   * - CREATE/UPDATE (mutation)
+   * - DECISION (ORPHAN, TDD_COHERENCE_OK, TDD_COHERENCE_MISMATCH)
+   * - No entry for NO-OP (relationship unchanged)
+   */
+  async logDecision(entry: Omit<DecisionEntry, 'timestamp' | 'operation' | 'kind'>): Promise<void> {
+    await this.initialize();
+
+    const fullEntry: DecisionEntry = {
+      ...entry,
+      timestamp: new Date().toISOString(),
+      operation: 'DECISION',
+      kind: 'decision',
+    };
+
+    const line = JSON.stringify(fullEntry) + '\n';
+    await fs.appendFile(this.ledgerPath, line);
   }
 
   /**

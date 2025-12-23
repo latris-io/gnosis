@@ -1,6 +1,5 @@
 // src/extraction/providers/git-relationship-provider.ts
 // @implements STORY-64.2
-// @satisfies AC-64.2.9, AC-64.2.10
 // @tdd TDD-A2-RELATIONSHIP-REGISTRY
 // Git relationship provider - derives R63 and R67 from git history
 // R63: INTRODUCED_IN (Story → ReleaseVersion)
@@ -223,3 +222,4 @@ export class GitRelationshipProvider {
 
 // Export singleton instance
 export const gitRelationshipProvider = new GitRelationshipProvider();
+

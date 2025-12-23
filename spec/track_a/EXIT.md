@@ -1,10 +1,11 @@
 # Track A Exit Criteria
 
-**Version:** 1.4.0  
+**Version:** 1.5.0  
 **Implements:** Roadmap V20.6.4 Track A Exit  
 **Purpose:** Verification checklist before HGR-1 (Human Gate Review 1)  
 **Canonical Source:** GNOSIS_TO_SOPHIA_MASTER_ROADMAP_V20_6_4.md §Track A
 
+> **v1.5.0:** A.3 Marker Extraction complete; 25 marker tests; R36/R37 deferred to A4 TEST-REL stage; DECISION ledger entries ready for A4 pipeline integration
 > **v1.4.0:** Added Marker Governance Verification (SANITY-053/054, lint:markers)
 > **v1.3.0:** Pre-A2 Hardening - Added SANITY-017/045, R36/R37 deferral to A3, relationship evidence requirement  
 > **v1.2.2:** Added semantic signal diversity governance note  
@@ -34,8 +35,8 @@
 
 - [ ] All Track A stories complete:
   - [x] A.1 Entity Registry — Definition of Done complete *(verified 2025-12-16)*
-  - [ ] A.2 Relationship Registry — Definition of Done complete
-  - [ ] A.3 Marker Extraction — Definition of Done complete
+  - [x] A.2 Relationship Registry — Definition of Done complete *(verified 2025-12-21)*
+  - [x] A.3 Marker Extraction — Definition of Done complete *(verified 2025-12-23)*
   - [ ] A.4 Structural Analysis — Definition of Done complete
   - [ ] A.5 Graph API v1 — Definition of Done complete
 
@@ -88,8 +89,8 @@ All 21 Track A relationship types extractable and verified:
 | R23 | EXTENDS | VERIFY-R23 | [ ] Pass |
 | R24 | IMPLEMENTS_INTERFACE | VERIFY-R24 | [ ] Pass |
 | R26 | DEPENDS_ON | VERIFY-R26 | [ ] Pass |
-| R36 | TESTED_BY | VERIFY-R36 | [ ] Deferred to A3 |
-| R37 | VERIFIED_BY | VERIFY-R37 | [ ] Deferred to A3 |
+| R36 | TESTED_BY | VERIFY-R36 | [ ] Deferred to A4 (TEST-REL stage) |
+| R37 | VERIFIED_BY | VERIFY-R37 | [ ] Deferred to A4 (TEST-REL stage) |
 | R63 | INTRODUCED_IN | VERIFY-R63 | [ ] Pass |
 | R67 | MODIFIED_IN | VERIFY-R67 | [ ] Pass |
 | R70 | GROUPS | VERIFY-R70 | [ ] Pass |
@@ -155,6 +156,36 @@ PROJECT_ID=$PROJECT_ID npm run test -- test/sanity/marker-governance.test.ts
 | SANITY-054 (Story integrity) | In SANITY suite | [ ] Pass |
 
 All `@satisfies AC-*` and `@implements STORY-*` markers must resolve to entities in the database.
+
+---
+
+## A.3 Marker Extraction Implementation
+
+**Verified:** 2025-12-23  
+**Tests:** 25 passing (marker-extraction: 18, tdd-coherence: 5, tdd-decision-ledger: 2)
+
+### Files Created
+
+| File | Purpose |
+|------|---------|
+| `src/markers/types.ts` | RawMarker, ValidatedMarker, OrphanMarker, TDDMismatch types |
+| `src/markers/validator.ts` | Target validation + E06 coherence check |
+| `src/extraction/providers/marker-provider.ts` | Comment parsing + file-absolute line positions |
+| `src/api/v1/markers.ts` | Orchestration + ledger DECISION entries |
+| `test/markers/marker-extraction.test.ts` | Integration tests (AST extraction) |
+| `test/markers/tdd-coherence.test.ts` | Unit tests (validator E06 checks) |
+| `test/markers/tdd-decision-ledger.test.ts` | Unit tests (DECISION ledger behavior) |
+
+### Files Modified
+
+| File | Changes |
+|------|---------|
+| `src/ledger/shadow-ledger.ts` | Added `logDecision()` for ORPHAN, TDD_COHERENCE_OK, TDD_COHERENCE_MISMATCH |
+
+### Pending Clarifications
+
+- **R36/R37:** Not implemented in A3. Per analysis, R36 (TESTED_BY) and R37 (VERIFIED_BY) are test-structure relationships derived in A4 TEST-REL stage, not from comment markers.
+- **DECISION ledger entries:** Implementation ready; will be observed on first A4 pipeline integration when `extractAndValidateMarkers()` is called.
 
 ---
 
