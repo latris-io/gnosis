@@ -21,3 +21,6 @@ jobs:
       
       - name: Verify organ document parity
         run: GOVERNANCE_PHASE=1 npm run verify:organ-parity
+
+      - name: Verify G-API scripts boundary
+        run: npm run verify:scripts-boundary
