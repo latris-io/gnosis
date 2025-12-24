@@ -33,11 +33,14 @@ export async function createTestProject(projectId: string, name: string): Promis
 /**
  * Delete entities for a project.
  * For test cleanup only.
+ * Sets project context for RLS compliance.
  */
 export async function deleteProjectEntities(projectId: string): Promise<void> {
   const client = await pool.connect();
   try {
-    await client.query('DELETE FROM entities WHERE project_id = $1', [projectId]);
+    // Set project context for RLS
+    await client.query(`SET app.project_id = '${projectId}'`);
+    await client.query('DELETE FROM entities');
   } finally {
     client.release();
   }
@@ -59,6 +62,7 @@ export async function deleteProject(projectId: string): Promise<void> {
 /**
  * Create a test entity.
  * For test setup only.
+ * Sets project context for RLS compliance.
  */
 export async function createTestEntity(
   projectId: string,
@@ -68,6 +72,8 @@ export async function createTestEntity(
 ): Promise<void> {
   const client = await pool.connect();
   try {
+    // Set project context for RLS
+    await client.query(`SET app.project_id = '${projectId}'`);
     await client.query(`
       INSERT INTO entities (id, project_id, entity_type, instance_id, name, attributes)
       VALUES (gen_random_uuid(), $1, $2, $3, $4, '{}')
