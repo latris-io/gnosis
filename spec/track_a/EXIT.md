@@ -1,10 +1,11 @@
 # Track A Exit Criteria
 
-**Version:** 1.5.1  
+**Version:** 1.5.2  
 **Implements:** Roadmap V20.6.4 Track A Exit  
 **Purpose:** Verification checklist before HGR-1 (Human Gate Review 1)  
 **Canonical Source:** GNOSIS_TO_SOPHIA_MASTER_ROADMAP_V20_6_4.md §Track A
 
+> **v1.5.2:** Performance fixes for Neo4j/PostgreSQL sync; all 210 tests passing (55 sanity + 106 unit + 49 verification)
 > **v1.5.1:** E15 extraction test repair - VERIFY-E15 now uses module derivation provider; 188 core tests passing
 > **v1.5.0:** A.3 Marker Extraction complete; 25 marker tests; R36/R37 deferred to A4 TEST-REL stage; DECISION ledger entries ready for A4 pipeline integration
 > **v1.4.0:** Added Marker Governance Verification (SANITY-053/054, lint:markers)
@@ -316,10 +317,10 @@ npm run report:coverage
 ## Final Checklist
 
 - [x] All entity tests pass (27/27 in entity-registry.test.ts)
-- [ ] All relationship tests pass (Neo4j timeout issues, PostgreSQL tests pass)
-- [ ] All gate tests pass (6/6)
+- [x] All relationship tests pass (49/49 verification tests)
+- [x] All gate tests pass (6/6)
 - [x] All SANITY tests pass (55/55 active)
-- [x] All unit tests pass (81/81)
+- [x] All unit tests pass (106/106)
 - [x] All marker tests pass (25/25)
 - [x] Shadow ledger populated
 - [x] Semantic corpus populated
@@ -327,9 +328,11 @@ npm run report:coverage
 - [x] No direct database access violations
 - [x] **Mission Alignment:** Track A makes no oracle claims — only structural extraction
 
-**Core test total:** 188 passing (unit: 81, markers: 25, sanity: 55, entity-registry: 27)
-**Verification tests:** 47/49 passing (2 Neo4j connection timeouts - network issue, not code)
-**Full total:** 235/237 tests passing (99.2%)
+**Test totals (2025-12-24):**
+- Sanity: 55/55 passing
+- Unit: 106/106 passing (including 25 marker tests)
+- Verification: 49/49 passing
+- **Full total: 210/210 tests passing (100%)**
 
 ---
 
