@@ -47,10 +47,12 @@ CREATE INDEX idx_entities_project ON entities(project_id);
 CREATE INDEX idx_entities_instance ON entities(instance_id);
 CREATE INDEX idx_entities_project_instance ON entities(project_id, instance_id);
 
--- RLS
+-- RLS (FORCE applies to table owner too)
 ALTER TABLE entities ENABLE ROW LEVEL SECURITY;
-CREATE POLICY entities_isolation ON entities
-  USING (project_id = current_setting('app.project_id', true)::UUID);
+ALTER TABLE entities FORCE ROW LEVEL SECURITY;
+CREATE POLICY entities_project_isolation ON entities
+  USING (project_id = current_setting('app.project_id', true)::UUID)
+  WITH CHECK (project_id = current_setting('app.project_id', true)::UUID);
 
 -- =============================================================================
 -- RELATIONSHIPS TABLE (per Cursor Plan V20.8.5 lines 471-495)
@@ -81,8 +83,11 @@ CREATE INDEX idx_relationships_to ON relationships(to_entity_id);
 CREATE INDEX idx_relationships_project ON relationships(project_id);
 CREATE INDEX idx_relationships_project_instance ON relationships(project_id, instance_id);
 
--- RLS
+-- RLS (FORCE applies to table owner too)
 ALTER TABLE relationships ENABLE ROW LEVEL SECURITY;
-CREATE POLICY relationships_isolation ON relationships
-  USING (project_id = current_setting('app.project_id', true)::UUID);
+ALTER TABLE relationships FORCE ROW LEVEL SECURITY;
+CREATE POLICY relationships_project_isolation ON relationships
+  USING (project_id = current_setting('app.project_id', true)::UUID)
+  WITH CHECK (project_id = current_setting('app.project_id', true)::UUID);
+
 
