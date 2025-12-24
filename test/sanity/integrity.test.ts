@@ -4,9 +4,12 @@
 
 import { describe, it, expect } from 'vitest';
 import { metaQuery } from '../utils/db-meta.js';
+import { rlsQuery } from '../utils/rls.js';
 import * as fs from 'fs';
 import * as path from 'path';
 import 'dotenv/config';
+
+const PROJECT_ID = process.env.PROJECT_ID || '6df2f456-440d-4958-b475-d9808775ff69';
 
 describe('INTEGRITY Tests', () => {
   // SANITY-010: Database Schema Matches Cursor Plan
@@ -234,8 +237,8 @@ describe('INTEGRITY Tests', () => {
         );
       }
 
-      // Get entity counts by type
-      const rows = await metaQuery<{ entity_type: string; count: string }>(`
+      // Get entity counts by type (use RLS-aware query since FORCE RLS is enabled)
+      const rows = await rlsQuery<{ entity_type: string; count: string }>(PROJECT_ID, `
         SELECT entity_type, COUNT(*) as count
         FROM entities
         GROUP BY entity_type

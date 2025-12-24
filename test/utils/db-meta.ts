@@ -26,17 +26,9 @@ export async function metaQuery<T = any>(
 ): Promise<T[]> {
   const client = await getClient();
   try {
-    // ASSERT: RLS context must NOT be set (this is intentionally db-wide)
-    const check = await client.query(
-      "SELECT current_setting('app.project_id', true) AS project_id"
-    );
-    const currentContext = check.rows?.[0]?.project_id;
-    if (currentContext) {
-      throw new Error(
-        `[metaQuery] RLS context unexpectedly set: ${currentContext}. ` +
-        `Use rlsQuery() for project-scoped queries.`
-      );
-    }
+    // Reset RLS context to ensure db-wide visibility
+    // (pooled connections may retain context from prior use)
+    await client.query("RESET app.project_id");
 
     const result = await client.query(sql, params);
     return result.rows as T[];
