@@ -382,22 +382,211 @@ export async function countByType(
 }
 
 /**
- * Batch upsert multiple relationships.
- * Returns results for each relationship.
- * Does NOT sync to Neo4j - use batchUpsertAndSync() if you need sync.
+ * Batch upsert multiple relationships using bulk SQL operations.
+ * Uses UNNEST for true batch INSERT...ON CONFLICT (single round-trip).
+ * 
+ * Performance: O(1) database round-trips instead of O(n).
+ * - Single query to resolve all entity instance_ids to UUIDs
+ * - Single UNNEST INSERT...ON CONFLICT for all relationships
+ * 
+ * Shadow ledger logging is batched at the end.
+ * 
+ * @param projectId - Project scope
+ * @param relationships - Relationships to upsert
+ * @returns Results for each relationship
  */
 export async function batchUpsert(
   projectId: string,
   relationships: ExtractedRelationship[]
 ): Promise<UpsertResult[]> {
-  const results: UpsertResult[] = [];
-
-  for (const extracted of relationships) {
-    const result = await upsert(projectId, extracted);
-    results.push(result);
+  if (relationships.length === 0) {
+    return [];
   }
 
-  return results;
+  // Validate all instance_ids upfront
+  for (const rel of relationships) {
+    validateRelationshipInstanceId(rel.instance_id);
+  }
+
+  const client = await getClient();
+  try {
+    await setProjectContext(client, projectId);
+
+    // Step 1: Collect all unique instance_ids needed for resolution
+    const fromIds = new Set(relationships.map(r => r.from_instance_id));
+    const toIds = new Set(relationships.map(r => r.to_instance_id));
+    const allInstanceIds = [...new Set([...fromIds, ...toIds])];
+
+    // Step 2: Batch resolve all entity instance_ids to UUIDs in single query
+    const entityResult = await client.query<{ instance_id: string; id: string }>(`
+      SELECT instance_id, id FROM entities WHERE instance_id = ANY($1)
+    `, [allInstanceIds]);
+
+    const entityMap = new Map(entityResult.rows.map(r => [r.instance_id, r.id]));
+
+    // Step 3: Build arrays for UNNEST
+    const relationshipTypes: string[] = [];
+    const instanceIds: string[] = [];
+    const names: string[] = [];
+    const fromEntityIds: string[] = [];
+    const toEntityIds: string[] = [];
+    const confidences: number[] = [];
+    const sourceFiles: string[] = [];
+    const lineStarts: number[] = [];
+    const lineEnds: number[] = [];
+    const contentHashes: string[] = [];
+
+    for (const rel of relationships) {
+      const fromEntityId = entityMap.get(rel.from_instance_id);
+      const toEntityId = entityMap.get(rel.to_instance_id);
+
+      if (!fromEntityId) {
+        throw new Error(
+          `Cannot resolve from_entity_id for relationship ${rel.instance_id}: ` +
+          `entity "${rel.from_instance_id}" not found in project ${projectId}`
+        );
+      }
+      if (!toEntityId) {
+        throw new Error(
+          `Cannot resolve to_entity_id for relationship ${rel.instance_id}: ` +
+          `entity "${rel.to_instance_id}" not found in project ${projectId}`
+        );
+      }
+
+      relationshipTypes.push(rel.relationship_type);
+      instanceIds.push(rel.instance_id);
+      names.push(rel.name);
+      fromEntityIds.push(fromEntityId);
+      toEntityIds.push(toEntityId);
+      confidences.push(rel.confidence ?? 1.0);
+      sourceFiles.push(rel.source_file);
+      lineStarts.push(rel.line_start);
+      lineEnds.push(rel.line_end);
+      contentHashes.push(computeContentHash(rel));
+    }
+
+    // Step 4: Bulk upsert with UNNEST (single query for all relationships)
+    const upsertResult = await client.query<{
+      id: string;
+      relationship_type: string;
+      instance_id: string;
+      name: string;
+      from_entity_id: string;
+      to_entity_id: string;
+      confidence: number;
+      source_file: string;
+      line_start: number;
+      line_end: number;
+      content_hash: string;
+      extracted_at: Date;
+      project_id: string;
+      inserted: boolean;
+    }>(`
+      INSERT INTO relationships (
+        id, relationship_type, instance_id, name,
+        from_entity_id, to_entity_id, confidence,
+        source_file, line_start, line_end, content_hash,
+        project_id, extracted_at
+      )
+      SELECT 
+        gen_random_uuid(),
+        r.relationship_type,
+        r.instance_id,
+        r.name,
+        r.from_entity_id::uuid,
+        r.to_entity_id::uuid,
+        r.confidence,
+        r.source_file,
+        r.line_start,
+        r.line_end,
+        r.content_hash,
+        $11::uuid,
+        NOW()
+      FROM UNNEST(
+        $1::text[], $2::text[], $3::text[], $4::text[], $5::text[],
+        $6::float[], $7::text[], $8::int[], $9::int[], $10::text[]
+      ) AS r(
+        relationship_type, instance_id, name, from_entity_id, to_entity_id,
+        confidence, source_file, line_start, line_end, content_hash
+      )
+      ON CONFLICT (project_id, instance_id) DO UPDATE SET
+        name = EXCLUDED.name,
+        from_entity_id = EXCLUDED.from_entity_id,
+        to_entity_id = EXCLUDED.to_entity_id,
+        confidence = EXCLUDED.confidence,
+        source_file = EXCLUDED.source_file,
+        line_start = EXCLUDED.line_start,
+        line_end = EXCLUDED.line_end,
+        content_hash = EXCLUDED.content_hash,
+        extracted_at = NOW()
+      WHERE relationships.content_hash IS DISTINCT FROM EXCLUDED.content_hash
+      RETURNING 
+        id, relationship_type, instance_id, name,
+        from_entity_id, to_entity_id, confidence,
+        source_file, line_start, line_end, content_hash,
+        extracted_at, project_id,
+        (xmax = 0) AS inserted
+    `, [
+      relationshipTypes, instanceIds, names, fromEntityIds, toEntityIds,
+      confidences, sourceFiles, lineStarts, lineEnds, contentHashes,
+      projectId,
+    ]);
+
+    // Step 5: Build results map from returned rows
+    const returnedMap = new Map(upsertResult.rows.map(r => [r.instance_id, r]));
+
+    // Step 6: Build results and batch log to shadow ledger
+    const results: UpsertResult[] = [];
+    const createLogs: Array<{ type: string; id: string; instanceId: string; hash: string; evidence: ReturnType<typeof createEvidenceAnchor> }> = [];
+    const updateLogs: Array<{ type: string; id: string; instanceId: string; hash: string; evidence: ReturnType<typeof createEvidenceAnchor> }> = [];
+
+    for (let i = 0; i < relationships.length; i++) {
+      const rel = relationships[i];
+      const row = returnedMap.get(rel.instance_id);
+
+      if (!row) {
+        // NO-OP (content_hash unchanged)
+        results.push({ relationship: null, operation: 'NO-OP' });
+      } else {
+        const relationship: Relationship = {
+          id: row.id,
+          relationship_type: row.relationship_type as RelationshipTypeCode,
+          instance_id: row.instance_id,
+          name: row.name,
+          from_entity_id: row.from_entity_id,
+          to_entity_id: row.to_entity_id,
+          confidence: row.confidence,
+          source_file: row.source_file,
+          line_start: row.line_start,
+          line_end: row.line_end,
+          content_hash: row.content_hash,
+          extracted_at: row.extracted_at,
+          project_id: row.project_id,
+        };
+        const operation = row.inserted ? 'CREATE' : 'UPDATE';
+        results.push({ relationship, operation });
+
+        const evidence = createEvidenceAnchor(rel.source_file, rel.line_start, rel.line_end);
+        if (operation === 'CREATE') {
+          createLogs.push({ type: row.relationship_type, id: row.id, instanceId: row.instance_id, hash: contentHashes[i], evidence });
+        } else {
+          updateLogs.push({ type: row.relationship_type, id: row.id, instanceId: row.instance_id, hash: contentHashes[i], evidence });
+        }
+      }
+    }
+
+    // Step 7: Batch log to shadow ledger (fire-and-forget for performance)
+    for (const log of createLogs) {
+      await shadowLedger.logRelationshipCreate(log.type, log.id, log.instanceId, log.hash, log.evidence, projectId);
+    }
+    for (const log of updateLogs) {
+      await shadowLedger.logRelationshipUpdate(log.type, log.id, log.instanceId, log.hash, log.evidence, projectId);
+    }
+
+    return results;
+  } finally {
+    client.release();
+  }
 }
 
 /**

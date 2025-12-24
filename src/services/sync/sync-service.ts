@@ -13,7 +13,7 @@ import { getSession, ensureConstraintsOnce } from '../../db/neo4j.js';
 
 /**
  * Sync all entities for a project from Postgres to Neo4j.
- * Internally queries via entity tables and creates/updates Neo4j nodes.
+ * Uses UNWIND batch pattern for performance (single query for all entities).
  * 
  * @param projectId - Project UUID
  * @returns Count of synced entities
@@ -39,27 +39,34 @@ export async function syncEntitiesToNeo4j(projectId: string): Promise<{ synced: 
     );
 
     const entities = result.rows;
-    let synced = 0;
-
-    for (const entity of entities) {
-      // Use MERGE to create or update with (project_id, instance_id) identity
-      // Per EXIT.md Upsert Rule (Locked): identity lookup is project-scoped
-      await session.run(
-        `MERGE (n:Entity {project_id: $projectId, instance_id: $instanceId})
-         SET n.entity_type = $entityType,
-             n.name = $name,
-             n.attributes = $attributes,
-             n.synced_at = datetime()`,
-        {
-          projectId: projectId,
-          instanceId: entity.instance_id,
-          entityType: entity.entity_type,
-          name: entity.name,
-          attributes: JSON.stringify(entity.attributes || {}),
-        }
-      );
-      synced++;
+    
+    if (entities.length === 0) {
+      return { synced: 0 };
     }
+
+    // UNWIND batch - single Cypher query for all entities (like relationship sync)
+    // Use MERGE to create or update with (project_id, instance_id) identity
+    // Per EXIT.md Upsert Rule (Locked): identity lookup is project-scoped
+    const mergeResult = await session.run(`
+      UNWIND $entities AS entity
+      MERGE (n:Entity {project_id: $projectId, instance_id: entity.instanceId})
+      SET n.entity_type = entity.entityType,
+          n.name = entity.name,
+          n.attributes = entity.attributes,
+          n.synced_at = datetime()
+      WITH count(n) AS mergedCount
+      RETURN mergedCount
+    `, {
+      projectId,
+      entities: entities.map(e => ({
+        instanceId: e.instance_id,
+        entityType: e.entity_type,
+        name: e.name,
+        attributes: JSON.stringify(e.attributes || {}),
+      })),
+    });
+
+    const synced = mergeResult.records[0]?.get('mergedCount')?.toNumber() ?? 0;
 
     return { synced };
   } finally {
