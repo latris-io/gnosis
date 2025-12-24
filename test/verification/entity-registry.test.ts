@@ -269,7 +269,8 @@ describe('Entity Registry - Story A.1', () => {
   });
 
   // ============================================================
-  // AST PROVIDER TESTS (E08, E12, E13, E15, E28, E29)
+  // AST PROVIDER TESTS (E08, E12, E13, E28, E29)
+  // Note: E15 is derived from E11 directories, not AST
   // ============================================================
 
   describe('AST Provider', () => {
@@ -314,17 +315,7 @@ describe('Entity Registry - Story A.1', () => {
       }
     });
 
-    // VERIFY-E15: Module extraction
-    it('VERIFY-E15: extracts Module entities from imports', async () => {
-      const modules = astResult.entities.filter(e => e.entity_type === 'E15');
-      
-      // HARD ASSERTION: Must find modules
-      expect(modules.length).toBeGreaterThan(0);
-      
-      for (const mod of modules) {
-        expect(mod.instance_id).toMatch(/^MOD-/);
-      }
-    });
+    // NOTE: VERIFY-E15 moved to Module Derivation Provider section below
 
     // VERIFY-E28: TestSuite extraction
     it('VERIFY-E28: extracts TestSuite entities from describe blocks', async () => {
@@ -348,6 +339,53 @@ describe('Entity Registry - Story A.1', () => {
       for (const tc of cases) {
         expect(tc.instance_id).toMatch(/^TC-/);
       }
+    });
+  });
+
+  // ============================================================
+  // MODULE DERIVATION PROVIDER TESTS (E15)
+  // E15 Module is derived from E11 SourceFile directories
+  // ============================================================
+
+  describe('Module Derivation Provider', () => {
+    // VERIFY-E15: Module derivation from E11 directories
+    it('VERIFY-E15: derives Module entities from E11 SourceFile directories', async () => {
+      // Import the derivation function
+      const { deriveModulesFromFiles } = await import('../../src/extraction/providers/module-derivation-provider.js');
+      
+      // Get E11 entities from filesystem provider
+      const fsResult = await filesystemProvider.extract(snapshot);
+      const e11Entities = fsResult.entities.filter(e => e.entity_type === 'E11');
+      
+      // HARD ASSERTION: Must have E11 files to derive from
+      expect(e11Entities.length).toBeGreaterThan(0);
+      
+      // Convert to SourceFileInput format
+      const sourceFiles = e11Entities.map(e => ({
+        instance_id: e.instance_id,
+        source_file: e.source_file || '',
+        line_start: e.line_start || 1,
+        line_end: e.line_end || 1,
+      }));
+      
+      // Derive E15 modules from directory structure
+      const modules = deriveModulesFromFiles(sourceFiles);
+      
+      // HARD ASSERTION: Must find modules (src/, test/, etc.)
+      expect(modules.length).toBeGreaterThan(0);
+      
+      for (const mod of modules) {
+        expect(mod.entity_type).toBe('E15');
+        expect(mod.instance_id).toMatch(/^MOD-/);
+        expect(mod.attributes).toHaveProperty('derived_from', 'directory-structure');
+        expect(mod.attributes).toHaveProperty('path');
+        expect(mod.attributes).toHaveProperty('file_count');
+      }
+      
+      // Verify we get expected directory modules (src subdirectories)
+      const moduleIds = modules.map(m => m.instance_id);
+      // All source files are in src/* subdirectories, not directly in src/
+      expect(moduleIds.some(id => id.startsWith('MOD-src/'))).toBe(true);
     });
   });
 
@@ -708,6 +746,9 @@ describe('Entity Registry - Story A.1', () => {
 
   describe('Entity Type Coverage', () => {
     it('covers all 16 Track A entity types (E14 deferred)', async () => {
+      // Import module derivation
+      const { deriveModulesFromFiles } = await import('../../src/extraction/providers/module-derivation-provider.js');
+      
       // Run all extractions
       const [brd, fsResult, ast] = await Promise.all([
         brdProvider.extract(snapshot),
@@ -715,11 +756,22 @@ describe('Entity Registry - Story A.1', () => {
         astProvider.extract(snapshot),
       ]);
 
+      // Derive E15 modules from E11 directory structure
+      const e11Entities = fsResult.entities.filter(e => e.entity_type === 'E11');
+      const sourceFiles = e11Entities.map(e => ({
+        instance_id: e.instance_id,
+        source_file: e.source_file || '',
+        line_start: e.line_start || 1,
+        line_end: e.line_end || 1,
+      }));
+      const e15Modules = deriveModulesFromFiles(sourceFiles);
+
       // Git/changeset tested separately with fixtures
       const allEntities = [
         ...brd.entities,
         ...fsResult.entities,
         ...ast.entities,
+        ...e15Modules,  // Add derived E15 modules
       ];
 
       const entityTypes = new Set(allEntities.map(e => e.entity_type));
@@ -750,4 +802,5 @@ describe('Entity Registry - Story A.1', () => {
     });
   });
 });
+
 

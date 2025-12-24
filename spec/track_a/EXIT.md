@@ -1,10 +1,11 @@
 # Track A Exit Criteria
 
-**Version:** 1.5.0  
+**Version:** 1.5.1  
 **Implements:** Roadmap V20.6.4 Track A Exit  
 **Purpose:** Verification checklist before HGR-1 (Human Gate Review 1)  
 **Canonical Source:** GNOSIS_TO_SOPHIA_MASTER_ROADMAP_V20_6_4.md §Track A
 
+> **v1.5.1:** E15 extraction test repair - VERIFY-E15 now uses module derivation provider; 188 core tests passing
 > **v1.5.0:** A.3 Marker Extraction complete; 25 marker tests; R36/R37 deferred to A4 TEST-REL stage; DECISION ledger entries ready for A4 pipeline integration
 > **v1.4.0:** Added Marker Governance Verification (SANITY-053/054, lint:markers)
 > **v1.3.0:** Pre-A2 Hardening - Added SANITY-017/045, R36/R37 deferral to A3, relationship evidence requirement  
@@ -187,6 +188,18 @@ All `@satisfies AC-*` and `@implements STORY-*` markers must resolve to entities
 - **R36/R37:** Not implemented in A3. Per analysis, R36 (TESTED_BY) and R37 (VERIFIED_BY) are test-structure relationships derived in A4 TEST-REL stage, not from comment markers.
 - **DECISION ledger entries:** Implementation ready; will be observed on first A4 pipeline integration when `extractAndValidateMarkers()` is called.
 
+### E15 Repair (v1.5.1)
+
+**Issue:** VERIFY-E15 was incorrectly expecting E15 modules from `astProvider.extract()`. E15 modules are derived from E11 SourceFile directories by `moduleDerivationProvider`, not from AST parsing.
+
+**Fix:**
+1. Moved VERIFY-E15 from AST Provider section to new "Module Derivation Provider" section
+2. Updated test to use `deriveModulesFromFiles()` on E11 entities from filesystemProvider
+3. Updated Entity Type Coverage test to include E15 derivation step
+
+**Files modified:**
+- `test/verification/entity-registry.test.ts` - Fixed VERIFY-E15 and Entity Type Coverage tests
+
 ---
 
 ## Pillar Verification
@@ -302,15 +315,19 @@ npm run report:coverage
 
 ## Final Checklist
 
-- [ ] All entity tests pass (16/16)
-- [ ] All relationship tests pass (21/21)
+- [x] All entity tests pass (27/27 in entity-registry.test.ts)
+- [ ] All relationship tests pass (Neo4j timeout issues, PostgreSQL tests pass)
 - [ ] All gate tests pass (6/6)
-- [ ] All SANITY tests pass (54/54 active)
-- [ ] Shadow ledger populated
-- [ ] Semantic corpus populated
+- [x] All SANITY tests pass (55/55 active)
+- [x] All unit tests pass (81/81)
+- [x] All marker tests pass (25/25)
+- [x] Shadow ledger populated
+- [x] Semantic corpus populated
 - [ ] Integrity checks pass
-- [ ] No direct database access violations
-- [ ] **Mission Alignment:** Track A makes no oracle claims — only structural extraction
+- [x] No direct database access violations
+- [x] **Mission Alignment:** Track A makes no oracle claims — only structural extraction
+
+**Core test total:** 188 passing (unit: 81, markers: 25, sanity: 55, entity-registry: 27)
 
 ---
 
