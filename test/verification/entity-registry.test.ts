@@ -204,7 +204,7 @@ describe('Entity Registry - Story A.1', () => {
     });
 
     // VERIFY-E04: Constraint extraction
-    // EVIDENCE: `grep -ciE "constraint" docs/BRD_V20_6_3_COMPLETE.md` = 50 matches
+    // EVIDENCE: `grep -ciE "constraint" docs/BRD_V20_6_4_COMPLETE.md` = 50 matches
     // All 50 are conceptual references (e.g., "budget constraints", "safety constraints"),
     // NOT CNST- formatted entity definitions.
     // BRD V20.6.3 does NOT contain E04 entity instances in extractable format.

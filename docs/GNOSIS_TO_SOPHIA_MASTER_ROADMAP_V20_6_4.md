@@ -4,7 +4,7 @@
 **Date:** December 14, 2025  
 **Status:** Aligned with BRD V20.6.3 and UNIFIED_TRACEABILITY_GRAPH_SCHEMA V20.6.1  
 **Companion Documents:**
-- BRD_V20_6_3_COMPLETE.md (Requirements - WHAT)
+- BRD_V20_6_4_COMPLETE.md (Requirements - WHAT)
 - UNIFIED_TRACEABILITY_GRAPH_SCHEMA_V20_6_1.md (Schema - HOW)
 - UNIFIED_VERIFICATION_SPECIFICATION_V20_6_5.md (Verification - PROOF)
 - CURSOR_IMPLEMENTATION_PLAN_V20_8_5.md (Implementation - EXECUTE)

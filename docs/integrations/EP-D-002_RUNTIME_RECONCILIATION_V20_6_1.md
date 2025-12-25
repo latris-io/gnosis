@@ -6,7 +6,7 @@
 **Classification:** Extension Protocol Addition  
 **Companion Documents:**
 - UNIFIED_TRACEABILITY_GRAPH_SCHEMA_V20_6_1.md
-- BRD_V20_6_3_COMPLETE.md
+- BRD_V20_6_4_COMPLETE.md
 - GNOSIS_TO_SOPHIA_MASTER_ROADMAP_V20_6_4.md
 - UNIFIED_VERIFICATION_SPECIFICATION_V20_6_5.md
 - CURSOR_IMPLEMENTATION_PLAN_V20_8_5.md (implements V20.6.4)
@@ -797,7 +797,7 @@ This integration is **not required** for EP-D-002 and should be considered post-
 **Author:** Integration Plan Generator  
 **Verified Against:**
 - UNIFIED_TRACEABILITY_GRAPH_SCHEMA_V20_6_1.md
-- BRD_V20_6_3_COMPLETE.md
+- BRD_V20_6_4_COMPLETE.md
 - GNOSIS_TO_SOPHIA_MASTER_ROADMAP_V20_6_4.md
 - UNIFIED_VERIFICATION_SPECIFICATION_V20_6_5.md
 

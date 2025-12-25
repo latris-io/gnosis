@@ -33,7 +33,7 @@
 
 | # | Document | File | Version |
 |---|----------|------|---------|
-| 1 | Business Requirements Document | `docs/BRD_V20_6_3_COMPLETE.md` | V20.6.3 |
+| 1 | Business Requirements Document | `docs/BRD_V20_6_4_COMPLETE.md` | V20.6.3 |
 | 2 | Unified Traceability Graph Schema | `docs/UNIFIED_TRACEABILITY_GRAPH_SCHEMA_V20_6_1.md` | V20.6.1 |
 | 3 | Unified Verification Specification | `docs/UNIFIED_VERIFICATION_SPECIFICATION_V20_6_5.md` | V20.6.5 |
 | 4 | Gnosis → Sophia Master Roadmap | `docs/GNOSIS_TO_SOPHIA_MASTER_ROADMAP_V20_6_4.md` | V20.6.4 |

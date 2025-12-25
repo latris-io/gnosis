@@ -7,7 +7,7 @@ import { describe, it, expect } from 'vitest';
 import * as fs from 'fs';
 import { parseBRD } from '../../src/extraction/parsers/brd-parser.js';
 
-const BRD_PATH = 'docs/BRD_V20_6_3_COMPLETE.md';
+const BRD_PATH = 'docs/BRD_V20_6_4_COMPLETE.md';
 
 describe('BRD Tests (Track A)', () => {
   // SANITY-055: BRD Registry Populated

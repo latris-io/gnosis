@@ -14,7 +14,7 @@ async function main() {
   console.log('Expected counts:', getExpectedCounts());
   console.log('');
   
-  const brdPath = 'docs/BRD_V20_6_3_COMPLETE.md';
+  const brdPath = 'docs/BRD_V20_6_4_COMPLETE.md';
   const content = fs.readFileSync(brdPath, 'utf-8');
   
   const pool = new Pool({ 

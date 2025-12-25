@@ -38,7 +38,7 @@ async function main() {
   console.log(`\nEpic 64 ACs in DB: ${acs64.rows.length}`);
   
   // Check BRD for table ACs in Epic 64
-  const brdContent = fs.readFileSync('docs/BRD_V20_6_3_COMPLETE.md', 'utf-8');
+  const brdContent = fs.readFileSync('docs/BRD_V20_6_4_COMPLETE.md', 'utf-8');
   const lines = brdContent.split('\n');
   
   const tableAcPattern = /^\|\s*AC-(\d+)\.(\d+)\.(\d+)\s*\|/;

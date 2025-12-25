@@ -5,7 +5,7 @@
 **Status:** Authoritative Verification Reference  
 **Scope:** Complete verification for Gnosis → Sophia (67 Base Entities + Extensions, 114 Relationships, 21 Gates, 4 Tracks, 9 Track D Stories)
 **Companion Documents:**
-- BRD_V20_6_3_COMPLETE.md
+- BRD_V20_6_4_COMPLETE.md
 - UNIFIED_TRACEABILITY_GRAPH_SCHEMA_V20_6_1.md
 - GNOSIS_TO_SOPHIA_MASTER_ROADMAP_V20_6_4.md
 - CURSOR_IMPLEMENTATION_PLAN_V20_8_5.md (implements V20.6.4)

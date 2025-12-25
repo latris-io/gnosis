@@ -41,7 +41,7 @@ async function main() {
 
   // Step 1: Parse BRD to get canonical E03 list
   console.log('Step 1: Parsing BRD...');
-  const brdPath = 'docs/BRD_V20_6_3_COMPLETE.md';
+  const brdPath = 'docs/BRD_V20_6_4_COMPLETE.md';
   const content = fs.readFileSync(brdPath, 'utf-8');
   const parsed = parseBRD(content, brdPath);
   console.log(`  Parser E03 count: ${parsed.acceptanceCriteria.length}`);

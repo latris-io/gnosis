@@ -33,7 +33,7 @@ async function main() {
 
   // Step 2: Compute BRD hash
   console.log('\nStep 2: Computing BRD hash...');
-  const brdPath = path.join(projectRoot, 'docs/BRD_V20_6_3_COMPLETE.md');
+  const brdPath = path.join(projectRoot, 'docs/BRD_V20_6_4_COMPLETE.md');
   const brdContent = fs.readFileSync(brdPath);
   const brdHash = crypto.createHash('sha256').update(brdContent).digest('hex');
   console.log(`  BRD Hash: ${brdHash}`);

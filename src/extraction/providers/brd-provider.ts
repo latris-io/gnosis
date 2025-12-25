@@ -27,8 +27,8 @@ export class BRDProvider implements ExtractionProvider {
   }
 
   async extract(snapshot: RepoSnapshot): Promise<ExtractionResult> {
-    const brdPath = path.join(snapshot.root_path, 'docs/BRD_V20_6_3_COMPLETE.md');
-    const relativePath = 'docs/BRD_V20_6_3_COMPLETE.md';
+    const brdPath = path.join(snapshot.root_path, 'docs/BRD_V20_6_4_COMPLETE.md');
+    const relativePath = 'docs/BRD_V20_6_4_COMPLETE.md';
     const entities: ExtractedEntity[] = [];
 
     // Emit start signal

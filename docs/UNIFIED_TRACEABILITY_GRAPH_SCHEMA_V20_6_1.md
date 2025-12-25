@@ -9,7 +9,7 @@
 > **Historical Note:** This document originated as the specification for Epic 64 (Unified Traceability Graph). It now encompasses all graph schema definitions including Epic 65 (Operations & Simulation) and Extension Protocol additions. The filename was changed in V20.6.0 to reflect this broader scope.
 
 **Companion Documents:**
-- BRD_V20_6_3_COMPLETE.md
+- BRD_V20_6_4_COMPLETE.md
 - GNOSIS_TO_SOPHIA_MASTER_ROADMAP_V20_6_4.md
 - UNIFIED_VERIFICATION_SPECIFICATION_V20_6_5.md
 - CURSOR_IMPLEMENTATION_PLAN_V20_8_5.md (implements V20.6.4)
@@ -3041,7 +3041,7 @@ Build it with the care it deserves.
 
 **Version:** 20.6.1 (Organ Alignment Edition)  
 **Companion Documents:**
-- BRD_V20_6_3_COMPLETE.md
+- BRD_V20_6_4_COMPLETE.md
 - GNOSIS_TO_SOPHIA_MASTER_ROADMAP_V20_6_4.md
 - UNIFIED_VERIFICATION_SPECIFICATION_V20_6_5.md
 - CURSOR_IMPLEMENTATION_PLAN_V20_8_5.md (implements V20.6.4)

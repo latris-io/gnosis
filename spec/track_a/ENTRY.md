@@ -48,7 +48,7 @@
 
 ### Canonical Documents Present
 
-- [ ] `docs/BRD_V20_6_3_COMPLETE.md` exists
+- [ ] `docs/BRD_V20_6_4_COMPLETE.md` exists
 - [ ] `docs/UNIFIED_TRACEABILITY_GRAPH_SCHEMA_V20_6_1.md` exists
 - [ ] `docs/UNIFIED_VERIFICATION_SPECIFICATION_V20_6_5.md` exists
 - [ ] `docs/GNOSIS_TO_SOPHIA_MASTER_ROADMAP_V20_6_4.md` exists

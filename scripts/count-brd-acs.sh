@@ -3,7 +3,7 @@
 # Generates AC format breakdown directly from BRD content
 # This script is evidence for ORGAN PATCH PR
 
-BRD="docs/BRD_V20_6_3_COMPLETE.md"
+BRD="docs/BRD_V20_6_4_COMPLETE.md"
 
 echo "=== AC FORMAT BREAKDOWN (generated from BRD) ==="
 echo ""

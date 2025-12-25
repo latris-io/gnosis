@@ -101,7 +101,7 @@ export interface RelationshipExpectation {
 // E04 Derivation (mechanically provable, not hand-waved)
 // -----------------------------------------------------------------------------
 
-const BRD_PATH = 'docs/BRD_V20_6_3_COMPLETE.md';
+const BRD_PATH = 'docs/BRD_V20_6_4_COMPLETE.md';
 
 /**
  * Derive E04 (Constraint) status mechanically from BRD.

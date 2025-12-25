@@ -195,7 +195,7 @@ export class BRDProvider implements ExtractionProvider {
   }
   
   async extract(snapshot: RepoSnapshot): Promise<ExtractionResult> {
-    const brdPath = `${snapshot.root_path}/docs/BRD_V20_6_3_COMPLETE.md`;
+    const brdPath = `${snapshot.root_path}/docs/BRD_V20_6_4_COMPLETE.md`;
     const content = await fs.readFile(brdPath, 'utf8');
     const parsed = parseBRD(content);
     

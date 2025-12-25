@@ -62,8 +62,8 @@ async function main() {
   });
 
   const projectId = '6df2f456-440d-4958-b475-d9808775ff69';
-  const brdPath = 'docs/BRD_V20_6_3_COMPLETE.md';
-  const relativePath = 'docs/BRD_V20_6_3_COMPLETE.md';
+  const brdPath = 'docs/BRD_V20_6_4_COMPLETE.md';
+  const relativePath = 'docs/BRD_V20_6_4_COMPLETE.md';
 
   // Capture run header
   const gitSha = execSync('git rev-parse HEAD', { encoding: 'utf-8' }).trim();
