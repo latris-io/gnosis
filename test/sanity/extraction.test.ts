@@ -16,11 +16,11 @@ const PROJECT_ID = process.env.PROJECT_ID;
 // Track phase for phase-aware tests (pre_a2, post_a2, post_a3)
 const TRACK_PHASE = process.env.TRACK_PHASE || 'pre_a2';
 
-// Expected BRD counts (from BRD V20.6.3)
+// Expected BRD counts (BRD V20.6.4 per CID-2025-12-25-001)
 const EXPECTED_BRD_COUNTS = {
   E01: 65,      // Epics
-  E02: 397,     // Stories (updated V20.6.4)
-  E03: 3147,    // Acceptance Criteria (updated V20.6.4)
+  E02: 397,     // Stories
+  E03: 3147,    // Acceptance Criteria
 };
 
 describe('EXTRACTION (Track A)', () => {
