@@ -17,8 +17,8 @@ describe('BRD Tests (Track A)', () => {
       const result = parseBRD(content, BRD_PATH);
       
       expect(result.epics.length, 'Epic count mismatch').toBe(65);
-      expect(result.stories.length, 'Story count mismatch').toBe(351);
-      expect(result.acceptanceCriteria.length, 'AC count mismatch').toBe(2849);
+      expect(result.stories.length, 'Story count mismatch').toBe(397);
+      expect(result.acceptanceCriteria.length, 'AC count mismatch').toBe(3147);
     });
   });
 
@@ -53,4 +53,5 @@ describe('BRD Tests (Track A)', () => {
     });
   });
 });
+
 

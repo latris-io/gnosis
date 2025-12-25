@@ -3,8 +3,8 @@
 ## Document Information
 
 **Document Type:** Business Requirements Document (BRD)  
-**Version:** 20.6.3 (Organ Alignment Edition)  
-**Date:** December 14, 2025  
+**Version:** 20.6.4 (Story Format Standardization Edition)  
+**Date:** December 24, 2025  
 **Status:** Complete - Full Compliance Traceability  
 **Audience:** Business stakeholders, product managers, executives, team leads, AI systems (self-ingestion)  
 **Companion Documents:** 
@@ -15,6 +15,27 @@
 - EP-D-002_RUNTIME_RECONCILIATION_V20_6_1.md
 
 **Document Hash:** [To be computed after finalization]
+
+---
+
+## What's New in V20.6.4
+
+This version applies **Story Format Standardization** — expanding bullet-format stories in Epics 49-53 to full story format with proper user stories and acceptance criteria.
+
+### Key Changes
+
+| Change | Description | Impact |
+|--------|-------------|--------|
+| **Epic 49** | 6 stories expanded from bullet to full format | +42 ACs |
+| **Epic 50** | 15 stories expanded from bullet to full format | +107 ACs |
+| **Epic 51** | 7 stories expanded from bullet to full format | +43 ACs |
+| **Epic 52** | 6 stories expanded from bullet to full format | +37 ACs |
+| **Epic 53** | 12 stories expanded from bullet to full format | +69 ACs |
+| **Epic 41** | Fixed malformed header, added placeholder status | Structure fix |
+| **Story Count** | 351 → 397 stories | +46 stories |
+| **AC Count** | 2849 → 3147 ACs | +298 ACs |
+
+**Note:** No requirements changed. This is format standardization to enable machine extraction of previously bullet-formatted stories.
 
 ---
 
@@ -6414,7 +6435,18 @@ Different application types require different compliance measures. Shipwright mu
 
 ### Epic 41: Memory System Integrity & Referential Consistency
 
-#
+**Priority:** Should Have (V3.1)
+**Tier:** Memory System Layer
+**Implementation:** TBD
+
+**Description:**
+Ensures memory system maintains referential integrity across all memory elements, preventing orphaned references, broken links, and inconsistent memory states.
+
+**Business Value:** Prevents memory corruption, ensures data consistency, enables reliable memory queries.
+
+**Status:** Stories to be defined (placeholder epic - see Memory System track planning)
+
+---
 
 ### Epic 42: Autonomous Architectural Evolution
 
@@ -9097,20 +9129,122 @@ Establishes hardware-backed founder identity as root-of-trust for all cognitive 
 
 **Business Value:** Protects cognitive IP, prevents insider threats, ensures founder control over AI evolution, establishes clear authority chain for high-risk decisions.
 
-**Stories:**
-- **49.1:** Hardware-Backed Founder Credential (YubiKey/TPM/FIDO2, challenge-response protocol)
-- **49.2:** Constitutional Amendment Approval (policy engine, recursion governor, crypto verifier changes require founder GPG signature)
-- **49.3:** Self-Modification Approval Gates (criticality ≥80 or blast_radius >5 requires founder approval + A/B simulation)
-- **49.4:** Successor Capability Approval (Foundry/Overmind capabilities must be founder-approved, forbidden: unrestricted recursion, policy bypass, audit evasion)
-- **49.5:** Cognitive Access Control (founder-only access to brain organs, patterns, cognitive graph; admin sees metrics only)
-- **49.6:** Non-Delegable Operations (constitutional amendments, self-mod approval, successor approval, cognitive access grants permanently non-delegable)
+---
 
-**Key Acceptance Criteria:**
-- Founder identity requires password + hardware token (both required, cannot bypass)
-- Constitutional policies in `/core/constitutional/` cannot change without founder GPG-signed commit
-- API endpoints `/debug/brain-organs`, `/internal/patterns`, `/cognitive-graph/dump` return 403 unless founder-authenticated
-- Non-delegable operations hard-coded in `/core/identity/founder_operations.ts`, attempting delegation triggers security alert
-- All cognitive access logged with required justification field, weekly audit review
+#### Story 49.1: Hardware-Backed Founder Credential
+
+**As a** founder  
+**I want** hardware-backed credential support using YubiKey/TPM/FIDO2 with challenge-response protocol  
+**So that** I have secure, non-bypassable authentication for critical cognitive governance operations
+
+**Acceptance Criteria:**
+- AC1: System supports YubiKey hardware token authentication
+- AC2: System supports TPM-based authentication
+- AC3: System supports FIDO2/WebAuthn protocol
+- AC4: Challenge-response protocol implemented for each authentication attempt
+- AC5: Founder identity requires password + hardware token (both required, cannot bypass)
+- AC6: Hardware token failure locks founder operations until resolved
+- AC7: All authentication attempts logged with timestamp and outcome
+
+**Priority:** P0 (V3.0 Blocker)  
+**Business Value:** Root-of-trust security for cognitive governance
+
+---
+
+#### Story 49.2: Constitutional Amendment Approval
+
+**As a** founder  
+**I want** policy engine, recursion governor, and crypto verifier changes to require my GPG signature  
+**So that** constitutional policies cannot be modified without explicit founder approval
+
+**Acceptance Criteria:**
+- AC1: Constitutional policies in `/core/constitutional/` cannot change without founder GPG-signed commit
+- AC2: Policy engine modifications require GPG signature verification
+- AC3: Recursion governor changes require GPG signature verification
+- AC4: Crypto verifier changes require GPG signature verification
+- AC5: Unsigned constitutional changes are rejected at commit and deploy stages
+- AC6: Amendment attempts logged with signature verification status
+
+**Priority:** P0 (V3.0 Blocker)  
+**Business Value:** Prevents unauthorized constitutional modifications
+
+---
+
+#### Story 49.3: Self-Modification Approval Gates
+
+**As a** founder  
+**I want** high-impact self-modifications (criticality ≥80 or blast_radius >5) to require my approval with A/B simulation  
+**So that** significant cognitive changes cannot occur without explicit oversight
+
+**Acceptance Criteria:**
+- AC1: Self-modifications with criticality ≥80 require founder approval
+- AC2: Self-modifications with blast_radius >5 require founder approval
+- AC3: A/B simulation required before founder approval decision
+- AC4: Approval workflow includes impact analysis summary
+- AC5: Lower-criticality modifications may proceed with admin approval
+- AC6: All approval decisions logged with justification
+
+**Priority:** P0 (V3.0 Blocker)  
+**Business Value:** Human oversight of significant cognitive evolution
+
+---
+
+#### Story 49.4: Successor Capability Approval
+
+**As a** founder  
+**I want** Foundry/Overmind capabilities to require my explicit approval, with forbidden capability categories  
+**So that** successor systems cannot gain dangerous capabilities without oversight
+
+**Acceptance Criteria:**
+- AC1: Foundry capabilities must be founder-approved before activation
+- AC2: Overmind capabilities must be founder-approved before activation
+- AC3: Forbidden capabilities include: unrestricted recursion, policy bypass, audit evasion
+- AC4: Attempting to grant forbidden capabilities triggers security alert
+- AC5: Capability approval logged with full capability specification
+- AC6: Capability revocation also requires founder approval
+
+**Priority:** P0 (V3.0 Blocker)  
+**Business Value:** Controls AI successor evolution trajectory
+
+---
+
+#### Story 49.5: Cognitive Access Control
+
+**As a** founder  
+**I want** exclusive access to brain organs, patterns, and cognitive graph, with admins limited to metrics only  
+**So that** internal cognitive architecture is protected from unauthorized inspection
+
+**Acceptance Criteria:**
+- AC1: API endpoints `/debug/brain-organs`, `/internal/patterns`, `/cognitive-graph/dump` return 403 unless founder-authenticated
+- AC2: Admin users can access system metrics only (not internal cognitive state)
+- AC3: Brain organ specifications protected from all non-founder access
+- AC4: Pattern internals protected from all non-founder access
+- AC5: Cognitive graph protected from all non-founder access
+- AC6: All cognitive access attempts logged with required justification field
+- AC7: Weekly audit review of cognitive access logs
+
+**Priority:** P0 (V3.0 Blocker)  
+**Business Value:** Protects cognitive IP from insider threats
+
+---
+
+#### Story 49.6: Non-Delegable Operations
+
+**As a** founder  
+**I want** constitutional amendments, self-mod approval, successor approval, and cognitive access grants to be permanently non-delegable  
+**So that** critical operations cannot be assigned to other users
+
+**Acceptance Criteria:**
+- AC1: Non-delegable operations hard-coded in `/core/identity/founder_operations.ts`
+- AC2: Constitutional amendment approval is non-delegable
+- AC3: Self-modification approval is non-delegable
+- AC4: Successor capability approval is non-delegable
+- AC5: Cognitive access grants are non-delegable
+- AC6: Attempting delegation triggers security alert
+- AC7: Non-delegable list cannot be modified programmatically
+
+**Priority:** P0 (V3.0 Blocker)  
+**Business Value:** Ensures founder retains ultimate control
 
 ---
 
@@ -9125,34 +9259,313 @@ Comprehensive safety framework for V3.0 self-ingestion and all recursive operati
 
 **Business Value:** Enables safe V3.0 self-ingestion, prevents runaway AI scenarios, ensures system stability during cognitive evolution, protects against catastrophic self-modification failures.
 
-**Stories (Recursion Safety - Stories 50.1-50.7):**
-- **50.1:** Maximum Recursion Depth Enforcement (hard limit = 3, exceeding triggers immediate halt + founder notification)
-- **50.2:** Allowed Recursion Targets Whitelist (allowed: codebase_ingestion, pattern_extraction, architecture_analysis; forbidden: brain_organ_modification, policy_engine_modification, recursive_self_modification)
-- **50.3:** Pre-Flight Safety Checks (validates: memory_health ≥95%, no critical conflicts, disk ≥20% free, CPU <80%, no ongoing self-mods, all Tier 1 policies operational)
-- **50.4:** Recursion Rate Limiting (max 10 operations/hour globally, cooldown period on exceeding, emergency operations exempt with logging)
-- **50.5:** Emergency Stop Triggers (pattern mismatch, memory drift ≥5%, resource surge, anomaly detection, crypto verification failure, policy violation → immediate halt + founder SMS)
-- **50.6:** Recursion Audit Logging (every level logged, stack trace captured, forensics available, 90-day retention)
-- **50.7:** Recursion Sandboxing (isolated environment, resource caps, network restrictions, rollback capability)
+---
 
-**Stories (Self-Modification Boundaries - Stories 50.8-50.12):**
-- **50.8:** Immutable Components Designation (policy_engine, cryptographic_verifier, audit_trail, founder_identity, recursion_governor in `/core/constitutional/` cannot be modified without founder approval)
-- **50.9:** Self-Modification Approval Workflow (impact analysis, sandbox simulation, A/B comparison required; criticality ≥80 needs founder, <80 needs admin)
-- **50.10:** Rollback/Snapshot Requirements (snapshot before every modification, one-click revert, 30-day snapshot retention)
-- **50.11:** Incremental Rollout (10% → 50% → 100% traffic with monitoring at each stage)
-- **50.12:** A/B Simulation for Cognitive Changes (current vs proposed tested on 1000 operations before deployment)
+**Section: Recursion Safety (Stories 50.1-50.7)**
 
-**Stories (Adaptation Boundaries - Stories 50.13-50.15):**
-- **50.13:** Maximum Cognitive Changes Per Day (limit = 10 significant changes, throttle + require stability period if exceeded)
-- **50.14:** Stability Windows (24-hour stability window after major adaptation, no further high-impact changes)
-- **50.15:** Adaptation Reversibility (all adaptations must be reversible, include rollback plan, tested rollback procedure)
+---
 
-**Key Acceptance Criteria:**
-- Recursion depth > 3 triggers immediate halt + incident report + founder notification within 15 minutes
-- Attempting forbidden recursion target returns error + suggests allowed alternatives + logs stack trace
-- Pre-flight check generates health score (0-100), requires ≥95 to proceed with recursion
-- Emergency stop cannot be disabled (constitutional), false positive rate tracked (target <1%)
-- Immutable components in `/core/constitutional/` protected at filesystem + authorization + validation layers (defense in depth)
-- Adaptation rate exceeding 10 changes/day triggers alert + requires founder justification to continue
+#### Story 50.1: Maximum Recursion Depth Enforcement
+
+**As a** system safety engineer  
+**I want** a hard limit of 3 on recursion depth with immediate halt and founder notification when exceeded  
+**So that** infinite recursion loops are prevented
+
+**Acceptance Criteria:**
+- AC1: Hard recursion depth limit = 3 enforced at runtime
+- AC2: Exceeding depth triggers immediate halt of recursive operation
+- AC3: Recursion depth > 3 triggers incident report generation
+- AC4: Founder notification sent within 15 minutes of depth violation
+- AC5: Halted operation logged with full recursion stack trace
+- AC6: Recursion depth tracked across all entry points
+
+**Priority:** P0 (V3.0 Blocker - CRITICAL)  
+**Business Value:** Prevents runaway recursive operations
+
+---
+
+#### Story 50.2: Allowed Recursion Targets Whitelist
+
+**As a** system safety engineer  
+**I want** a whitelist of allowed recursion targets with forbidden targets explicitly blocked  
+**So that** recursive operations only touch safe components
+
+**Acceptance Criteria:**
+- AC1: Allowed targets: codebase_ingestion, pattern_extraction, architecture_analysis
+- AC2: Forbidden targets: brain_organ_modification, policy_engine_modification, recursive_self_modification
+- AC3: Attempting forbidden recursion target returns error with explanation
+- AC4: Error response suggests allowed alternatives when applicable
+- AC5: Forbidden target attempts logged with stack trace
+- AC6: Whitelist is immutable at runtime (constitutional)
+
+**Priority:** P0 (V3.0 Blocker - CRITICAL)  
+**Business Value:** Restricts recursion to safe operations
+
+---
+
+#### Story 50.3: Pre-Flight Safety Checks
+
+**As a** system safety engineer  
+**I want** pre-flight safety validation before any recursive operation  
+**So that** recursion only proceeds when system health is verified
+
+**Acceptance Criteria:**
+- AC1: Pre-flight check validates memory_health ≥95%
+- AC2: Pre-flight check validates no critical conflicts active
+- AC3: Pre-flight check validates disk ≥20% free
+- AC4: Pre-flight check validates CPU <80% utilization
+- AC5: Pre-flight check validates no ongoing self-modifications
+- AC6: Pre-flight check validates all Tier 1 policies operational
+- AC7: Pre-flight check generates health score (0-100)
+- AC8: Recursion requires health score ≥95 to proceed
+- AC9: Failed pre-flight logged with specific failure reasons
+
+**Priority:** P0 (V3.0 Blocker - CRITICAL)  
+**Business Value:** Ensures stable system state before recursion
+
+---
+
+#### Story 50.4: Recursion Rate Limiting
+
+**As a** system safety engineer  
+**I want** rate limiting on recursive operations (max 10/hour globally)  
+**So that** system resources are protected from recursive overload
+
+**Acceptance Criteria:**
+- AC1: Maximum 10 recursive operations per hour globally enforced
+- AC2: Exceeding rate triggers cooldown period
+- AC3: Emergency operations exempt from rate limit with logging
+- AC4: Rate limit tracked across all recursion entry points
+- AC5: Rate limit violations logged with operation context
+- AC6: Cooldown duration configurable by founder
+
+**Priority:** P0 (V3.0 Blocker - CRITICAL)  
+**Business Value:** Prevents resource exhaustion from recursion
+
+---
+
+#### Story 50.5: Emergency Stop Triggers
+
+**As a** system safety engineer  
+**I want** automatic emergency stops triggered by safety conditions  
+**So that** dangerous recursive states are immediately terminated
+
+**Acceptance Criteria:**
+- AC1: Pattern mismatch triggers emergency stop
+- AC2: Memory drift ≥5% triggers emergency stop
+- AC3: Resource surge triggers emergency stop
+- AC4: Anomaly detection triggers emergency stop
+- AC5: Crypto verification failure triggers emergency stop
+- AC6: Policy violation triggers emergency stop
+- AC7: Emergency stop triggers immediate halt + founder SMS notification
+- AC8: Emergency stop cannot be disabled (constitutional protection)
+- AC9: False positive rate tracked with target <1%
+
+**Priority:** P0 (V3.0 Blocker - CRITICAL)  
+**Business Value:** Immediate termination of dangerous states
+
+---
+
+#### Story 50.6: Recursion Audit Logging
+
+**As a** system safety engineer  
+**I want** comprehensive audit logging for all recursive operations  
+**So that** recursion behavior can be forensically analyzed
+
+**Acceptance Criteria:**
+- AC1: Every recursion level logged with timestamp
+- AC2: Stack trace captured at each recursion level
+- AC3: Forensics data available for post-incident analysis
+- AC4: 90-day retention for all recursion audit logs
+- AC5: Logs include operation type, depth, duration, outcome
+- AC6: Logs tamper-protected with integrity verification
+
+**Priority:** P0 (V3.0 Blocker - CRITICAL)  
+**Business Value:** Enables forensic analysis of recursive behavior
+
+---
+
+#### Story 50.7: Recursion Sandboxing
+
+**As a** system safety engineer  
+**I want** recursive operations executed in isolated sandbox environments  
+**So that** recursive failures cannot corrupt main system state
+
+**Acceptance Criteria:**
+- AC1: Recursive operations execute in isolated environment
+- AC2: Resource caps enforced within sandbox
+- AC3: Network restrictions applied to sandbox
+- AC4: Rollback capability for sandbox state
+- AC5: Sandbox failures do not affect main system
+- AC6: Sandbox results validated before promotion to main system
+
+**Priority:** P0 (V3.0 Blocker - CRITICAL)  
+**Business Value:** Isolates recursive operations from main system
+
+---
+
+**Section: Self-Modification Boundaries (Stories 50.8-50.12)**
+
+---
+
+#### Story 50.8: Immutable Components Designation
+
+**As a** system safety engineer  
+**I want** constitutional components designated as immutable without founder approval  
+**So that** critical system components are protected from unauthorized modification
+
+**Acceptance Criteria:**
+- AC1: policy_engine designated as immutable
+- AC2: cryptographic_verifier designated as immutable
+- AC3: audit_trail designated as immutable
+- AC4: founder_identity designated as immutable
+- AC5: recursion_governor designated as immutable
+- AC6: Immutable components located in `/core/constitutional/`
+- AC7: Modifications require founder approval
+- AC8: Protection at filesystem layer (permissions)
+- AC9: Protection at authorization layer (access control)
+- AC10: Protection at validation layer (change detection)
+
+**Priority:** P0 (V3.0 Blocker - CRITICAL)  
+**Business Value:** Defense-in-depth for constitutional components
+
+---
+
+#### Story 50.9: Self-Modification Approval Workflow
+
+**As a** system safety engineer  
+**I want** a structured approval workflow for self-modifications  
+**So that** changes are validated and approved before application
+
+**Acceptance Criteria:**
+- AC1: Impact analysis required before approval decision
+- AC2: Sandbox simulation required before approval decision
+- AC3: A/B comparison required before approval decision
+- AC4: Criticality ≥80 requires founder approval
+- AC5: Criticality <80 requires admin approval
+- AC6: Approval decision logged with full context
+- AC7: Rejected modifications logged with rejection reason
+
+**Priority:** P0 (V3.0 Blocker - CRITICAL)  
+**Business Value:** Structured oversight of self-modifications
+
+---
+
+#### Story 50.10: Rollback/Snapshot Requirements
+
+**As a** system safety engineer  
+**I want** automatic snapshots before modifications with one-click rollback  
+**So that** failed modifications can be quickly reverted
+
+**Acceptance Criteria:**
+- AC1: Snapshot taken before every self-modification
+- AC2: One-click revert capability for any snapshot
+- AC3: 30-day snapshot retention policy
+- AC4: Snapshots include full system state
+- AC5: Rollback tested as part of modification workflow
+- AC6: Snapshot integrity verified before rollback
+
+**Priority:** P0 (V3.0 Blocker - CRITICAL)  
+**Business Value:** Enables rapid recovery from failed modifications
+
+---
+
+#### Story 50.11: Incremental Rollout
+
+**As a** system safety engineer  
+**I want** incremental rollout (10% → 50% → 100%) for modifications  
+**So that** issues are detected before full deployment
+
+**Acceptance Criteria:**
+- AC1: Modifications deploy to 10% of traffic first
+- AC2: Monitoring period before advancing to 50%
+- AC3: 50% deployment with continued monitoring
+- AC4: 100% deployment only after 50% success
+- AC5: Automatic rollback if metrics degrade at any stage
+- AC6: Rollout progression logged with metrics at each stage
+
+**Priority:** P0 (V3.0 Blocker - CRITICAL)  
+**Business Value:** Gradual exposure reduces blast radius
+
+---
+
+#### Story 50.12: A/B Simulation for Cognitive Changes
+
+**As a** system safety engineer  
+**I want** A/B simulation testing for cognitive changes before deployment  
+**So that** changes are validated against current behavior
+
+**Acceptance Criteria:**
+- AC1: Current version vs proposed version tested in parallel
+- AC2: Minimum 1000 operations tested before deployment decision
+- AC3: Comparison metrics include accuracy, latency, resource usage
+- AC4: Significant regression blocks deployment
+- AC5: A/B results logged with full comparison data
+- AC6: Founder notified of significant deviations
+
+**Priority:** P0 (V3.0 Blocker - CRITICAL)  
+**Business Value:** Validates cognitive changes before production
+
+---
+
+**Section: Adaptation Boundaries (Stories 50.13-50.15)**
+
+---
+
+#### Story 50.13: Maximum Cognitive Changes Per Day
+
+**As a** system safety engineer  
+**I want** a limit of 10 significant cognitive changes per day  
+**So that** system stability is maintained during adaptation
+
+**Acceptance Criteria:**
+- AC1: Maximum 10 significant cognitive changes per day enforced
+- AC2: Exceeding limit triggers throttle
+- AC3: Stability period required after throttle
+- AC4: Adaptation rate exceeding limit triggers alert
+- AC5: Founder justification required to continue past limit
+- AC6: Change count tracked with significance scoring
+
+**Priority:** P0 (V3.0 Blocker - CRITICAL)  
+**Business Value:** Prevents cognitive instability from rapid changes
+
+---
+
+#### Story 50.14: Stability Windows
+
+**As a** system safety engineer  
+**I want** 24-hour stability windows after major adaptations  
+**So that** system has time to stabilize before further changes
+
+**Acceptance Criteria:**
+- AC1: 24-hour stability window triggered after major adaptation
+- AC2: No high-impact changes allowed during stability window
+- AC3: Low-impact changes allowed with additional approval
+- AC4: Stability window duration configurable by founder
+- AC5: Stability window violations logged and alerted
+- AC6: Emergency overrides require founder approval
+
+**Priority:** P0 (V3.0 Blocker - CRITICAL)  
+**Business Value:** Ensures adaptation stability periods
+
+---
+
+#### Story 50.15: Adaptation Reversibility
+
+**As a** system safety engineer  
+**I want** all adaptations to be reversible with tested rollback procedures  
+**So that** failed adaptations can be undone
+
+**Acceptance Criteria:**
+- AC1: All adaptations must be reversible
+- AC2: Rollback plan required before adaptation approved
+- AC3: Rollback procedure tested before adaptation deployed
+- AC4: Irreversible adaptations blocked (constitutional)
+- AC5: Rollback success verified with validation tests
+- AC6: Rollback time target: <5 minutes for any adaptation
+
+**Priority:** P0 (V3.0 Blocker - CRITICAL)  
+**Business Value:** Guarantees recovery from failed adaptations
 
 ---
 
@@ -9167,21 +9580,139 @@ Critical separation between Shipwright's own codebase (SELF) and customer reposi
 
 **Business Value:** Enables multi-tenant SaaS, protects customer IP, prevents Shipwright IP leakage, ensures compliance with data isolation requirements.
 
-**Stories:**
-- **51.1:** Internal vs External Codebase Classification (SELF = Shipwright/Foundry/Overmind, EXTERNAL = all customer repos, GENERIC = open-source libraries)
-- **51.2:** SELF vs CUSTOMER vs GENERIC Taxonomy (strict classification, auto-detected on ingestion, stored in memory metadata)
-- **51.3:** Cross-Tenant Pattern Transfer Controls (patterns from customer_A cannot apply to customer_B unless explicitly generalized + privacy-preserved)
-- **51.4:** Pattern Leakage Prevention (Shipwright brain organ logic never appears in customer code, customer-specific patterns never cross tenants)
-- **51.5:** Memory Namespace Isolation (memory.namespace = "customer_{id}_{project}", strict isolation, cannot access other namespaces)
-- **51.6:** Customer IP Protection (customer patterns, architecture, data never exposed to other customers or Shipwright developers)
-- **51.7:** Internal Pattern Safeguarding (Shipwright cognitive architecture protected from customer queries, brain organs never exposed via API)
+---
 
-**Key Acceptance Criteria:**
-- Every codebase classified on ingestion: SELF/CUSTOMER/GENERIC stored in memory.classification field
-- Memory queries filtered by namespace: customer_A queries never return customer_B data
-- Pattern extraction respects boundaries: learned patterns tagged with source_classification
-- Cross-tenant contamination tests: verify pattern from customer_A never applied to customer_B
-- Brain organ specifications never appear in generated code for customers
+#### Story 51.1: Internal vs External Codebase Classification
+
+**As a** system administrator  
+**I want** automatic classification of codebases as SELF, EXTERNAL, or GENERIC on ingestion  
+**So that** proper isolation policies can be applied
+
+**Acceptance Criteria:**
+- AC1: SELF classification for Shipwright/Foundry/Overmind repositories
+- AC2: EXTERNAL classification for all customer repositories
+- AC3: GENERIC classification for open-source libraries
+- AC4: Classification determined automatically on ingestion
+- AC5: Classification stored in memory.classification field
+- AC6: Manual classification override available for founder only
+- AC7: Classification immutable after initial assignment (requires founder to change)
+
+**Priority:** P0 (V2.9 Blocker)  
+**Business Value:** Foundation for tenant isolation
+
+---
+
+#### Story 51.2: SELF vs CUSTOMER vs GENERIC Taxonomy
+
+**As a** system administrator  
+**I want** strict taxonomy enforcement for codebase classifications  
+**So that** classification is consistent and reliable
+
+**Acceptance Criteria:**
+- AC1: Strict taxonomy enforced: SELF, CUSTOMER, GENERIC only
+- AC2: Classification auto-detected on ingestion based on repository source
+- AC3: Classification stored in memory metadata field
+- AC4: Invalid classifications rejected with error
+- AC5: Every codebase classified on ingestion: SELF/CUSTOMER/GENERIC stored in memory.classification field
+- AC6: Classification query API available for policy checks
+
+**Priority:** P0 (V2.9 Blocker)  
+**Business Value:** Consistent classification taxonomy
+
+---
+
+#### Story 51.3: Cross-Tenant Pattern Transfer Controls
+
+**As a** multi-tenant operator  
+**I want** controls preventing pattern transfer between customer tenants  
+**So that** customer IP is protected from cross-contamination
+
+**Acceptance Criteria:**
+- AC1: Patterns from customer_A cannot apply to customer_B by default
+- AC2: Cross-tenant pattern transfer requires explicit generalization
+- AC3: Generalization process removes privacy-sensitive details
+- AC4: Cross-tenant contamination tests: verify pattern from customer_A never applied to customer_B
+- AC5: Transfer attempts logged with source and target tenant
+- AC6: Generalized patterns tagged with origin classification
+
+**Priority:** P0 (V2.9 Blocker)  
+**Business Value:** Prevents customer IP cross-contamination
+
+---
+
+#### Story 51.4: Pattern Leakage Prevention
+
+**As a** multi-tenant operator  
+**I want** prevention of pattern leakage between Shipwright and customers  
+**So that** both internal and customer patterns are protected
+
+**Acceptance Criteria:**
+- AC1: Shipwright brain organ logic never appears in customer code
+- AC2: Customer-specific patterns never cross tenant boundaries
+- AC3: Pattern extraction respects boundaries: learned patterns tagged with source_classification
+- AC4: Brain organ specifications never appear in generated code for customers
+- AC5: Leakage attempts detected and blocked
+- AC6: Leakage detection logged with pattern details
+
+**Priority:** P0 (V2.9 Blocker)  
+**Business Value:** Protects both internal and customer patterns
+
+---
+
+#### Story 51.5: Memory Namespace Isolation
+
+**As a** multi-tenant operator  
+**I want** strict memory namespace isolation per customer  
+**So that** customer data cannot be accessed across tenants
+
+**Acceptance Criteria:**
+- AC1: Memory namespace format: "customer_{id}_{project}"
+- AC2: Strict namespace isolation enforced
+- AC3: Memory queries filtered by namespace: customer_A queries never return customer_B data
+- AC4: Cross-namespace access attempts rejected with error
+- AC5: Namespace violations logged and alerted
+- AC6: No global namespace queries except for founder
+
+**Priority:** P0 (V2.9 Blocker)  
+**Business Value:** Data isolation between tenants
+
+---
+
+#### Story 51.6: Customer IP Protection
+
+**As a** multi-tenant operator  
+**I want** customer intellectual property protected from exposure  
+**So that** customer data privacy is maintained
+
+**Acceptance Criteria:**
+- AC1: Customer patterns never exposed to other customers
+- AC2: Customer architecture never exposed to other customers
+- AC3: Customer data never exposed to Shipwright developers
+- AC4: IP protection enforced at API, memory, and pattern layers
+- AC5: IP exposure attempts logged and alerted
+- AC6: Audit trail for all customer data access
+
+**Priority:** P0 (V2.9 Blocker)  
+**Business Value:** Customer data privacy compliance
+
+---
+
+#### Story 51.7: Internal Pattern Safeguarding
+
+**As a** system administrator  
+**I want** Shipwright's internal cognitive architecture protected from customer access  
+**So that** competitive advantage is preserved
+
+**Acceptance Criteria:**
+- AC1: Shipwright cognitive architecture protected from customer queries
+- AC2: Brain organs never exposed via customer-facing API
+- AC3: Internal patterns filtered from customer responses
+- AC4: Internal file paths never revealed to customers
+- AC5: Cognitive graph structure hidden from customers
+- AC6: Safeguarding violations logged and alerted
+
+**Priority:** P0 (V2.9 Blocker)  
+**Business Value:** Protects Shipwright competitive advantage
 
 ---
 
@@ -9196,20 +9727,119 @@ Prevents Shipwright from accidentally leaking its cognitive architecture through
 
 **Business Value:** Protects cognitive IP from LLM training data contamination, prevents accidental exposure of internal architecture, ensures competitive advantage preservation.
 
-**Stories:**
-- **52.1:** Input Sanitization (filter cognitive context before LLM sees it: allowed_fields = [requirement_text, api_spec, test_cases]; forbidden_fields = [brain_organ_spec, cognitive_graph, dual_brain_protocol])
-- **52.2:** Prompt Contamination Detection (detect if user prompt contains internal_keywords like "consolidation_organ", "shadow_mode", "brain_organ" → reject + alert)
-- **52.3:** Output Redaction (scan LLM response for cognitive artifacts, redact before returning, replace with high-level abstractions)
-- **52.4:** Memory Element Filtering (if memory_element.type = "cognitive_architecture" then exclude_from_llm_context)
-- **52.5:** Context Boundary Enforcement (llm_context = sanitize(memory, allowed_only) for code generation; llm_context = full_memory only for founder introspection)
-- **52.6:** LLM Response Filtering (check response for pattern dumps, file paths to cognitive code, internal variable names → redact before user sees)
+---
 
-**Key Acceptance Criteria:**
-- Prompt construction sanitizes all context: brain_organ_spec, cognitive_graph_nodes never in prompt text
-- Contamination detector rejects prompts with keywords: "consolidation_organ", "dual_brain", "shadow_mode"
-- Output scanner redacts cognitive artifacts using regex + semantic matching
-- Test: attempt to extract brain organ logic via prompt injection → system detects + blocks
-- All sanitization events logged for security audit
+#### Story 52.1: Input Sanitization
+
+**As a** system security engineer  
+**I want** cognitive context filtered before it reaches the LLM  
+**So that** internal architecture is never exposed to external AI
+
+**Acceptance Criteria:**
+- AC1: Allowed fields in LLM context: requirement_text, api_spec, test_cases
+- AC2: Forbidden fields blocked from LLM context: brain_organ_spec, cognitive_graph, dual_brain_protocol
+- AC3: Prompt construction sanitizes all context: brain_organ_spec, cognitive_graph_nodes never in prompt text
+- AC4: Sanitization applied before every LLM API call
+- AC5: Bypassing sanitization triggers security alert
+- AC6: Sanitization rules immutable at runtime
+
+**Priority:** P0 (V2.8 Blocker - CRITICAL)  
+**Business Value:** Prevents cognitive IP leakage to LLM
+
+---
+
+#### Story 52.2: Prompt Contamination Detection
+
+**As a** system security engineer  
+**I want** detection of prompts containing internal keywords  
+**So that** users cannot extract internal architecture via clever prompts
+
+**Acceptance Criteria:**
+- AC1: Detect if user prompt contains internal keywords
+- AC2: Blocked keywords include: "consolidation_organ", "shadow_mode", "brain_organ"
+- AC3: Contamination detector rejects prompts with keywords: "consolidation_organ", "dual_brain", "shadow_mode"
+- AC4: Rejection returns generic error (no keyword leak)
+- AC5: Alert triggered on contamination detection
+- AC6: All contamination attempts logged with full prompt text
+
+**Priority:** P0 (V2.8 Blocker - CRITICAL)  
+**Business Value:** Blocks prompt injection attacks
+
+---
+
+#### Story 52.3: Output Redaction
+
+**As a** system security engineer  
+**I want** LLM responses scanned for cognitive artifacts and redacted  
+**So that** accidental leakage in LLM output is prevented
+
+**Acceptance Criteria:**
+- AC1: LLM response scanned for cognitive artifacts before returning
+- AC2: Detected artifacts redacted from response
+- AC3: Redacted content replaced with high-level abstractions
+- AC4: Output scanner redacts cognitive artifacts using regex + semantic matching
+- AC5: Redaction events logged for security audit
+- AC6: Redaction patterns maintained in secure configuration
+
+**Priority:** P0 (V2.8 Blocker - CRITICAL)  
+**Business Value:** Catches accidental LLM leakage
+
+---
+
+#### Story 52.4: Memory Element Filtering
+
+**As a** system security engineer  
+**I want** cognitive architecture memory elements excluded from LLM context  
+**So that** internal memory structures are never exposed
+
+**Acceptance Criteria:**
+- AC1: Memory elements with type = "cognitive_architecture" excluded from LLM context
+- AC2: Filtering applied before context assembly
+- AC3: No cognitive memory elements in any LLM prompt
+- AC4: Filter bypass attempts logged and alerted
+- AC5: Memory element types clearly categorized for filtering
+- AC6: New memory types default to excluded (safe by default)
+
+**Priority:** P0 (V2.8 Blocker - CRITICAL)  
+**Business Value:** Protects memory structure from exposure
+
+---
+
+#### Story 52.5: Context Boundary Enforcement
+
+**As a** system security engineer  
+**I want** different context boundaries for different use cases  
+**So that** only appropriate context reaches the LLM
+
+**Acceptance Criteria:**
+- AC1: Code generation uses sanitized context: llm_context = sanitize(memory, allowed_only)
+- AC2: Founder introspection can use full context: llm_context = full_memory
+- AC3: Context boundary determined by user role and operation type
+- AC4: Non-founder users never receive full_memory context
+- AC5: Boundary violations logged and blocked
+- AC6: Context type logged with every LLM call
+
+**Priority:** P0 (V2.8 Blocker - CRITICAL)  
+**Business Value:** Role-based context security
+
+---
+
+#### Story 52.6: LLM Response Filtering
+
+**As a** system security engineer  
+**I want** LLM responses checked for internal details and redacted  
+**So that** users never see internal implementation details
+
+**Acceptance Criteria:**
+- AC1: Check response for pattern dumps
+- AC2: Check response for file paths to cognitive code
+- AC3: Check response for internal variable names
+- AC4: Detected items redacted before user sees response
+- AC5: Test: attempt to extract brain organ logic via prompt injection → system detects + blocks
+- AC6: All sanitization events logged for security audit
+
+**Priority:** P0 (V2.8 Blocker - CRITICAL)  
+**Business Value:** Final layer of output protection
 
 ---
 
@@ -9229,30 +9859,252 @@ Implements biblical moral law framework based on Protestant Christian interpreta
 - **Ceremonial Law (Fulfilled):** Dietary restrictions (Lev 11 → Acts 10:15), Sabbath regulations (specific day observance → Col 2:16-17), ritual purity, mixed fabrics
 - **Civil Law (Fulfilled/Contextual):** Ancient Israel governance, specific penalties, usury laws (context: protecting poor neighbors)
 
-**Stories (Moral Law Enforcement - Stories 53.1-53.8):**
-- **53.1:** Moral Law Evaluation Engine (evaluates requests against Ten Commandments + NT moral law, returns approve/reject/review)
-- **53.2:** Forbidden Application Categories (pornography, prostitution, gambling, fraud, occult services explicitly blocked)
-- **53.3:** Sexual Immorality Prohibition (blocks: pornography, prostitution, adultery-facilitating apps, hookup culture platforms; allows: marriage-focused dating, counseling)
-- **53.4:** Sanctity of Life Protection (blocks: abortion clinic management, euthanasia facilitation, suicide assistance; allows: general hospitals, hospice care, life insurance)
-- **53.5:** Fraud/Deception Prevention (blocks: scam platforms, fake reviews, identity theft tools, academic dishonesty)
-- **53.6:** Occult Practice Prohibition (blocks: witchcraft services, tarot/divination, spiritism, New Age occult apps)
-- **53.7:** Exploitation Prevention (blocks: predatory lending, get-rich-quick schemes, exploitation of poor; allows: normal banking, reasonable interest, competitive business)
-- **53.8:** Blasphemy Filtering (blocks: God-mockery platforms, blasphemy content; allows: honest critique, academic study, intellectual disagreement)
+---
 
-**Stories (Inter-Religious Boundaries - Stories 53.9-53.11):**
-- **53.9:** Inter-Religious Boundary Policy (based on Joseph/Daniel precedent: served pagan governments, didn't worship their gods)
-- **53.10:** Direct vs Administrative Services (blocks: worship of other gods, occult practice apps, interfaith syncretism; allows: scheduling, accounting, websites for religious orgs)
-- **53.11:** Anti-Christianity Attack Prevention (blocks: persecution coordination, church harassment tools, counterfeit bibles; allows: honest critique, academic study, intellectual discourse)
+**Section: Moral Law Enforcement (Stories 53.1-53.8)**
 
-**Stories (Grace-Based Communication - Story 53.12):**
-- **53.12:** Grace-Based Rejection Messaging (when rejecting, explain biblical rationale, offer ethical alternatives, maintain respectful tone)
+---
 
-**Key Acceptance Criteria:**
-- Moral law violations rejected with scripture citation (e.g., pornography → 1 Cor 6:18, Matt 5:28)
-- Ceremonial law not enforced (shellfish restaurants, Sunday work, polyester clothing all allowed)
-- Inter-religious: blocks worship participation, allows administrative commerce (mosque scheduling OK, digital prayer to false gods blocked)
-- Rejection messages gracious: "I cannot build [X] as it conflicts with biblical principles. However, I can help with [ethical alternative]."
-- 90-95% of legitimate business applications unaffected (only ~5-10% market excluded)
+#### Story 53.1: Moral Law Evaluation Engine
+
+**As a** founder  
+**I want** an evaluation engine that checks requests against Ten Commandments and NT moral law  
+**So that** the system only builds applications aligned with biblical ethics
+
+**Acceptance Criteria:**
+- AC1: Engine evaluates requests against Ten Commandments
+- AC2: Engine evaluates requests against NT moral law principles
+- AC3: Engine returns approve/reject/review decision
+- AC4: Moral law violations rejected with scripture citation (e.g., pornography → 1 Cor 6:18, Matt 5:28)
+- AC5: Ambiguous cases flagged for human review
+- AC6: Evaluation logic documented and auditable
+
+**Priority:** P1 (V3.0 Integration)  
+**Business Value:** Foundation for ethical application filtering
+
+---
+
+#### Story 53.2: Forbidden Application Categories
+
+**As a** founder  
+**I want** explicit categories of applications that are always blocked  
+**So that** clearly immoral applications are never built
+
+**Acceptance Criteria:**
+- AC1: Pornography applications explicitly blocked
+- AC2: Prostitution-facilitating applications explicitly blocked
+- AC3: Gambling applications explicitly blocked
+- AC4: Fraud-facilitating applications explicitly blocked
+- AC5: Occult service applications explicitly blocked
+- AC6: Forbidden categories maintained in configuration
+- AC7: 90-95% of legitimate business applications unaffected (only ~5-10% market excluded)
+
+**Priority:** P1 (V3.0 Integration)  
+**Business Value:** Clear ethical boundaries
+
+---
+
+#### Story 53.3: Sexual Immorality Prohibition
+
+**As a** founder  
+**I want** blocking of sexually immoral applications while permitting ethical alternatives  
+**So that** sexuality is respected within biblical boundaries
+
+**Acceptance Criteria:**
+- AC1: Blocks: pornography platforms
+- AC2: Blocks: prostitution facilitation apps
+- AC3: Blocks: adultery-facilitating apps
+- AC4: Blocks: hookup culture platforms
+- AC5: Allows: marriage-focused dating platforms
+- AC6: Allows: relationship counseling apps
+- AC7: Clear distinction between blocked and allowed categories
+
+**Priority:** P1 (V3.0 Integration)  
+**Business Value:** Sexual ethics enforcement
+
+---
+
+#### Story 53.4: Sanctity of Life Protection
+
+**As a** founder  
+**I want** protection of sanctity of life while permitting legitimate healthcare  
+**So that** life-ending applications are blocked
+
+**Acceptance Criteria:**
+- AC1: Blocks: abortion clinic management systems
+- AC2: Blocks: euthanasia facilitation applications
+- AC3: Blocks: suicide assistance tools
+- AC4: Allows: general hospital management systems
+- AC5: Allows: hospice care management
+- AC6: Allows: life insurance platforms
+- AC7: Clear distinction based on intent to preserve vs end life
+
+**Priority:** P1 (V3.0 Integration)  
+**Business Value:** Life ethics enforcement
+
+---
+
+#### Story 53.5: Fraud/Deception Prevention
+
+**As a** founder  
+**I want** blocking of applications that facilitate fraud or deception  
+**So that** honesty is upheld
+
+**Acceptance Criteria:**
+- AC1: Blocks: scam platforms
+- AC2: Blocks: fake review generators
+- AC3: Blocks: identity theft tools
+- AC4: Blocks: academic dishonesty tools (essay mills, plagiarism)
+- AC5: Allows: legitimate marketing
+- AC6: Allows: honest competitive analysis
+- AC7: Detection based on deceptive intent
+
+**Priority:** P1 (V3.0 Integration)  
+**Business Value:** Honesty ethics enforcement
+
+---
+
+#### Story 53.6: Occult Practice Prohibition
+
+**As a** founder  
+**I want** blocking of applications that facilitate occult practices  
+**So that** spiritual boundaries are maintained
+
+**Acceptance Criteria:**
+- AC1: Blocks: witchcraft service platforms
+- AC2: Blocks: tarot/divination applications
+- AC3: Blocks: spiritism applications
+- AC4: Blocks: New Age occult apps
+- AC5: Allows: historical/academic study of religions
+- AC6: Clear distinction between practice and study
+
+**Priority:** P1 (V3.0 Integration)  
+**Business Value:** Spiritual ethics enforcement
+
+---
+
+#### Story 53.7: Exploitation Prevention
+
+**As a** founder  
+**I want** blocking of applications that exploit vulnerable people  
+**So that** the poor and vulnerable are protected
+
+**Acceptance Criteria:**
+- AC1: Blocks: predatory lending platforms
+- AC2: Blocks: get-rich-quick scheme platforms
+- AC3: Blocks: applications exploiting the poor
+- AC4: Allows: normal banking applications
+- AC5: Allows: reasonable interest lending
+- AC6: Allows: competitive business applications
+- AC7: Detection based on exploitative patterns
+
+**Priority:** P1 (V3.0 Integration)  
+**Business Value:** Economic justice ethics
+
+---
+
+#### Story 53.8: Blasphemy Filtering
+
+**As a** founder  
+**I want** blocking of platforms designed to mock God while permitting honest discourse  
+**So that** respect for the sacred is maintained
+
+**Acceptance Criteria:**
+- AC1: Blocks: God-mockery platforms
+- AC2: Blocks: intentional blasphemy content creation
+- AC3: Allows: honest theological critique
+- AC4: Allows: academic religious study
+- AC5: Allows: intellectual disagreement and debate
+- AC6: Distinction between mockery and legitimate discourse
+
+**Priority:** P1 (V3.0 Integration)  
+**Business Value:** Sacred respect enforcement
+
+---
+
+**Section: Inter-Religious Boundaries (Stories 53.9-53.11)**
+
+---
+
+#### Story 53.9: Inter-Religious Boundary Policy
+
+**As a** founder  
+**I want** clear policy on inter-religious service based on Joseph/Daniel precedent  
+**So that** administrative commerce is permitted without worship participation
+
+**Acceptance Criteria:**
+- AC1: Policy based on Joseph/Daniel biblical precedent
+- AC2: Joseph: served pagan Pharaoh, didn't worship Egyptian gods
+- AC3: Daniel: served pagan Nebuchadnezzar, didn't worship idols
+- AC4: Serving ≠ worshipping (clear distinction)
+- AC5: Administrative/commercial services permitted for all
+- AC6: Worship participation blocked for non-Christian religions
+
+**Priority:** P1 (V3.0 Integration)  
+**Business Value:** Biblical precedent for business engagement
+
+---
+
+#### Story 53.10: Direct vs Administrative Services
+
+**As a** founder  
+**I want** distinction between worship participation and administrative commerce  
+**So that** legitimate business is permitted
+
+**Acceptance Criteria:**
+- AC1: Blocks: worship of other gods facilitation
+- AC2: Blocks: occult practice apps
+- AC3: Blocks: interfaith syncretism platforms
+- AC4: Allows: scheduling systems for religious organizations
+- AC5: Allows: accounting systems for religious organizations
+- AC6: Allows: websites for religious organizations
+- AC7: Inter-religious: blocks worship participation, allows administrative commerce (mosque scheduling OK, digital prayer to false gods blocked)
+
+**Priority:** P1 (V3.0 Integration)  
+**Business Value:** Clear service boundaries
+
+---
+
+#### Story 53.11: Anti-Christianity Attack Prevention
+
+**As a** founder  
+**I want** blocking of applications designed to attack Christianity  
+**So that** the system doesn't build tools against its own values
+
+**Acceptance Criteria:**
+- AC1: Blocks: persecution coordination tools
+- AC2: Blocks: church harassment tools
+- AC3: Blocks: counterfeit bible creation
+- AC4: Allows: honest critique of Christianity
+- AC5: Allows: academic study of Christian history
+- AC6: Allows: intellectual discourse and debate
+- AC7: Distinction between attack and legitimate engagement
+
+**Priority:** P1 (V3.0 Integration)  
+**Business Value:** Self-preservation of value system
+
+---
+
+**Section: Grace-Based Communication (Story 53.12)**
+
+---
+
+#### Story 53.12: Grace-Based Rejection Messaging
+
+**As a** user receiving a rejection  
+**I want** gracious, helpful rejection messages that explain reasoning and offer alternatives  
+**So that** I understand the decision and can find ethical solutions
+
+**Acceptance Criteria:**
+- AC1: Rejection explains biblical rationale clearly
+- AC2: Rejection offers ethical alternatives when possible
+- AC3: Rejection maintains respectful, gracious tone
+- AC4: Rejection messages gracious: "I cannot build [X] as it conflicts with biblical principles. However, I can help with [ethical alternative]."
+- AC5: No condemnation or judgment of the person
+- AC6: Focus on the request, not the requester
+
+**Priority:** P1 (V3.0 Integration)  
+**Business Value:** Maintains positive user relationships
 
 ---
 
@@ -11678,7 +12530,7 @@ STORY-65.3,EPIC-65,Cognitive Engine Health,P0,Gnosis,7
 STORY-D.9,EPIC-65,Observational Truth Layer (EP-D-002),P0,Gnosis,7
 ```
 
-**Note:** Complete index to be generated from final document. Total stories: 351 (includes Story D.9)
+**Note:** Complete index to be generated from final document. Total stories: 397 (includes Story D.9)
 
 ---
 
@@ -12234,8 +13086,8 @@ The remaining entities, relationships, and gates are added progressively through
 | Metric | Count | Verification |
 |--------|-------|--------------|
 | **Total Epics** | 65 | Enumerated in Appendix E |
-| **Total Stories** | 351 | Enumerated in Appendix A |
-| **Total Acceptance Criteria** | 2,849 | Enumerated in Appendix B |
+| **Total Stories** | 397 | Enumerated in Appendix A |
+| **Total Acceptance Criteria** | 3,147 | Enumerated in Appendix B |
 | **Entity Types** | 83 (67 base + 16 extensions) | Enumerated in Appendix F |
 | **Relationship Types** | 114 (100 base + 14 extensions) | Enumerated in Appendix G |
 | **Coverage Gates** | 21 (20 active + 1 dormant) | G01, G03, G04, G06, G-API, G-HEALTH, G-REGISTRY, G-DRIFT, G-CLOSURE, G-COMPATIBILITY, G-SEMANTIC, G-ALIGNMENT, G-CONFIDENCE, G-POLICY, G-AUTONOMY, G-COMPLIANCE, G-AUDIT, G-SIMULATION, G-COGNITIVE, G-OPS, G-RUNTIME (dormant) |
@@ -12248,9 +13100,9 @@ The remaining entities, relationships, and gates are added progressively through
 
 ## Document Integrity
 
-**Version:** 20.6.3  
-**Date:** December 14, 2025  
-**Status:** COMPLETE - Organ Alignment Edition  
+**Version:** 20.6.4  
+**Date:** December 24, 2025  
+**Status:** COMPLETE - Story Format Standardization Edition  
 **Companion Documents:**
 - UNIFIED_TRACEABILITY_GRAPH_SCHEMA_V20_6_1.md
 - GNOSIS_TO_SOPHIA_MASTER_ROADMAP_V20_6_4.md
@@ -12279,7 +13131,7 @@ The following implementation architecture documents are referenced but created s
 
 ---
 
-**END OF BUSINESS REQUIREMENTS DOCUMENT V20.6.3**
+**END OF BUSINESS REQUIREMENTS DOCUMENT V20.6.4**
 
 ---
 

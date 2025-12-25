@@ -161,7 +161,7 @@ export const ENTITY_EXPECTATIONS: EntityExpectation[] = [
     a3: 'EXPECTED_NONZERO',
     a4: 'EXPECTED_NONZERO',
     a5: 'EXPECTED_NONZERO',
-    invariantCount: 351,
+    invariantCount: 397,
   },
   {
     code: 'E03',
@@ -171,7 +171,7 @@ export const ENTITY_EXPECTATIONS: EntityExpectation[] = [
     a3: 'EXPECTED_NONZERO',
     a4: 'EXPECTED_NONZERO',
     a5: 'EXPECTED_NONZERO',
-    invariantCount: 2849,
+    invariantCount: 3147,
   },
   {
     code: 'E04',
@@ -339,7 +339,7 @@ export const RELATIONSHIP_EXPECTATIONS: RelationshipExpectation[] = [
     a3: 'EXPECTED_NONZERO',
     a4: 'EXPECTED_NONZERO',
     a5: 'EXPECTED_NONZERO',
-    invariantCount: 351, // Every story belongs to an epic
+    invariantCount: 397, // Every story belongs to an epic
   },
   {
     code: 'R02',
@@ -349,7 +349,7 @@ export const RELATIONSHIP_EXPECTATIONS: RelationshipExpectation[] = [
     a3: 'EXPECTED_NONZERO',
     a4: 'EXPECTED_NONZERO',
     a5: 'EXPECTED_NONZERO',
-    invariantCount: 2849, // Every AC belongs to a story
+    invariantCount: 3147, // Every AC belongs to a story
   },
   {
     code: 'R03',

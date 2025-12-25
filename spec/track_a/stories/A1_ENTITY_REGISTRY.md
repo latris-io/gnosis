@@ -686,7 +686,7 @@ describe('Entity Registry', () => {
   it('extracts all stories from BRD', async () => {
     const result = await brdProvider.extract(snapshot);
     const stories = result.entities.filter(e => e.entity_type === 'E02');
-    expect(stories.length).toBe(351);
+    expect(stories.length).toBe(397);
     expect(stories[0].instance_id).toMatch(/^STORY-\d+\.\d+$/);
   });
   

@@ -27,7 +27,7 @@ describe('Organ Parity Parsers', () => {
       const result = parseBrdStats(fixture);
       expect(result).toEqual({
         epics: 65,
-        stories: 351,
+        stories: 397,
         acs: 2849,
       });
     });
@@ -108,3 +108,4 @@ This specification defines 83 entities (67 base + 16 extensions) across 14 layer
   });
   
 });
+

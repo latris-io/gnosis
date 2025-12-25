@@ -649,8 +649,8 @@ test('SANITY-055: BRD counts match expected', async () => {
   const brd = await parseBRD('docs/BRD_V20_6_3_COMPLETE.md');
   
   expect(brd.epics.length).toBe(65);
-  expect(brd.stories.length).toBe(351);
-  expect(brd.acceptanceCriteria.length).toBe(2849);
+  expect(brd.stories.length).toBe(397);
+  expect(brd.acceptanceCriteria.length).toBe(3147);
 });
 ```
 

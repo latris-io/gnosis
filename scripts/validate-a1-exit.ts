@@ -15,8 +15,8 @@ import type { RepoSnapshot } from '../src/extraction/types.js';
 // Expected counts per ORGAN PATCH
 const EXPECTED = {
   epics: 65,
-  stories: 351,
-  acceptanceCriteria: 2849,
+  stories: 397,
+  acceptanceCriteria: 3147,
 };
 
 // Track A entity types (16 total, E14 deferred)

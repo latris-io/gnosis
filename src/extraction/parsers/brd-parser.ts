@@ -68,11 +68,11 @@ export interface BRDParseResult {
   constraints: ParsedConstraint[];
 }
 
-// Canonical counts for BRD V20.6.3
+// Canonical counts for BRD V20.6.4
 const EXPECTED_COUNTS = {
   epics: 65,
-  stories: 351,
-  acceptanceCriteria: 2849,
+  stories: 397,
+  acceptanceCriteria: 3147,
 };
 
 // Regex patterns (whitespace-tolerant)

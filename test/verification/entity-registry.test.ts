@@ -41,8 +41,8 @@ const TEST_PROJECT_ID = 'test-project-' + Date.now();
 // Evidence: scripts/count-brd-acs.sh produces list(2682) + table(167) = 2849
 const EXPECTED_COUNTS = {
   epics: 65,
-  stories: 351,
-  acceptanceCriteria: 2849,
+  stories: 397,
+  acceptanceCriteria: 3147,
 };
 
 // Temp directory for deterministic test outputs

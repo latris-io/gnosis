@@ -436,7 +436,7 @@ export class IntegrityEvaluator {
     const storyCount = await pool.query(`SELECT COUNT(*) FROM entities WHERE entity_type = 'E02'`);
     const acCount = await pool.query(`SELECT COUNT(*) FROM entities WHERE entity_type = 'E03'`);
     
-    const expected = { epics: 65, stories: 351, acs: 2849 };
+    const expected = { epics: 65, stories: 397, acs: 2980 };
     const actual = {
       epics: parseInt(epicCount.rows[0].count),
       stories: parseInt(storyCount.rows[0].count),

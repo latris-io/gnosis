@@ -39,8 +39,8 @@ const ORGAN_VERSIONS: Record<string, string> = {
 // Invariant counts (canonical values from organ docs)
 const INVARIANTS = {
   epics: 65,
-  stories: 351,
-  acceptanceCriteria: 2849,
+  stories: 397,
+  acceptanceCriteria: 3147,
   entities: 83,
   relationships: 114,
   gates: 21,
@@ -519,3 +519,4 @@ main().catch(err => {
   console.error('Error running parity verification:', err);
   process.exit(1);
 });
+
