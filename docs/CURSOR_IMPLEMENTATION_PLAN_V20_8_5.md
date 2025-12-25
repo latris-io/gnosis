@@ -89,7 +89,7 @@ All implementation specs derive from these authoritative sources:
 
 | Document | Version | Location | Purpose |
 |----------|---------|----------|---------|
-| **BRD** | V20.6.3 | `docs/BRD_V20_6_4_COMPLETE.md` | WHAT (requirements) |
+| **BRD** | V20.6.4 | `docs/BRD_V20_6_4_COMPLETE.md` | WHAT (requirements) |
 | **UTG Schema** | V20.6.1 | `docs/UNIFIED_TRACEABILITY_GRAPH_SCHEMA_V20_6_1.md` | HOW (schema) |
 | **Verification Spec** | V20.6.4 | `docs/UNIFIED_VERIFICATION_SPECIFICATION_V20_6_5.md` | PROOF (extraction rules, gates, tests) |
 | **Roadmap** | V20.6.4 | `docs/GNOSIS_TO_SOPHIA_MASTER_ROADMAP_V20_6_4.md` | WHEN (execution plan) |

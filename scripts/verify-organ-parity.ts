@@ -28,7 +28,7 @@ const ROOT = process.cwd();
 
 // Current organ doc versions (source of truth)
 const ORGAN_VERSIONS: Record<string, string> = {
-  'BRD': '20.6.3',
+  'BRD': '20.6.4',
   'UTG': '20.6.1',
   'VERIFICATION': '20.6.5',
   'ROADMAP': '20.6.4',

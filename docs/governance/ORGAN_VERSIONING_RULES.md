@@ -33,7 +33,7 @@ The version in the filename MUST match the header version.
 
 ```
 File: BRD_V20_6_4_COMPLETE.md
-Header: **Version:** 20.6.3
+Header: **Version:** 20.6.4
 ```
 
 ### Rule 3: No Forward References
@@ -54,7 +54,7 @@ When referencing another organ doc, use its actual current version.
 
 | Document | Current Version |
 |----------|-----------------|
-| BRD | V20.6.3 |
+| BRD | V20.6.4 |
 | UTG Schema | V20.6.1 |
 | Verification Spec | V20.6.5 |
 | Roadmap | V20.6.4 |
@@ -70,3 +70,4 @@ Run: `npm run verify:organ-parity`
 ---
 
 **END OF ORGAN_VERSIONING_RULES V1.0.0**
+
