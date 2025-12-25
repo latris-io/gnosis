@@ -318,6 +318,12 @@ function checkGAPIViolation(filePath: string, content: string, lines: string[]):
   // These tests use vi.mock() to replace the actual implementations
   const isUnitTestWithMocks = filePath.includes('/test/markers/') && content.includes('vi.mock(');
   
+  // Exception: Verification tests that need admin helpers for test data setup
+  // These use admin-test-only for creating/deleting test entities/relationships
+  const isVerificationTestWithAdminHelpers = 
+    filePath.includes('/test/verification/') && 
+    content.includes('admin-test-only');
+  
   while ((match = SERVICES_IMPORT_REGEX.exec(content)) !== null) {
     const lineNumber = content.substring(0, match.index).split('\n').length;
     const lineContent = lines[lineNumber - 1] || '';
@@ -329,6 +335,11 @@ function checkGAPIViolation(filePath: string, content: string, lines: string[]):
     
     // Allow unit tests with mocks to import services for mocking purposes
     if (isUnitTestWithMocks) {
+      continue;
+    }
+    
+    // Allow verification tests that use admin helpers for test data setup
+    if (isVerificationTestWithAdminHelpers && lineContent.includes('admin-test-only')) {
       continue;
     }
     

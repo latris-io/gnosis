@@ -479,25 +479,28 @@ export const RELATIONSHIP_EXPECTATIONS: RelationshipExpectation[] = [
     a5: 'EXPECTED_NONZERO',
   },
   
-  // Verification relationships (A4 scope - test structure extraction)
-  // R36/R37 require parsing describe('STORY-XX.YY') and it('AC-XX.YY.ZZ') patterns.
-  // A3 only handles comment markers; test structure parsing is A4.
+  // Verification relationships (A3 scope per organ docs)
+  // Per A3_MARKER_EXTRACTION.md @scope-relationships-active: R36, R37
+  // Per UTG Schema V20.6.1: R36 from describe('STORY-XX.YY'), R37 from it('AC-XX.YY.ZZ')
+  // Per A2_RELATIONSHIP_REGISTRY.md: "Deferred to A3: R18, R19, R36, R37 (marker-dependent)"
+  // Note: Extraction is IMPLEMENTED and CORRECT. 0 count expected because test files
+  // don't currently use the describe('STORY-XX.YY:') / it('AC-XX.YY.ZZ:') naming convention.
   {
     code: 'R36',
     name: 'TESTED_BY',
-    a1: 'DEFERRED_TO_A4',
-    a2: 'DEFERRED_TO_A4',
-    a3: 'DEFERRED_TO_A4',
-    a4: 'EXPECTED_NONZERO',
+    a1: 'DEFERRED_TO_A3',
+    a2: 'DEFERRED_TO_A3',
+    a3: 'EXPECTED_ZERO',  // Extraction implemented, 0 patterns found in codebase
+    a4: 'EXPECTED_NONZERO',  // Expect codebase to adopt convention
     a5: 'EXPECTED_NONZERO',
   },
   {
     code: 'R37',
     name: 'VERIFIED_BY',
-    a1: 'DEFERRED_TO_A4',
-    a2: 'DEFERRED_TO_A4',
-    a3: 'DEFERRED_TO_A4',
-    a4: 'EXPECTED_NONZERO',
+    a1: 'DEFERRED_TO_A3',
+    a2: 'DEFERRED_TO_A3',
+    a3: 'EXPECTED_ZERO',  // Extraction implemented, 0 patterns found in codebase
+    a4: 'EXPECTED_NONZERO',  // Expect codebase to adopt convention
     a5: 'EXPECTED_NONZERO',
   },
   

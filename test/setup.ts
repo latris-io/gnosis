@@ -2,6 +2,9 @@
 // Test setup file - loads environment and initializes connections
 import 'dotenv/config';
 
+// Ensure NODE_ENV is 'test' for test-only modules
+process.env.NODE_ENV = 'test';
+
 // Default SANITY_PHASE to 'post_a1' if not set (cross-platform)
 // A1 extraction is complete, so 'post_a1' is the normal operating state
 // Override with: SANITY_PHASE=pre npm run test:sanity
@@ -27,4 +30,5 @@ export const TEST_PROJECT_ID = '00000000-0000-0000-0000-000000000001';
 export function testLog(message: string): void {
   console.log(`[TEST ${new Date().toISOString()}] ${message}`);
 }
+
 

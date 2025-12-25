@@ -66,8 +66,11 @@ import {
   deriveTDDRelationships,
   flattenRelationships,
 } from '../extraction/providers/tdd-relationship-provider.js';
+import {
+  deriveTestRelationships,
+} from '../extraction/providers/test-relationship-provider.js';
 import * as path from 'path';
-import { queryEntities } from '../api/v1/entities.js';
+import { queryEntities, getAllEntities } from '../api/v1/entities.js';
 import { extractAndValidateMarkers } from '../api/v1/markers.js';
 import type { EntityTypeCode } from '../schema/track-a/entities.js';
 
@@ -262,6 +265,63 @@ export async function extractAndPersistMarkerRelationships(
     tdd_ok: result.stats.tdd_ok_count,
     tdd_mismatch: result.stats.tdd_mismatch_count,
   };
+}
+
+/**
+ * Extract and persist R36/R37 test structure relationships.
+ * @implements STORY-64.3
+ * @satisfies AC-64.3.4
+ * @satisfies AC-64.3.5
+ * 
+ * Derives relationships from test structure (describe/it blocks):
+ * - R36: Story → TestSuite from describe('STORY-XX.YY: ...')
+ * - R37: AC → TestCase from it('AC-XX.YY.ZZ: ...')
+ */
+export async function extractAndPersistTestRelationships(
+  projectId: string
+): Promise<{
+  r36_created: number;
+  r37_created: number;
+  r36_updated: number;
+  r37_updated: number;
+}> {
+  // Get all entities needed for derivation
+  const dbEntities = await getAllEntities(projectId);
+  
+  // Convert to ExtractedEntity format (provider expects source_file as non-null string)
+  const extractedEntities: ExtractedEntity[] = dbEntities.map(e => ({
+    entity_type: e.entity_type,
+    instance_id: e.instance_id,
+    name: e.name,
+    attributes: e.attributes || {},
+    source_file: e.source_file || '',
+    line_start: e.line_start || 0,
+    line_end: e.line_end || 0,
+  }));
+  
+  // Derive R36/R37 relationships
+  const testRels = deriveTestRelationships(extractedEntities);
+  
+  if (testRels.length === 0) {
+    return { r36_created: 0, r37_created: 0, r36_updated: 0, r37_updated: 0 };
+  }
+  
+  // Persist relationships
+  const results = await relBatchUpsertAndSync(projectId, testRels);
+  
+  // Count by type
+  let r36_created = 0, r37_created = 0, r36_updated = 0, r37_updated = 0;
+  for (const r of results.results) {
+    if (r.relationship && r.relationship.relationship_type === 'R36') {
+      if (r.operation === 'CREATE') r36_created++;
+      else if (r.operation === 'UPDATE') r36_updated++;
+    } else if (r.relationship && r.relationship.relationship_type === 'R37') {
+      if (r.operation === 'CREATE') r37_created++;
+      else if (r.operation === 'UPDATE') r37_updated++;
+    }
+  }
+  
+  return { r36_created, r37_created, r36_updated, r37_updated };
 }
 
 /**

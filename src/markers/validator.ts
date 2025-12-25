@@ -15,8 +15,15 @@
 // - MUST NOT create relationships
 // - MUST NOT signal to semantic corpus
 
-import * as entityService from '../services/entities/entity-service.js';
+import * as entityServiceModule from '../services/entities/entity-service.js';
 import type { RawMarker, ValidatedMarker, OrphanMarker, TDDMismatch, ValidationResult } from './types.js';
+
+/**
+ * Minimal interface for entity lookup (for dependency injection in tests)
+ */
+export interface EntityLookupService {
+  getByInstanceId(projectId: string, instanceId: string): Promise<{ entity_type: string; instance_id: string } | null>;
+}
 
 /**
  * MarkerValidator validates marker targets against the entity registry.
@@ -28,7 +35,15 @@ import type { RawMarker, ValidatedMarker, OrphanMarker, TDDMismatch, ValidationR
  * - NO persistence or signaling
  */
 export class MarkerValidator {
-  constructor(private readonly projectId: string) {}
+  private entityService: EntityLookupService;
+
+  constructor(
+    private readonly projectId: string, 
+    entityService?: EntityLookupService
+  ) {
+    // Use injected service for testing, or default to real service
+    this.entityService = entityService || entityServiceModule;
+  }
 
   /**
    * Validate markers against entity registry.
@@ -47,7 +62,7 @@ export class MarkerValidator {
 
     for (const marker of markers) {
       // First check if source entity exists (required for relationship creation)
-      const sourceEntity = await entityService.getByInstanceId(this.projectId, marker.source_entity_id);
+      const sourceEntity = await this.entityService.getByInstanceId(this.projectId, marker.source_entity_id);
       
       if (sourceEntity === null) {
         // Source entity doesn't exist - can't create relationship
@@ -61,7 +76,7 @@ export class MarkerValidator {
       }
       
       // Now check target entity
-      const targetEntity = await entityService.getByInstanceId(this.projectId, marker.target_id);
+      const targetEntity = await this.entityService.getByInstanceId(this.projectId, marker.target_id);
 
       if (marker.type === 'tdd') {
         // TDD coherence requires E06 entity type, not just existence
