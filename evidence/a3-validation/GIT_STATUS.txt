@@ -1,0 +1,3 @@
+ M docs/verification/A3_SI_CHECKPOINT.md
+?? evidence/
+NOTE: Working tree has uncommitted changes (evidence/ dir and A3_SI_CHECKPOINT.md). Validation proceeds against current state.

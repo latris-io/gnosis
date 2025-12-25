@@ -1,0 +1,3 @@
+DB_URL: postgresql://sophia_db_t47d_user:XUh55HVlJCl9GdMBfS8U2qrk3W2yYKwk@dpg-d501epmmcj7s73e12gi0-a.ohio-postgres.render.com/sophia_db_t47d
+NEO4J_URL: neo4j+s://9d7fb92a.databases.neo4j.io
+SCAN_SCOPE: src/**/*.{ts,tsx}

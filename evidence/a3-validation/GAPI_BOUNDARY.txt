@@ -1,0 +1,13 @@
+
+> @gnosis/core@0.0.1 verify:scripts-boundary
+> npx tsx scripts/verify-scripts-boundary.ts
+
+Scanning 47 script files for G-API boundary violations...
+
+SKIPPED FILES (@g-api-exception):
+
+  scripts/pre-phase2-check.ts [LEGACY_VERIFICATION_SCRIPT]
+
+✓ No G-API boundary violations found.
+All scripts correctly use src/ops/** entrypoints.
+(1 file(s) skipped with @g-api-exception)

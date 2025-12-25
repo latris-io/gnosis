@@ -1,0 +1,73 @@
+
+ RUN  v1.6.1 /Users/martybremer/Library/CloudStorage/OneDrive-Latris/Projects/Sophia/Gnosis
+
+stdout | test/verification/marker-relationships.test.ts > A3: Marker Relationships (R18/R19)
+[A3] Run 1: Extracted: 93, R18: 31, R19: 9, Orphans: 22
+
+stdout | test/verification/marker-relationships.test.ts > A3: Marker Relationships (R18/R19) > R18 count > 0 (at least some @implements markers exist)
+[A3] R18 count: 31
+
+ ✓ test/verification/marker-relationships.test.ts > A3: Marker Relationships (R18/R19) > R18 count > 0 (at least some @implements markers exist)
+stdout | test/verification/marker-relationships.test.ts > A3: Marker Relationships (R18/R19) > R19 count > 0 (at least some @satisfies markers exist)
+[A3] R19 count: 9
+
+ ✓ test/verification/marker-relationships.test.ts > A3: Marker Relationships (R18/R19) > R19 count > 0 (at least some @satisfies markers exist)
+ ✓ test/verification/marker-relationships.test.ts > A3: Marker Relationships (R18/R19) > R18 instance_id format valid
+ ✓ test/verification/marker-relationships.test.ts > A3: Marker Relationships (R18/R19) > R19 instance_id format valid
+ ✓ test/verification/marker-relationships.test.ts > A3: Marker Relationships (R18/R19) > all R18/R19 relationships have valid evidence anchors
+ ✓ test/verification/marker-relationships.test.ts > A3: Marker Relationships (R18/R19) > second run is idempotent (no new relationships created) 24576ms
+ ✓ test/verification/marker-relationships.test.ts > A3: Marker Relationships (R18/R19) > orphan count matches expectation (documented or zero)
+ ✓ test/verification/marker-relationships.test.ts > A3: Marker Relationships (R18/R19) > TDD coherence results documented
+stdout | test/verification/marker-relationships.test.ts > A3: Marker Relationships (R18/R19) > second run is idempotent (no new relationships created)
+[A3] Run 2: Extracted: 93, R18: 0, R19: 0
+
+stdout | test/verification/marker-relationships.test.ts > A3: Marker Relationships (R18/R19) > orphan count matches expectation (documented or zero)
+[A3] Orphans: 22
+
+stdout | test/verification/marker-relationships.test.ts > A3: Marker Relationships (R18/R19) > TDD coherence results documented
+[A3] TDD OK: 31, TDD Mismatch: 0
+
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/verification/rls-isolation.test.ts [ test/verification/rls-isolation.test.ts ]
+Error: admin-test-only.ts can only be loaded when NODE_ENV=test. This module contains destructive operations not permitted in production.
+ ❯ src/services/admin/admin-test-only.ts:7:9
+      5| // Hard runtime guard - throws immediately in non-test environments
+      6| if (process.env.NODE_ENV !== 'test') {
+      7|   throw new Error(
+       |         ^
+      8|     'admin-test-only.ts can only be loaded when NODE_ENV=test. ' +
+      9|     'This module contains destructive operations not permitted in prod…
+ ❯ test/verification/rls-isolation.test.ts:2:31
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  8 passed (8)
+   Start at  22:10:25
+   Duration  51.27s (transform 83ms, setup 554ms, collect 8ms, tests 50.88s, environment 0ms, prepare 63ms)
+
+
+ RUN  v1.6.1 /Users/martybremer/Library/CloudStorage/OneDrive-Latris/Projects/Sophia/Gnosis
+
+stdout | test/verification/rls-isolation.test.ts > RLS Isolation (Regression)
+[BEFORE] Main project: 3830 entities, 3653 relationships
+
+stdout | test/verification/rls-isolation.test.ts > RLS Isolation (Regression)
+[BEFORE] Test project: 2 entities, 1 relationships
+
+stdout | test/verification/rls-isolation.test.ts > RLS Isolation (Regression) > deleteProjectRelationships(TEST_PROJECT) does NOT affect MAIN project
+[AFTER DELETE] Main project: 3830 entities, 3653 relationships
+
+ ✓ test/verification/rls-isolation.test.ts > RLS Isolation (Regression) > deleteProjectRelationships(TEST_PROJECT) does NOT affect MAIN project 525ms
+stdout | test/verification/rls-isolation.test.ts > RLS Isolation (Regression) > deleteProjectEntities(TEST_PROJECT) does NOT affect MAIN project
+[AFTER ENTITY DELETE] Main project: 3830 entities
+
+ ✓ test/verification/rls-isolation.test.ts > RLS Isolation (Regression) > deleteProjectEntities(TEST_PROJECT) does NOT affect MAIN project 359ms
+
+ Test Files  1 passed (1)
+      Tests  2 passed (2)
+   Start at  22:11:26
+   Duration  3.05s (transform 81ms, setup 272ms, collect 7ms, tests 2.67s, environment 0ms, prepare 28ms)
+

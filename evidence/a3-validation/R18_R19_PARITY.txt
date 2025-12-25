@@ -1,0 +1,8 @@
+PostgreSQL R18: 31
+PostgreSQL R19: 9
+Neo4j R18: 31
+Neo4j R19: 9
+
+=== PARITY CHECK ===
+R18: PG=31, Neo4j=31 => MATCH ✓
+R19: PG=9, Neo4j=9 => MATCH ✓

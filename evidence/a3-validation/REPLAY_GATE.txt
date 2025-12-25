@@ -1,0 +1,32 @@
+=== Phase 6: Replay Gate ===
+
+--- 6.1 Before State ---
+R18: 31
+R19: 9
+Ledger lines: 595
+Corpus ORPHAN_MARKER: 22
+
+--- 6.2 Running Extraction ---
+Extracted: 93
+R18 created: 0
+R19 created: 0
+Orphans: 22
+
+--- 6.3 After State ---
+R18: 31
+R19: 9
+Ledger lines: 648
+Corpus ORPHAN_MARKER: 22
+
+--- 6.4 Deltas ---
+R18 delta: 0
+R19 delta: 0
+Ledger delta: 53
+Corpus delta: 0
+
+--- 6.5 Replay Gate Result ---
+DB Idempotency (R18/R19): PASS ✓
+Corpus Idempotency: PASS ✓
+REPLAY GATE: PASS ✓
+
+=== End of Phase 6 ===

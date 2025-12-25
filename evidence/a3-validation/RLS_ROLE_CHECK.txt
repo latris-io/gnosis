@@ -1,0 +1,3 @@
+current_user: sophia_db_t47d_user
+rolsuper: false
+rolbypassrls: false

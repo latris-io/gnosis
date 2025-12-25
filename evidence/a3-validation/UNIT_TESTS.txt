@@ -1,0 +1,27 @@
+
+ RUN  v1.6.1 /Users/martybremer/Library/CloudStorage/OneDrive-Latris/Projects/Sophia/Gnosis
+
+ ✓ test/markers/marker-extraction.test.ts > Marker Extraction (A3) > VERIFY-MARKER-01: @implements extraction > extracts @implements markers from single-line comments
+ ✓ test/markers/marker-extraction.test.ts > Marker Extraction (A3) > VERIFY-MARKER-01: @implements extraction > extracts @implements markers from JSDoc comments
+ ✓ test/markers/marker-extraction.test.ts > Marker Extraction (A3) > VERIFY-MARKER-01: @implements extraction > extracts @implements markers from block comments
+ ✓ test/markers/marker-extraction.test.ts > Marker Extraction (A3) > VERIFY-MARKER-02: @satisfies extraction > extracts @satisfies markers
+ ✓ test/markers/marker-extraction.test.ts > Marker Extraction (A3) > VERIFY-MARKER-02: @satisfies extraction > extracts multiple @satisfies markers
+ ✓ test/markers/marker-extraction.test.ts > Marker Extraction (A3) > VERIFY-MARKER-03: source entity linking > links function markers to FUNC- entities
+ ✓ test/markers/marker-extraction.test.ts > Marker Extraction (A3) > VERIFY-MARKER-03: source entity linking > links class markers to CLASS- entities
+ ✓ test/markers/marker-extraction.test.ts > Marker Extraction (A3) > VERIFY-MARKER-03: source entity linking > links file-level markers to FILE- entities
+ ✓ test/markers/marker-extraction.test.ts > Marker Extraction (A3) > VERIFY-MARKER-06: multiline comment support > extracts markers from multiline JSDoc
+ ✓ test/markers/marker-extraction.test.ts > Marker Extraction (A3) > VERIFY-MARKER-07: @tdd extraction > extracts @tdd markers
+ ✓ test/markers/marker-extraction.test.ts > Marker Extraction (A3) > Evidence anchoring (file-absolute positions) > computes file-absolute line_start and line_end
+ ✓ test/markers/marker-extraction.test.ts > Marker Extraction (A3) > Evidence anchoring (file-absolute positions) > includes source_file in markers
+ ✓ test/markers/marker-extraction.test.ts > Marker Extraction (A3) > Scan scope (governed) > scans src/** files
+ ✓ test/markers/marker-extraction.test.ts > Marker Extraction (A3) > Scan scope (governed) > does NOT scan scripts/** files (governance: prevents false orphans)
+ ✓ test/markers/marker-extraction.test.ts > Marker Extraction (A3) > Invalid marker patterns (negative tests) > does not extract markers with wrong case
+ ✓ test/markers/marker-extraction.test.ts > Marker Extraction (A3) > Invalid marker patterns (negative tests) > does not extract markers missing prefix
+ ✓ test/markers/marker-extraction.test.ts > Marker Extraction (A3) > Class method markers > links method markers to FUNC- entities with class prefix
+ ✓ test/markers/marker-extraction.test.ts > Marker Extraction (A3) > Arrow function markers > links arrow function markers to FUNC- entities
+
+ Test Files  1 passed | 2 skipped (3)
+      Tests  18 passed | 7 skipped (25)
+   Start at  22:10:12
+   Duration  580ms (transform 108ms, setup 910ms, collect 44ms, tests 64ms, environment 0ms, prepare 109ms)
+

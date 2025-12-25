@@ -267,16 +267,21 @@ export const srcFile = true;
       expect(marker).toBeDefined();
     });
 
-    it('scans scripts/** files', async () => {
+    it('does NOT scan scripts/** files (governance: prevents false orphans)', async () => {
+      // scripts/** is intentionally excluded from scan scope
+      // because filesystemProvider does not create E11 entities for scripts/
+      // which would cause all markers in scripts/ to become orphans
       const content = `// @implements STORY-64.11
 export const scriptFile = true;
 `;
+      await fs.mkdir(path.join(tempDir, 'scripts'), { recursive: true });
       await fs.writeFile(path.join(tempDir, 'scripts', 'script.ts'), content);
 
       const markers = await provider.extract(snapshot);
       const marker = markers.find(m => m.target_id === 'STORY-64.11');
 
-      expect(marker).toBeDefined();
+      // Should NOT find marker - scripts/** is excluded
+      expect(marker).toBeUndefined();
     });
   });
 
