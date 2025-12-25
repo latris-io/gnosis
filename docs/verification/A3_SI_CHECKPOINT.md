@@ -60,8 +60,24 @@ npm run verify:scripts-boundary
 
 - **Milestone**: 27/39 passed, 0 failed, 12 skipped (documented A4 gaps)
 - **Ledger**: 40 R18/R19 CREATE, 62 TDD_COHERENCE_OK/MISMATCH, 22 ORPHAN decisions, 0 NO-OP
-- **Corpus**: 44 ORPHAN_MARKER signals with deterministic IDs
+- **Corpus**: 22 ORPHAN_MARKER signals (matches 22 ORPHAN decisions ✓)
 - **G-API**: Clean (1 documented legacy exception)
+
+### Replay Check (Idempotency Proof)
+
+```
+Run 1: 93 extracted, 31 R18, 9 R19, 22 orphans
+Run 2: 93 extracted, 0 R18, 0 R19 (all NO-OP)
+Corpus: 22 ORPHAN_MARKER before and after (idempotent)
+```
+
+- `count(distinct signal_instance_id) == count(ORPHAN_MARKER signals)` ✓
+- Rerun produces **0 new** R18/R19 relationships ✓
+- Rerun produces **0 new** ORPHAN_MARKER signals ✓
+
+### Bug Fixed During Checkpoint
+
+- **semantic-corpus.ts**: Added deduplication by `signal_instance_id` to ensure idempotent signal capture
 
 ---
 

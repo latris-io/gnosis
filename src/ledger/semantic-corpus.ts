@@ -67,9 +67,24 @@ export class SemanticCorpus {
 
   /**
    * Capture a semantic signal.
+   * Idempotent: signals with same signal_instance_id are deduplicated.
    */
   async capture(signal: Omit<SemanticSignal, 'timestamp'>): Promise<void> {
     await this.initialize();
+
+    // Extract signal_instance_id for deduplication
+    const signalInstanceId = (signal as any).context?.signal_instance_id;
+    
+    // If signal has an instance_id, check for duplicates
+    if (signalInstanceId) {
+      const existing = await this.getSignals();
+      const isDuplicate = existing.some(
+        s => (s as any).context?.signal_instance_id === signalInstanceId
+      );
+      if (isDuplicate) {
+        return; // Skip duplicate - idempotent
+      }
+    }
 
     const fullSignal: SemanticSignal = {
       ...signal,
