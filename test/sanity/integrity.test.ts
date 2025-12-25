@@ -257,7 +257,7 @@ describe('INTEGRITY Tests', () => {
         console.log('SANITY_PHASE=pre: Graph is empty as expected (0 entities)');
       } else if (phase === 'post_a1') {
         // Post-A1: Graph must have minimum A1 entities
-        // Per Track A EXIT.md: E01=65, E02=351, E03=2849, E04>=0
+        // Per Track A EXIT.md: E01=65, E02=397, E03=3147, E04>=0
         expect(counts['E01'] || 0).toBeGreaterThanOrEqual(65);
         expect(counts['E02'] || 0).toBeGreaterThanOrEqual(351);
         expect(counts['E03'] || 0).toBeGreaterThanOrEqual(2849);

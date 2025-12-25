@@ -689,7 +689,7 @@ describe('Entity Registry - Story A.1', () => {
 
       // Assert corpus growth is bounded (proves determinism)
       // Corpus starts at 0 (reset by outer beforeAll), then tests write signals.
-      // BRD extraction alone produces ~3265 signals (65 + 351 + 2849).
+      // BRD extraction alone produces ~3609 signals (65 + 397 + 3147).
       // Multiple extractions in test run produce ~10000 signals.
       // Bound of 15000 allows for test variance while catching accumulation bugs.
       const corpusRaw = await fs.readFile('semantic-corpus/signals.jsonl', 'utf8');

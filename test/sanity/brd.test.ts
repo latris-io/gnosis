@@ -12,7 +12,7 @@ const BRD_PATH = 'docs/BRD_V20_6_4_COMPLETE.md';
 describe('BRD Tests (Track A)', () => {
   // SANITY-055: BRD Registry Populated
   describe('SANITY-055: BRD Registry Populated', () => {
-    it('BRD counts match expected (65/351/2849)', () => {
+    it('BRD counts match expected (65/397/3147)', () => {
       const content = fs.readFileSync(BRD_PATH, 'utf8');
       const result = parseBRD(content, BRD_PATH);
       

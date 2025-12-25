@@ -305,9 +305,9 @@ describe('CONTAINMENT RELATIONSHIPS (R04-R07)', () => {
     // This test validates BRD relationships which are managed by brd-relationships.test.ts
     // If BRD extraction hasn't run or is incomplete, skip with a warning
     // The authoritative BRD tests are in brd-relationships.test.ts
-    if (r01Count !== 351 || r02Count !== 2849) {
+    if (r01Count !== 397 || r02Count !== 3147) {
       console.log('[Regression] Skipping - BRD relationships incomplete. Run brd-relationships.test.ts for authoritative BRD verification.');
-      console.log(`             Got: R01=${r01Count}, R02=${r02Count}. Expected: R01=351, R02=2849`);
+      console.log(`             Got: R01=${r01Count}, R02=${r02Count}. Expected: R01=397, R02=3147`);
       return;
     }
 
