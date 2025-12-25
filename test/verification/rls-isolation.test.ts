@@ -19,7 +19,8 @@ import {
 import { rlsQuery } from '../utils/rls.js';
 
 const MAIN_PROJECT = process.env.PROJECT_ID || '6df2f456-440d-4958-b475-d9808775ff69';
-const TEST_PROJECT = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+// Use unique project ID (different from neo4j-multi-tenant.test.ts which uses aaaa...)
+const TEST_PROJECT = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
 
 describe('RLS Isolation (Regression)', () => {
   let mainEntityCountBefore: number;

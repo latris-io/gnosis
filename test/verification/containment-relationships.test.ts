@@ -6,7 +6,7 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { rlsQuery } from '../utils/rls.js';
 import { countNeo4jNodes, countNeo4jRelationships } from '../utils/admin-test-only.js';
-import { extractAndPersistContainmentRelationships } from '../../src/ops/track-a.js';
+import { extractAndPersistContainmentRelationships, replaceAllRelationshipsInNeo4j, syncToNeo4j } from '../../src/ops/track-a.js';
 import 'dotenv/config';
 
 // Get project ID from environment
@@ -336,6 +336,11 @@ describe('CONTAINMENT RELATIONSHIPS (R04-R07)', () => {
       console.log('[Neo4j] Skipping sync validation (pre_a2 phase)');
       return;
     }
+
+    // Sync entities and replace all relationships in Neo4j to ensure parity
+    // This handles stale data from previous test runs
+    await syncToNeo4j(PROJECT_ID);
+    await replaceAllRelationshipsInNeo4j(PROJECT_ID);
 
     // Get Postgres counts
     const pgEntityCount = await rlsQuery<{ count: string }>(
