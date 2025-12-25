@@ -19,8 +19,8 @@ const TRACK_PHASE = process.env.TRACK_PHASE || 'pre_a2';
 // Expected BRD counts (from BRD V20.6.3)
 const EXPECTED_BRD_COUNTS = {
   E01: 65,      // Epics
-  E02: 351,     // Stories  
-  E03: 2849,    // Acceptance Criteria
+  E02: 397,     // Stories (updated V20.6.4)
+  E03: 3147,    // Acceptance Criteria (updated V20.6.4)
 };
 
 describe('EXTRACTION (Track A)', () => {
