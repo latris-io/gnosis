@@ -3,7 +3,7 @@
 // One-off script to sync all relationships to Neo4j
 
 import 'dotenv/config';
-import { replaceRelationshipsInNeo4j } from '../src/services/sync/sync-service.js';
+import { serviceReplaceRelationships } from '../src/ops/track-a.js';
 
 async function main() {
   const projectId = process.env.PROJECT_ID;
@@ -14,8 +14,8 @@ async function main() {
   console.log('=== SYNC RELATIONSHIPS TO NEO4J ===');
   console.log('Project:', projectId);
 
-  // replaceRelationshipsInNeo4j handles RLS context internally using setProjectContext()
-  const result = await replaceRelationshipsInNeo4j(projectId);
+  // Uses ops layer (G-API compliant) - handles RLS context internally
+  const result = await serviceReplaceRelationships(projectId);
   console.log('Deleted:', result.deleted, 'Synced:', result.synced, 'Skipped:', result.skipped);
   
   console.log('Done.');
