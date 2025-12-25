@@ -9,9 +9,9 @@
 // Per A3 plan: NO imports from db or services. Emits RawMarker[] with file-absolute positions.
 //
 // Scan scope (governed):
-// - src/**/*.{ts,tsx}
-// - scripts/**/*.ts
-// - test/**/*.ts is EXCLUDED by default
+// - src/**/*.{ts,tsx} ONLY (matches filesystemProvider E11 scope)
+// - scripts/** EXCLUDED (no E11 entities → would always produce orphans)
+// - test/**/*.ts EXCLUDED by default
 
 import { Project, SourceFile, SyntaxKind, Node, CommentRange } from 'ts-morph';
 import type { RepoSnapshot, ExtractionResult } from '../types.js';
@@ -27,12 +27,13 @@ const TDD_PATTERN = /@tdd\s+(TDD-[A-Za-z0-9-]+)/g;
 
 /**
  * Default scan roots (governed).
- * test/** is EXCLUDED unless explicitly added.
+ * MUST match filesystemProvider E11 scope to avoid systematic orphans.
+ * scripts/** excluded: no E11 entities exist for those files.
+ * test/** excluded: test markers are R36/R37 (A4), not R18/R19.
  */
 function getScanGlobs(rootPath: string): string[] {
   return [
     `${rootPath}/src/**/*.{ts,tsx}`,
-    `${rootPath}/scripts/**/*.ts`,
   ];
 }
 
