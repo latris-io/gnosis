@@ -1,9 +1,11 @@
 // src/ops/track-a.ts
 // @implements STORY-64.1
 // @implements STORY-64.2
+// @implements STORY-64.3
 // @implements STORY-64.4
 // @tdd TDD-A1-ENTITY-REGISTRY
 // @tdd TDD-A2-RELATIONSHIP-REGISTRY
+// @tdd TDD-A3-MARKER-EXTRACTION
 // @tdd TDD-A4-STRUCTURAL-ANALYSIS
 // Operator/CLI entrypoints - delegates to services, MUST NOT import db
 // NOT public API surface (per A5), but enforces G-API boundary
@@ -66,6 +68,7 @@ import {
 } from '../extraction/providers/tdd-relationship-provider.js';
 import * as path from 'path';
 import { queryEntities } from '../api/v1/entities.js';
+import { extractAndValidateMarkers } from '../api/v1/markers.js';
 import type { EntityTypeCode } from '../schema/track-a/entities.js';
 
 // Re-export types for convenience
@@ -218,6 +221,46 @@ export async function extractAndPersistBrdRelationships(projectId: string): Prom
     persisted: persistResult.results.filter(r => r.operation !== 'NO-OP').length,
     synced: persistResult.neo4jSync?.synced ?? 0,
     entitiesSynced: persistResult.neo4jSync?.entitiesSynced ?? 0,
+  };
+}
+
+/**
+ * Extract and persist marker relationships (R18/R19).
+ * @implements STORY-64.3
+ * @satisfies AC-64.3.1
+ * @satisfies AC-64.3.2
+ * 
+ * Scans src/** and scripts/** for @implements/@satisfies/@tdd markers.
+ * Creates R18 (IMPLEMENTS) and R19 (SATISFIES) relationships.
+ * Logs TDD_COHERENCE_OK/MISMATCH decisions for @tdd markers.
+ * Signals orphan markers to semantic corpus.
+ */
+export async function extractAndPersistMarkerRelationships(
+  projectId: string
+): Promise<{
+  extracted: number;
+  r18_created: number;
+  r19_created: number;
+  orphans: number;
+  tdd_ok: number;
+  tdd_mismatch: number;
+}> {
+  // Create snapshot for the real repository
+  const snapshot = {
+    id: `marker-extraction-${Date.now()}`,
+    root_path: process.cwd(),
+    timestamp: new Date(),
+  };
+  
+  const result = await extractAndValidateMarkers(projectId, snapshot);
+  
+  return {
+    extracted: result.stats.total_extracted,
+    r18_created: result.stats.r18_created,
+    r19_created: result.stats.r19_created,
+    orphans: result.stats.orphan_count,
+    tdd_ok: result.stats.tdd_ok_count,
+    tdd_mismatch: result.stats.tdd_mismatch_count,
   };
 }
 
@@ -757,11 +800,12 @@ export { closeAdminPool };
  * Uses replace-by-project strategy: deletes all existing relationships then recreates.
  * 
  * @param projectId - Project UUID to sync
- * @returns Sync results with entity and relationship counts
+ * @returns Sync results with counts for deleted, synced, and skipped relationships
  */
 export async function replaceAllRelationshipsInNeo4j(projectId: string): Promise<{
+  deleted: number;
   synced: number;
-  entitiesSynced: number;
+  skipped: number;
 }> {
   return serviceReplaceRelationships(projectId);
 }

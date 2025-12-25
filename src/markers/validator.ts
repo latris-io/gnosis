@@ -33,8 +33,12 @@ export class MarkerValidator {
   /**
    * Validate markers against entity registry.
    * 
-   * For @implements/@satisfies: check target Story/AC exists.
-   * For @tdd: check target E06 TechnicalDesign entity exists AND is type E06.
+   * Validates BOTH source and target entities:
+   * - Source entity (FILE-*, FUNC-*, CLASS-*) must exist for relationship creation
+   * - For @implements/@satisfies: target Story/AC must exist
+   * - For @tdd: target E06 TechnicalDesign entity must exist AND be type E06
+   * 
+   * Markers with missing source entities are treated as orphans (can't create relationship).
    */
   async validateMarkers(markers: RawMarker[]): Promise<ValidationResult> {
     const validated: ValidatedMarker[] = [];
@@ -42,21 +46,36 @@ export class MarkerValidator {
     const tddMismatches: TDDMismatch[] = [];
 
     for (const marker of markers) {
-      const entity = await entityService.getByInstanceId(this.projectId, marker.target_id);
+      // First check if source entity exists (required for relationship creation)
+      const sourceEntity = await entityService.getByInstanceId(this.projectId, marker.source_entity_id);
+      
+      if (sourceEntity === null) {
+        // Source entity doesn't exist - can't create relationship
+        // This happens for markers in scripts/** (no E11 entities extracted)
+        orphans.push({
+          ...marker,
+          validated: false,
+          validation_error: `Source entity ${marker.source_entity_id} not found in entity registry`,
+        });
+        continue;
+      }
+      
+      // Now check target entity
+      const targetEntity = await entityService.getByInstanceId(this.projectId, marker.target_id);
 
       if (marker.type === 'tdd') {
         // TDD coherence requires E06 entity type, not just existence
-        if (entity === null) {
+        if (targetEntity === null) {
           tddMismatches.push({
             ...marker,
             validated: false,
             validation_error: `TDD entity ${marker.target_id} not found`,
           });
-        } else if (entity.entity_type !== 'E06') {
+        } else if (targetEntity.entity_type !== 'E06') {
           tddMismatches.push({
             ...marker,
             validated: false,
-            validation_error: `Expected E06 TechnicalDesign, found ${entity.entity_type}`,
+            validation_error: `Expected E06 TechnicalDesign, found ${targetEntity.entity_type}`,
           });
         } else {
           // TDD coherence OK - validated as E06
@@ -65,7 +84,7 @@ export class MarkerValidator {
             validated: true,
           });
         }
-      } else if (entity !== null) {
+      } else if (targetEntity !== null) {
         // @implements/@satisfies - target exists
         validated.push({
           ...marker,

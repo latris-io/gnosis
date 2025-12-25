@@ -17,16 +17,16 @@ TRACK_A_PHASE=A3 npm run verify:track-milestone
 - [ ] Cross-store parity confirmed
 
 ### 2. Ledger Delta Coverage
-```bash
-npm run verify:scripts-boundary
-```
-- [ ] Passes with exit 0
-- [ ] Ledger delta coverage = 100% for A3 mutations
-- [ ] No silent writes detected
+- [ ] N/A (no dedicated ledger-delta verifier yet)
+- [ ] Manual check (A3 run): confirm `shadow-ledger/ledger.jsonl` contains CREATE/UPDATE entries for R18/R19 and DECISION entries for TDD_COHERENCE_OK / TDD_COHERENCE_MISMATCH / ORPHAN outcomes
+- [ ] Confirm no NO-OP entries were logged (A3 requirement)
+- [ ] Confirm `project_id` present on entries (multi-tenant isolation)
+- [ ] Confirm deterministic IDs: `relationship_instance_id` / `signal_instance_id` stable across a rerun
 
 ### 3. Semantic Corpus Verification
-- [ ] Semantic corpus contains ORPHAN_MARKER signals if orphans exist
+- [ ] If orphans exist: corpus contains ORPHAN_MARKER signals with deterministic `signal_instance_id`
 - [ ] OR: Proof that orphan count = 0
+- [ ] Replay check: rerun A3 on same snapshot/project and confirm no duplicate ORPHAN_MARKER signals (idempotent upsert)
 
 ### 4. G-API Boundary
 ```bash
@@ -40,8 +40,8 @@ npm run verify:scripts-boundary
 
 | Entity/Relationship | Expected | Notes |
 |---------------------|----------|-------|
-| Marker relationships | TBD | R18/R19/R36/R37 per schema |
-| ORPHAN_MARKER signals | 0 or documented | If >0, must be in corpus |
+| Marker relationships | **R18/R19 only** | R36/R37 deferred to A4 TEST-REL; counts must match milestone expectations |
+| ORPHAN_MARKER signals | 0 or documented | If >0, must be in corpus with deterministic IDs |
 
 ---
 
@@ -58,4 +58,5 @@ npm run verify:scripts-boundary
 
 ---
 
-*This checkpoint does NOT require full re-extraction. It is a lightweight verification gate.*
+*This checkpoint may run fresh extraction depending on `verify:track-milestone` implementation; it does not require a full manual re-extraction workflow.*
+
