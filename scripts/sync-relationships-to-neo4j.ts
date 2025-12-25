@@ -4,7 +4,6 @@
 
 import 'dotenv/config';
 import { replaceRelationshipsInNeo4j } from '../src/services/sync/sync-service.js';
-import { pool } from '../src/db/postgres.js';
 
 async function main() {
   const projectId = process.env.PROJECT_ID;
@@ -15,19 +14,10 @@ async function main() {
   console.log('=== SYNC RELATIONSHIPS TO NEO4J ===');
   console.log('Project:', projectId);
 
-  // SET doesn't support parameterized queries - must use string interpolation
-  await pool.query(`SET app.project_id = '${projectId}'`);
+  // replaceRelationshipsInNeo4j handles RLS context internally using setProjectContext()
+  const result = await replaceRelationshipsInNeo4j(projectId);
+  console.log('Deleted:', result.deleted, 'Synced:', result.synced, 'Skipped:', result.skipped);
   
-  const { rows } = await pool.query(
-    'SELECT * FROM relationships WHERE project_id = $1',
-    [projectId]
-  );
-  
-  console.log('Syncing', rows.length, 'relationships to Neo4j...');
-  const result = await replaceRelationshipsInNeo4j(projectId, rows);
-  console.log('Synced:', result.synced, 'Skipped:', result.skipped);
-  
-  await pool.end();
   console.log('Done.');
 }
 
