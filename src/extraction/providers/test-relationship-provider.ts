@@ -51,13 +51,16 @@ export function deriveTestedByRelationships(
 
     // R36: Story → TestSuite (Story is TESTED_BY TestSuite)
     const instanceId = `R36:${storyId}:${suite.instance_id}`;
+    // Truncate name to fit VARCHAR(100) constraint
+    const fullName = `${storyId} TESTED_BY ${suite.instance_id}`;
+    const name = fullName.length > 100 ? fullName.slice(0, 97) + '...' : fullName;
 
     relationships.push({
       relationship_type: 'R36',
       instance_id: instanceId,
       from_instance_id: storyId,
       to_instance_id: suite.instance_id,
-      name: `${storyId} TESTED_BY ${suite.instance_id}`,
+      name,
       // Evidence from the TestSuite location (where the describe() is)
       source_file: suite.source_file || '',
       line_start: suite.line_start || 0,
@@ -106,13 +109,16 @@ export function deriveVerifiedByRelationships(
 
     // R37: AC → TestCase (AC is VERIFIED_BY TestCase)
     const instanceId = `R37:${acId}:${testCase.instance_id}`;
+    // Truncate name to fit VARCHAR(100) constraint
+    const fullName = `${acId} VERIFIED_BY ${testCase.instance_id}`;
+    const name = fullName.length > 100 ? fullName.slice(0, 97) + '...' : fullName;
 
     relationships.push({
       relationship_type: 'R37',
       instance_id: instanceId,
       from_instance_id: acId,
       to_instance_id: testCase.instance_id,
-      name: `${acId} VERIFIED_BY ${testCase.instance_id}`,
+      name,
       // Evidence from the TestCase location (where the it() is)
       source_file: testCase.source_file || '',
       line_start: testCase.line_start || 0,

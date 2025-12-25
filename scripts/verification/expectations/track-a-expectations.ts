@@ -483,15 +483,15 @@ export const RELATIONSHIP_EXPECTATIONS: RelationshipExpectation[] = [
   // Per A3_MARKER_EXTRACTION.md @scope-relationships-active: R36, R37
   // Per UTG Schema V20.6.1: R36 from describe('STORY-XX.YY'), R37 from it('AC-XX.YY.ZZ')
   // Per A2_RELATIONSHIP_REGISTRY.md: "Deferred to A3: R18, R19, R36, R37 (marker-dependent)"
-  // Note: Extraction is IMPLEMENTED and CORRECT. 0 count expected because test files
-  // don't currently use the describe('STORY-XX.YY:') / it('AC-XX.YY.ZZ:') naming convention.
+  // Note: Extraction is IMPLEMENTED and CORRECT. At least 1 R36 and 2 R37 expected
+  // from test/verification/marker-relationships.test.ts naming convention.
   {
     code: 'R36',
     name: 'TESTED_BY',
     a1: 'DEFERRED_TO_A3',
     a2: 'DEFERRED_TO_A3',
-    a3: 'EXPECTED_ZERO',  // Extraction implemented, 0 patterns found in codebase
-    a4: 'EXPECTED_NONZERO',  // Expect codebase to adopt convention
+    a3: 'EXPECTED_NONZERO',  // At least 1: describe('STORY-64.3: ...')
+    a4: 'EXPECTED_NONZERO',
     a5: 'EXPECTED_NONZERO',
   },
   {
@@ -499,8 +499,8 @@ export const RELATIONSHIP_EXPECTATIONS: RelationshipExpectation[] = [
     name: 'VERIFIED_BY',
     a1: 'DEFERRED_TO_A3',
     a2: 'DEFERRED_TO_A3',
-    a3: 'EXPECTED_ZERO',  // Extraction implemented, 0 patterns found in codebase
-    a4: 'EXPECTED_NONZERO',  // Expect codebase to adopt convention
+    a3: 'EXPECTED_NONZERO',  // At least 2: it('AC-64.3.1: ...'), it('AC-64.3.2: ...')
+    a4: 'EXPECTED_NONZERO',
     a5: 'EXPECTED_NONZERO',
   },
   

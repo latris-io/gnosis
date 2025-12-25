@@ -8,7 +8,7 @@ import { rlsQuery } from '../utils/rls.js';
 
 const PROJECT_ID = process.env.PROJECT_ID;
 
-describe('A3: Marker Relationships (R18/R19)', () => {
+describe('STORY-64.3: Marker Extraction - R18/R19 Relationships', () => {
   let firstRunResult: {
     extracted: number;
     r18_created: number;
@@ -33,7 +33,7 @@ describe('A3: Marker Relationships (R18/R19)', () => {
 
   // --- R18/R19 COUNTS ---
 
-  it('R18 count > 0 (at least some @implements markers exist)', async () => {
+  it('AC-64.3.1: R18 count > 0 (at least some @implements markers exist)', async () => {
     const rows = await rlsQuery(PROJECT_ID!, 
       `SELECT instance_id FROM relationships WHERE relationship_type='R18'`
     );
@@ -41,7 +41,7 @@ describe('A3: Marker Relationships (R18/R19)', () => {
     console.log(`[A3] R18 count: ${rows.length}`);
   });
 
-  it('R19 count > 0 (at least some @satisfies markers exist)', async () => {
+  it('AC-64.3.2: R19 count > 0 (at least some @satisfies markers exist)', async () => {
     const rows = await rlsQuery(PROJECT_ID!, 
       `SELECT instance_id FROM relationships WHERE relationship_type='R19'`
     );
