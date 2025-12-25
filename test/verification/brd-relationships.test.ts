@@ -29,21 +29,21 @@ describe('A2 Phase 1: BRD relationships (R01/R02/R03)', () => {
     console.log(`[A2-Phase1] Run 1: Extracted: ${firstRunResult.extracted}, Persisted: ${firstRunResult.persisted}, Synced: ${firstRunResult.synced}`);
   }, 900000); // 15 minute timeout for extraction (batch upsert is slow with remote DB)
 
-  it('R01 count = 351 and instance_id format valid', async () => {
+  it('R01 count = 397 and instance_id format valid', async () => {
     const rows = await rlsQuery(PROJECT_ID!, 
       `SELECT instance_id FROM relationships WHERE relationship_type='R01'`
     );
-    expect(rows.length).toBe(351);
+    expect(rows.length).toBe(397);
     for (const r of rows.slice(0, 10)) {
       expect(r.instance_id).toMatch(/^R01:EPIC-\d+:STORY-\d+\.\d+$/);
     }
   });
 
-  it('R02 count = 2849 and instance_id format valid', async () => {
+  it('R02 count = 3147 and instance_id format valid', async () => {
     const rows = await rlsQuery(PROJECT_ID!, 
       `SELECT instance_id FROM relationships WHERE relationship_type='R02'`
     );
-    expect(rows.length).toBe(2849);
+    expect(rows.length).toBe(3147);
     for (const r of rows.slice(0, 10)) {
       expect(r.instance_id).toMatch(/^R02:STORY-\d+\.\d+:AC-\d+\.\d+\.\d+$/);
     }

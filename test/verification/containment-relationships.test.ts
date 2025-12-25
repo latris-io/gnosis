@@ -312,8 +312,8 @@ describe('CONTAINMENT RELATIONSHIPS (R04-R07)', () => {
     }
 
     // If we get here, verify the exact counts
-    expect(r01Count).toBe(351);
-    expect(r02Count).toBe(2849);
+    expect(r01Count).toBe(397);
+    expect(r02Count).toBe(3147);
     expect(r03Count).toBe(0);
   });
 

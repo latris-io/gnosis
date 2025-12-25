@@ -259,14 +259,14 @@ describe('INTEGRITY Tests', () => {
         // Post-A1: Graph must have minimum A1 entities
         // Per Track A EXIT.md: E01=65, E02=397, E03=3147, E04>=0
         expect(counts['E01'] || 0).toBeGreaterThanOrEqual(65);
-        expect(counts['E02'] || 0).toBeGreaterThanOrEqual(351);
-        expect(counts['E03'] || 0).toBeGreaterThanOrEqual(2849);
+        expect(counts['E02'] || 0).toBeGreaterThanOrEqual(397);
+        expect(counts['E03'] || 0).toBeGreaterThanOrEqual(3147);
         expect(counts['E04'] || 0).toBeGreaterThanOrEqual(0); // BRD-dependent
         
         console.log(`SANITY_PHASE=post_a1: Graph has ${totalEntities} entities`);
         console.log(`  E01: ${counts['E01'] || 0} (expected >=65)`);
-        console.log(`  E02: ${counts['E02'] || 0} (expected >=351)`);
-        console.log(`  E03: ${counts['E03'] || 0} (expected >=2849)`);
+        console.log(`  E02: ${counts['E02'] || 0} (expected >=397)`);
+        console.log(`  E03: ${counts['E03'] || 0} (expected >=3147)`);
         console.log(`  E04: ${counts['E04'] || 0} (expected >=0)`);
       }
     });
