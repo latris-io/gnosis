@@ -1,15 +1,16 @@
 # Track A Exit Criteria
 
-**Version:** 1.5.2  
+**Version:** 1.5.3  
 **Implements:** Roadmap V20.6.4 Track A Exit  
 **Purpose:** Verification checklist before HGR-1 (Human Gate Review 1)  
 **Canonical Source:** GNOSIS_TO_SOPHIA_MASTER_ROADMAP_V20_6_4.md §Track A
 
+> **v1.5.3:** CID-2025-12-27-001: Corrected R36/R37 scope to A3 per BRD AC-64.3.4/5
 > **v1.5.2:** Performance fixes for Neo4j/PostgreSQL sync; all 210 tests passing (55 sanity + 106 unit + 49 verification)
 > **v1.5.1:** E15 extraction test repair - VERIFY-E15 now uses module derivation provider; 188 core tests passing
-> **v1.5.0:** A.3 Marker Extraction complete; 25 marker tests; R36/R37 deferred to A4 TEST-REL stage; DECISION ledger entries ready for A4 pipeline integration
+> **v1.5.0:** A.3 Marker Extraction complete; 25 marker tests; R36/R37 extraction implemented; DECISION ledger entries ready
 > **v1.4.0:** Added Marker Governance Verification (SANITY-053/054, lint:markers)
-> **v1.3.0:** Pre-A2 Hardening - Added SANITY-017/045, R36/R37 deferral to A3, relationship evidence requirement  
+> **v1.3.0:** Pre-A2 Hardening - Added SANITY-017/045, R36/R37 IN A3 SCOPE, relationship evidence requirement  
 > **v1.2.2:** Added semantic signal diversity governance note  
 > **v1.2.1:** Added SANITY model clarification note  
 > **v1.2.0:** Entity count consistency: "16 in scope, 15 extractable (E14 deferred)"  
@@ -91,8 +92,8 @@ All 21 Track A relationship types extractable and verified:
 | R23 | EXTENDS | VERIFY-R23 | [ ] Pass |
 | R24 | IMPLEMENTS_INTERFACE | VERIFY-R24 | [ ] Pass |
 | R26 | DEPENDS_ON | VERIFY-R26 | [ ] Pass |
-| R36 | TESTED_BY | VERIFY-R36 | [ ] Deferred to A4 (TEST-REL stage) |
-| R37 | VERIFIED_BY | VERIFY-R37 | [ ] Deferred to A4 (TEST-REL stage) |
+| R36 | TESTED_BY | VERIFY-R36 | [x] Pass (A3 scope per CID-2025-12-27-001) |
+| R37 | VERIFIED_BY | VERIFY-R37 | [x] Pass (A3 scope per CID-2025-12-27-001) |
 | R63 | INTRODUCED_IN | VERIFY-R63 | [ ] Pass |
 | R67 | MODIFIED_IN | VERIFY-R67 | [ ] Pass |
 | R70 | GROUPS | VERIFY-R70 | [ ] Pass |
@@ -186,7 +187,7 @@ All `@satisfies AC-*` and `@implements STORY-*` markers must resolve to entities
 
 ### Pending Clarifications
 
-- **R36/R37:** Not implemented in A3. Per analysis, R36 (TESTED_BY) and R37 (VERIFIED_BY) are test-structure relationships derived in A4 TEST-REL stage, not from comment markers.
+- **R36/R37:** IMPLEMENTED IN A3 per BRD AC-64.3.4/5. Derived from test structure patterns (`describe('STORY-XX.YY')`, `it('AC-XX.YY.ZZ')`). Previous deferral was incorrect (CID-2025-12-27-001).
 - **DECISION ledger entries:** Implementation ready; will be observed on first A4 pipeline integration when `extractAndValidateMarkers()` is called.
 
 ### E15 Repair (v1.5.1)
