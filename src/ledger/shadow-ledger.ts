@@ -95,8 +95,11 @@ export interface LedgerEntry {
   content_hash: string;       // SHA-256 hash of content
   evidence: EvidenceAnchor;
   project_id: string;
-  epoch_id?: string;          // Epoch ID for run binding (optional for backward compat)
-  repo_sha?: string;          // Git SHA for reproducibility (optional for backward compat)
+  // V11 Epoch fields (optional for backward compat with pre-V11 entries)
+  epoch_id?: string;          // Epoch ID for run binding
+  repo_sha?: string;          // Git SHA of repository at extraction time
+  runner_sha?: string;        // Git SHA of Gnosis codebase
+  brd_hash?: string;          // SHA-256 hash of BRD content
 }
 
 /**
@@ -117,6 +120,11 @@ export interface DecisionEntry {
   line_end: number;            // File-absolute line end
   reason?: string;             // Validation error message (for ORPHAN/MISMATCH)
   project_id: string;
+  // V11 Epoch fields (optional for backward compat with pre-V11 entries)
+  epoch_id?: string;           // Epoch ID for run binding
+  repo_sha?: string;           // Git SHA of repository at extraction time
+  runner_sha?: string;         // Git SHA of Gnosis codebase
+  brd_hash?: string;           // SHA-256 hash of BRD content
 }
 
 /**
@@ -185,6 +193,8 @@ export class ShadowLedger {
       timestamp: new Date().toISOString(),
       epoch_id: epoch?.epoch_id,
       repo_sha: epoch?.repo_sha,
+      runner_sha: epoch?.runner_sha,
+      brd_hash: epoch?.brd_hash,
     };
 
     const line = JSON.stringify(fullEntry) + '\n';
@@ -294,14 +304,21 @@ export class ShadowLedger {
    * - DECISION (ORPHAN, TDD_COHERENCE_OK, TDD_COHERENCE_MISMATCH)
    * - No entry for NO-OP (relationship unchanged)
    */
-  async logDecision(entry: Omit<DecisionEntry, 'timestamp' | 'operation' | 'kind'>): Promise<void> {
+  async logDecision(entry: Omit<DecisionEntry, 'timestamp' | 'operation' | 'kind' | 'epoch_id' | 'repo_sha' | 'runner_sha' | 'brd_hash'>): Promise<void> {
     await this.initialize();
+
+    // Get epoch context if available
+    const epoch = getCurrentEpoch();
 
     const fullEntry: DecisionEntry = {
       ...entry,
       timestamp: new Date().toISOString(),
       operation: 'DECISION',
       kind: 'decision',
+      epoch_id: epoch?.epoch_id,
+      repo_sha: epoch?.repo_sha,
+      runner_sha: epoch?.runner_sha,
+      brd_hash: epoch?.brd_hash,
     };
 
     const line = JSON.stringify(fullEntry) + '\n';

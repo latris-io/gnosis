@@ -25,6 +25,12 @@ import {
   verifyRelationshipParity as serviceVerifyParity,
 } from '../services/sync/sync-service.js';
 import { closeConnections } from '../services/connections/connection-service.js';
+import { 
+  startEpoch, 
+  completeEpoch, 
+  failEpoch,
+  getCurrentEpoch,
+} from '../ledger/epoch-service.js';
 import {
   checkConstraints as serviceCheckConstraints,
   fixUpsertConstraint as serviceFixConstraint,
@@ -248,23 +254,48 @@ export async function extractAndPersistMarkerRelationships(
   tdd_ok: number;
   tdd_mismatch: number;
 }> {
-  // Create snapshot for the real repository
-  const snapshot = {
-    id: `marker-extraction-${Date.now()}`,
-    root_path: process.cwd(),
-    timestamp: new Date(),
-  };
+  // Start epoch for this extraction run (enables V11 ledger fields)
+  let epochStarted = false;
+  if (!getCurrentEpoch()) {
+    await startEpoch(projectId);
+    epochStarted = true;
+  }
   
-  const result = await extractAndValidateMarkers(projectId, snapshot);
-  
-  return {
-    extracted: result.stats.total_extracted,
-    r18_created: result.stats.r18_created,
-    r19_created: result.stats.r19_created,
-    orphans: result.stats.orphan_count,
-    tdd_ok: result.stats.tdd_ok_count,
-    tdd_mismatch: result.stats.tdd_mismatch_count,
-  };
+  try {
+    // Create snapshot for the real repository
+    const snapshot = {
+      id: `marker-extraction-${Date.now()}`,
+      root_path: process.cwd(),
+      timestamp: new Date(),
+    };
+    
+    const result = await extractAndValidateMarkers(projectId, snapshot);
+    
+    // Complete epoch if we started it
+    if (epochStarted) {
+      await completeEpoch({
+        relationships_created: result.stats.r18_created + result.stats.r19_created,
+        relationships_updated: 0,
+        decisions_logged: result.stats.tdd_ok_count + result.stats.orphan_count + result.stats.tdd_mismatch_count,
+        signals_captured: result.stats.orphan_count + result.stats.tdd_mismatch_count,
+      });
+    }
+    
+    return {
+      extracted: result.stats.total_extracted,
+      r18_created: result.stats.r18_created,
+      r19_created: result.stats.r19_created,
+      orphans: result.stats.orphan_count,
+      tdd_ok: result.stats.tdd_ok_count,
+      tdd_mismatch: result.stats.tdd_mismatch_count,
+    };
+  } catch (err) {
+    // Fail epoch if we started it
+    if (epochStarted) {
+      await failEpoch(String(err));
+    }
+    throw err;
+  }
 }
 
 /**
@@ -285,43 +316,70 @@ export async function extractAndPersistTestRelationships(
   r36_updated: number;
   r37_updated: number;
 }> {
-  // Get all entities needed for derivation
-  const dbEntities = await getAllEntities(projectId);
-  
-  // Convert to ExtractedEntity format (provider expects source_file as non-null string)
-  const extractedEntities: ExtractedEntity[] = dbEntities.map(e => ({
-    entity_type: e.entity_type,
-    instance_id: e.instance_id,
-    name: e.name,
-    attributes: e.attributes || {},
-    source_file: e.source_file || '',
-    line_start: e.line_start || 0,
-    line_end: e.line_end || 0,
-  }));
-  
-  // Derive R36/R37 relationships
-  const testRels = deriveTestRelationships(extractedEntities);
-  
-  if (testRels.length === 0) {
-    return { r36_created: 0, r37_created: 0, r36_updated: 0, r37_updated: 0 };
+  // Start epoch for this extraction run (enables V11 ledger fields)
+  let epochStarted = false;
+  if (!getCurrentEpoch()) {
+    await startEpoch(projectId);
+    epochStarted = true;
   }
   
-  // Persist relationships
-  const results = await relBatchUpsertAndSync(projectId, testRels);
+  try {
+    // Get all entities needed for derivation
+    const dbEntities = await getAllEntities(projectId);
   
-  // Count by type
-  let r36_created = 0, r37_created = 0, r36_updated = 0, r37_updated = 0;
-  for (const r of results.results) {
-    if (r.relationship && r.relationship.relationship_type === 'R36') {
-      if (r.operation === 'CREATE') r36_created++;
-      else if (r.operation === 'UPDATE') r36_updated++;
-    } else if (r.relationship && r.relationship.relationship_type === 'R37') {
-      if (r.operation === 'CREATE') r37_created++;
-      else if (r.operation === 'UPDATE') r37_updated++;
+    // Convert to ExtractedEntity format (provider expects source_file as non-null string)
+    const extractedEntities: ExtractedEntity[] = dbEntities.map(e => ({
+      entity_type: e.entity_type,
+      instance_id: e.instance_id,
+      name: e.name,
+      attributes: e.attributes || {},
+      source_file: e.source_file || '',
+      line_start: e.line_start || 0,
+      line_end: e.line_end || 0,
+    }));
+    
+    // Derive R36/R37 relationships
+    const testRels = deriveTestRelationships(extractedEntities);
+    
+    if (testRels.length === 0) {
+      // Complete epoch if we started it before returning
+      if (epochStarted) {
+        await completeEpoch({ relationships_created: 0, relationships_updated: 0 });
+      }
+      return { r36_created: 0, r37_created: 0, r36_updated: 0, r37_updated: 0 };
     }
-  }
+    
+    // Persist relationships
+    const results = await relBatchUpsertAndSync(projectId, testRels);
   
-  return { r36_created, r37_created, r36_updated, r37_updated };
+    // Count by type
+    let r36_created = 0, r37_created = 0, r36_updated = 0, r37_updated = 0;
+    for (const r of results.results) {
+      if (r.relationship && r.relationship.relationship_type === 'R36') {
+        if (r.operation === 'CREATE') r36_created++;
+        else if (r.operation === 'UPDATE') r36_updated++;
+      } else if (r.relationship && r.relationship.relationship_type === 'R37') {
+        if (r.operation === 'CREATE') r37_created++;
+        else if (r.operation === 'UPDATE') r37_updated++;
+      }
+    }
+    
+    // Complete epoch if we started it
+    if (epochStarted) {
+      await completeEpoch({
+        relationships_created: r36_created + r37_created,
+        relationships_updated: r36_updated + r37_updated,
+      });
+    }
+    
+    return { r36_created, r37_created, r36_updated, r37_updated };
+  } catch (err) {
+    // Fail epoch if we started it
+    if (epochStarted) {
+      await failEpoch(String(err));
+    }
+    throw err;
+  }
 }
 
 /**
