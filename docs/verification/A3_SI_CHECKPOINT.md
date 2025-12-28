@@ -1,6 +1,26 @@
 # A3 End-of-Phase SI Checkpoint
 
-**Purpose:** Lightweight verification gate to confirm SI-readiness after A3 (Marker Extraction) completion.
+**Purpose:** Lightweight verification gate to confirm SI-readiness after A3 (Marker Extraction) completion.  
+**Normative Reference:** UNIFIED_VERIFICATION_SPECIFICATION_V20_6_6.md §8.1.4
+
+---
+
+## Epoch Evidence
+
+Each A3 extraction run produces an epoch metadata file containing provenance for all ledger/corpus entries.
+
+> **Normative Reference:** Epoch semantics are defined in UVS §8.1.4 (normative). This checkpoint references but does not redefine them.
+>
+> Epoch metadata files are **append-only evidence artifacts**.
+> They are not authoritative sources of correctness and must not be mutated post-completion.
+
+**Epoch Location:** `shadow-ledger/{project_id}/epochs/{epoch_id}.json`
+
+**Required Epoch Fields:**
+- `epoch_id` - Scopes all ledger/corpus entries to this run
+- `repo_sha` - Git SHA for reproducibility
+- `runner_sha` - Gnosis codebase version
+- `brd_hash` - BRD content hash for determinism
 
 ---
 
@@ -17,13 +37,17 @@ TRACK_A_PHASE=A3 npm run verify:track-milestone
 - [ ] Cross-store parity confirmed
 
 ### 2. Ledger Delta Coverage
-- [ ] N/A (no dedicated ledger-delta verifier yet)
-- [ ] Manual check (A3 run): confirm `shadow-ledger/ledger.jsonl` contains CREATE/UPDATE entries for R18/R19 and DECISION entries for TDD_COHERENCE_OK / TDD_COHERENCE_MISMATCH / ORPHAN outcomes
+- [ ] Ledger path: `shadow-ledger/{project_id}/ledger.jsonl`
+- [ ] Entries contain `epoch_id` field (V11+ requirement)
+- [ ] Contains CREATE/UPDATE entries for R18/R19 with epoch scoping
+- [ ] Contains DECISION entries for TDD_COHERENCE_OK / TDD_COHERENCE_MISMATCH / ORPHAN outcomes
 - [ ] Confirm no NO-OP entries were logged (A3 requirement)
 - [ ] Confirm `project_id` present on entries (multi-tenant isolation)
 - [ ] Confirm deterministic IDs: `relationship_instance_id` / `signal_instance_id` stable across a rerun
 
 ### 3. Semantic Corpus Verification
+- [ ] Corpus path: `semantic-corpus/{project_id}/signals.jsonl`
+- [ ] Signals contain `epoch_id` field (V11+ requirement)
 - [ ] If orphans exist: corpus contains ORPHAN_MARKER signals with deterministic `signal_instance_id`
 - [ ] OR: Proof that orphan count = 0
 - [ ] Replay check: rerun A3 on same snapshot/project and confirm no duplicate ORPHAN_MARKER signals (idempotent upsert)
@@ -33,6 +57,13 @@ TRACK_A_PHASE=A3 npm run verify:track-milestone
 npm run verify:scripts-boundary
 ```
 - [ ] Passes with exit 0 (or only documented @g-api-exception files skipped)
+
+### 5. Epoch Metadata Verification
+- [ ] Epoch file exists at `shadow-ledger/{project_id}/epochs/{epoch_id}.json`
+- [ ] Epoch status is `completed`
+- [ ] Computed counts match actual ledger/corpus entries for this epoch
+- [ ] `brd_hash` format is `sha256:<64hex>`
+- [ ] `repo_sha` and `runner_sha` are 40 hex characters
 
 ---
 
@@ -53,6 +84,7 @@ npm run verify:scripts-boundary
 | Ledger Delta Coverage | [x] PASS | Cursor | 2025-12-25 |
 | Semantic Corpus | [x] PASS | Cursor | 2025-12-25 |
 | G-API Boundary | [x] PASS | Cursor | 2025-12-25 |
+| Epoch Metadata | [x] PASS | Cursor | 2025-12-28 |
 
 **A3 SI-Ready:** [x] YES
 
@@ -62,6 +94,17 @@ npm run verify:scripts-boundary
 - **Ledger**: 40 R18/R19 CREATE, 62 TDD_COHERENCE_OK/MISMATCH, 22 ORPHAN decisions, 0 NO-OP
 - **Corpus**: 22 ORPHAN_MARKER signals (matches 22 ORPHAN decisions ✓)
 - **G-API**: Clean (1 documented legacy exception)
+- **Epoch**: `30bc998d-91e0-413b-bfb5-1546e1350be0` with 38 decisions logged
+
+### Canonical Epoch Evidence
+
+```
+Epoch ID:    30bc998d-91e0-413b-bfb5-1546e1350be0
+Repo SHA:    76800f245665a7e49a58309e1275764c4010ab72
+BRD Hash:    sha256:843de848ee9838dd8070313d43cd61a0d1c81ea5327625b5aed65cecd6a55d74
+Status:      completed
+Decisions:   38 (3 ORPHAN + 35 TDD_COHERENCE_OK)
+```
 
 ### Replay Check (Idempotency Proof)
 
@@ -82,4 +125,3 @@ Corpus: 22 ORPHAN_MARKER before and after (idempotent)
 ---
 
 *This checkpoint may run fresh extraction depending on `verify:track-milestone` implementation; it does not require a full manual re-extraction workflow.*
-

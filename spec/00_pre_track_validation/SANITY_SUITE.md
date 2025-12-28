@@ -3,7 +3,7 @@
 **Version:** 1.5.3  
 **Implements:** Verification Spec V20.6.5 Part II  
 **Purpose:** Foundational tests that must pass before any track begins  
-**Canonical Source:** UNIFIED_VERIFICATION_SPECIFICATION_V20_6_5.md §Part II
+**Canonical Source:** UNIFIED_VERIFICATION_SPECIFICATION_V20_6_6.md §Part II
 
 > **v1.5.3:** Add SANITY-053/054 (Marker Governance - AC/Story marker integrity)
 > **v1.5.2:** Fix E49/E50 evidence anchors (line_start=1, not 0) + document AMB-5 git entity strategy
@@ -129,7 +129,7 @@ test('SANITY-011: UTG Schema document exists', () => {
 // @implements SANITY-012
 
 test('SANITY-012: Verification Spec document exists', () => {
-  const path = 'docs/UNIFIED_VERIFICATION_SPECIFICATION_V20_6_5.md';
+  const path = 'docs/UNIFIED_VERIFICATION_SPECIFICATION_V20_6_6.md';
   expect(fs.existsSync(path)).toBe(true);
 });
 ```
@@ -172,7 +172,7 @@ test('SANITY-016: All canonical docs have valid version headers', () => {
   const docs = [
     { path: 'docs/BRD_V20_6_4_COMPLETE.md', expected: '20.6.4' },
     { path: 'docs/UNIFIED_TRACEABILITY_GRAPH_SCHEMA_V20_6_1.md', expected: '20.6.1' },
-    { path: 'docs/UNIFIED_VERIFICATION_SPECIFICATION_V20_6_5.md', expected: '20.6.5' },
+    { path: 'docs/UNIFIED_VERIFICATION_SPECIFICATION_V20_6_6.md', expected: '20.6.5' },
     { path: 'docs/GNOSIS_TO_SOPHIA_MASTER_ROADMAP_V20_6_4.md', expected: '20.6.4' },
   ];
   

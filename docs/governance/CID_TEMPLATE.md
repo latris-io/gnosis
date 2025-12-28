@@ -41,7 +41,7 @@ Justification: [why this change is needed]
 CID-2025-001: Fix version drift in organ docs
 
 Organ Doc(s): GNOSIS_TO_SOPHIA_MASTER_ROADMAP_V20_6_4.md,
-              UNIFIED_VERIFICATION_SPECIFICATION_V20_6_5.md
+              UNIFIED_VERIFICATION_SPECIFICATION_V20_6_6.md
 Change Type: cosmetic
 Impact: none
 
@@ -66,3 +66,4 @@ ORGAN_VERSIONING_RULES.md Rule 1
 ---
 
 **END OF CID_TEMPLATE V1.0.0**
+

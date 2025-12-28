@@ -208,20 +208,24 @@ All `@satisfies AC-*` and `@implements STORY-*` markers must resolve to entities
 
 ### Shadow Ledger
 
-- [x] Shadow ledger file exists at `shadow-ledger/ledger.jsonl`
+- [x] Shadow ledger file exists at `shadow-ledger/{project_id}/ledger.jsonl`
 - [x] Ledger contains entries for all entity creations
 - [ ] Ledger contains entries for all relationship creations *(A2)*
 - [ ] All relationship rows have evidence anchors (SANITY-045) *(A2)*
 - [ ] Ledger contains entries for pipeline start/complete *(A5)*
 - [x] Entry count: **10** entries *(A1 verified 2025-12-16)*
+- [x] Epoch metadata exists at `shadow-ledger/{project_id}/epochs/{epoch_id}.json` *(V2.0)*
+
+> **Epoch Note (V2.0):** Ledger entries are scoped to execution epochs for auditability and replay safety. New entries include `epoch_id`, `repo_sha`, `runner_sha`, `brd_hash`. See UVS §8.1.4 for epoch semantics.
 
 ### Semantic Learning
 
-- [x] Semantic corpus exists at `semantic-corpus/signals.jsonl`
+- [x] Semantic corpus exists at `semantic-corpus/{project_id}/signals.jsonl`
 - [x] Minimum 50 signals captured during Track A
 - [x] Signal types include: CORRECT, INCORRECT, PARTIAL, ORPHAN_MARKER, AMBIGUOUS
 - [x] Signal count: **17,063** signals *(A1 verified 2025-12-16, must be ≥50)*
 - [x] `captureSemanticSignal()` function operational
+- [x] Corpus signals include `epoch_id` for provenance *(V2.0)*
 
 > **Governance Note (V1.2.2):** Track A may legitimately produce CORRECT-only signals when extraction is functioning correctly. Signal type diversity is **not a Track A exit requirement** and is expected to emerge in A3/A4 marker extraction. Signal diversity is **required for Track C entry**.
 

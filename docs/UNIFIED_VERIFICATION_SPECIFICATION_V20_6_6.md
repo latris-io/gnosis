@@ -1,7 +1,7 @@
 # Unified Verification Specification
 
-**Version:** 20.6.5 (Marker Governance Edition)  
-**Date:** December 17, 2025  
+**Version:** 20.6.6 (Epoch Documentation Edition)  
+**Date:** December 28, 2025  
 **Status:** Authoritative Verification Reference  
 **Scope:** Complete verification for Gnosis → Sophia (67 Base Entities + Extensions, 114 Relationships, 21 Gates, 4 Tracks, 9 Track D Stories)
 **Companion Documents:**
@@ -10,6 +10,24 @@
 - GNOSIS_TO_SOPHIA_MASTER_ROADMAP_V20_6_4.md
 - CURSOR_IMPLEMENTATION_PLAN_V20_8_5.md (implements V20.6.4)
 - EP-D-002_RUNTIME_RECONCILIATION_V20_6_1.md
+
+---
+
+## What's New in V20.6.6
+
+This version adds **Execution Epoch Documentation** — a non-normative operational definition for the epoch construct used to scope ledger/corpus entries.
+
+### Key Changes
+
+| Change | Description | Impact |
+|--------|-------------|--------|
+| **§8.1.4** | Execution Epochs (Non-Normative Operational Definition) added | Epoch semantics documented |
+| **Epoch Fields** | `epoch_id`, `repo_sha`, `runner_sha`, `brd_hash` defined | Ledger schema extension |
+| **Replay Invariant** | Same (project_id, repo_sha) = reproducible outputs | Determinism guarantee |
+| **Track B/C/D Rules** | Concrete epoch usage rules per track | Implementation guidance |
+| **API Contract** | epoch_id is internal-only | API boundary |
+
+**Note:** Epochs are NOT traceability entities. They are operational metadata for auditability and replay. No new E-codes, R-codes, or gates.
 
 ---
 
@@ -1850,7 +1868,110 @@ The shadow ledger provides a tamper-evident audit trail of all graph operations.
 - RULE-LEDGER-042: If VIOLATION, `violation_details` required (ERROR)
 - RULE-LEDGER-043: If `escalation_required`, `escalation_level` required (ERROR)
 
-### 8.1.4 Shadow Ledger Migration Protocol (Track B)
+### 8.1.4 Execution Epochs (Non-Normative Operational Definition)
+
+> **Non-Normative Operational Definition**
+>
+> The execution epoch is an operational construct used to scope ledger entries, corpus signals, and decisions to a single extraction run.
+> It is **not** a traceability entity, semantic artifact, or correctness signal.
+
+#### Purpose
+
+Epochs enable:
+- **Auditability** — Ledger entries from different runs are distinguishable
+- **Replay Safety** — Same `(project_id, repo_sha)` should produce identical outputs
+- **Temporal Comparison** — Compare extraction outputs across runs for drift detection
+
+#### Epoch Fields in Ledger Entries
+
+New ledger entries (post-V11 implementation) MUST include:
+
+| Field | Format | Description |
+|-------|--------|-------------|
+| `epoch_id` | UUID | Unique identifier for the extraction run |
+| `repo_sha` | 40 hex chars | Git SHA of repository at extraction time |
+| `runner_sha` | 40 hex chars | Git SHA of Gnosis codebase |
+| `brd_hash` | `sha256:<64hex>` | SHA-256 hash of BRD content |
+
+#### Epoch Field Requirements
+
+- **New entries** (created after V11 implementation) MUST include `epoch_id`, `repo_sha`, `runner_sha`, `brd_hash`.
+- **Legacy entries** (pre-V11) may exist without epoch fields and are treated as historical artifacts, not invalidations.
+- Gates and verification checks MUST NOT fail solely because legacy entries lack epoch fields.
+
+#### Epoch Metadata Files
+
+Each extraction run produces an epoch metadata file at:
+
+```
+shadow-ledger/{project_id}/epochs/{epoch_id}.json
+```
+
+**Schema:**
+```json
+{
+  "epoch_id": "uuid",
+  "project_id": "uuid",
+  "repo_sha": "40 hex chars",
+  "runner_sha": "40 hex chars",
+  "brd_hash": "sha256:64 hex chars",
+  "started_at": "ISO 8601",
+  "completed_at": "ISO 8601 or null",
+  "status": "running | completed | failed",
+  "entities_created": 0,
+  "entities_updated": 0,
+  "relationships_created": 0,
+  "relationships_updated": 0,
+  "decisions_logged": 0,
+  "signals_captured": 0
+}
+```
+
+> Epoch metadata files are **append-only evidence artifacts**.
+> They are not authoritative sources of correctness and must not be mutated post-completion.
+
+#### Replay Invariant
+
+For a given `(project_id, repo_sha)`:
+- Extraction SHOULD produce identical entity/relationship instance_ids
+- Ledger entries SHOULD have identical content_hash values
+- This is a reproducibility guarantee, NOT a correctness claim
+
+#### What Epochs Are NOT
+
+| Epochs Are NOT | Because |
+|----------------|---------|
+| Traceability entities (E-codes) | They are operational metadata, not domain concepts |
+| Relationships (R-codes) | They scope entries, not connect entities |
+| Correctness signals | Reproducibility ≠ correctness |
+| Verification gates | Epoch completion is not a pass/fail criterion |
+
+#### Explicit Non-Goal: Epoch-Level Success Criteria
+
+No track, gate, or checkpoint may require:
+- A minimum number of epochs
+- A "successful epoch" threshold
+- Comparison of epoch counts as a quality signal
+
+**Epochs exist solely to scope evidence, not to evaluate it.**
+
+#### Post-A3 Track Usage
+
+| Track | Epoch Usage | Concrete Rule |
+|-------|-------------|---------------|
+| B | Drift comparisons | MUST specify `{project_id, repo_sha, epoch_id}` scoping |
+| C | Semantic signal provenance | MUST cite `epoch_id` in evidence anchors |
+| D | Audit trail | Exports MUST include `epoch_id` for temporal ordering |
+
+#### API/Artifact Contract (Internal Only)
+
+`epoch_id` is internal audit provenance and MUST NOT be exposed in public APIs.
+
+**Allowed surfaces:** Evidence packets, internal admin/debug endpoints, logs/audit exports, ledger/corpus files
+
+**Forbidden surfaces:** Public Graph API responses, user-facing dashboards, external webhooks
+
+### 8.1.5 Shadow Ledger Migration Protocol (Track B)
 
 **Purpose:** Migrate external ledger to graph, establishing Gnosis as oracle.
 
@@ -1903,7 +2024,7 @@ SHADOW LEDGER MIGRATION PROTOCOL
    - Confirm no data loss
 ```
 
-### 8.1.5 Tamper-Evidence Requirements
+### 8.1.6 Tamper-Evidence Requirements
 
 | Track | Tamper-Evidence |
 |-------|-----------------|

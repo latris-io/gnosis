@@ -129,7 +129,7 @@ These documents define truth. Do not contradict them. Do not modify them without
 |----------|----------|---------|
 | BRD | `docs/BRD_V20_6_4_COMPLETE.md` | Requirements source |
 | UTG Schema | `docs/UNIFIED_TRACEABILITY_GRAPH_SCHEMA_V20_6_1.md` | Entity/relationship definitions |
-| Verification Spec | `docs/UNIFIED_VERIFICATION_SPECIFICATION_V20_6_5.md` | Gates and test requirements |
+| Verification Spec | `docs/UNIFIED_VERIFICATION_SPECIFICATION_V20_6_6.md` | Gates and test requirements |
 | Roadmap | `docs/GNOSIS_TO_SOPHIA_MASTER_ROADMAP_V20_6_4.md` | Track sequencing |
 | Cursor Plan | `docs/CURSOR_IMPLEMENTATION_PLAN_V20_8_5.md` | Implementation constraints |
 | EP-D-002 | `docs/integrations/EP-D-002_RUNTIME_RECONCILIATION_V20_6_1.md` | Runtime (DORMANT until D.9) |

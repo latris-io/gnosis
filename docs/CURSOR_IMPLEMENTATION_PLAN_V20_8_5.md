@@ -91,7 +91,7 @@ All implementation specs derive from these authoritative sources:
 |----------|---------|----------|---------|
 | **BRD** | V20.6.4 | `docs/BRD_V20_6_4_COMPLETE.md` | WHAT (requirements) |
 | **UTG Schema** | V20.6.1 | `docs/UNIFIED_TRACEABILITY_GRAPH_SCHEMA_V20_6_1.md` | HOW (schema) |
-| **Verification Spec** | V20.6.4 | `docs/UNIFIED_VERIFICATION_SPECIFICATION_V20_6_5.md` | PROOF (extraction rules, gates, tests) |
+| **Verification Spec** | V20.6.4 | `docs/UNIFIED_VERIFICATION_SPECIFICATION_V20_6_6.md` | PROOF (extraction rules, gates, tests) |
 | **Roadmap** | V20.6.4 | `docs/GNOSIS_TO_SOPHIA_MASTER_ROADMAP_V20_6_4.md` | WHEN (execution plan) |
 | **This Document** | V20.8.5 | `docs/CURSOR_IMPLEMENTATION_PLAN_V20_8_5.md` | HOW TO EXECUTE |
 | **EP-D-002** | V20.6.1 | `docs/integrations/EP-D-002_RUNTIME_RECONCILIATION_V20_6_1.md` | Runtime Reconciliation spec |
@@ -159,6 +159,8 @@ AC-39.5.8: Vector store namespaced per project
 | C | Graph-based | — |
 | D | Graph-based | — |
 | Sophia | Graph + cryptographic hash chain | — |
+
+**Epoch Scoping:** Each extraction run is bounded by an epoch (see UVS §8.1.4). Ledger entries include `epoch_id`, `repo_sha`, `runner_sha`, `brd_hash` for auditability and replay safety. Epochs are operational metadata, not traceability entities.
 
 ### G-API Boundary (from Verification Spec §8.3)
 
@@ -532,7 +534,7 @@ gnosis/
 ├── docs/                                    # Canonical documents (read-only reference)
 │   ├── BRD_V20_6_4_COMPLETE.md
 │   ├── UNIFIED_TRACEABILITY_GRAPH_SCHEMA_V20_6_1.md
-│   ├── UNIFIED_VERIFICATION_SPECIFICATION_V20_6_5.md
+│   ├── UNIFIED_VERIFICATION_SPECIFICATION_V20_6_6.md
 │   ├── GNOSIS_TO_SOPHIA_MASTER_ROADMAP_V20_6_4.md
 │   ├── CURSOR_IMPLEMENTATION_PLAN_V20_8_0.md
 │   └── integrations/
@@ -628,9 +630,14 @@ gnosis/
 │   └── verification/
 │
 ├── shadow-ledger/                           # External shadow ledger (Track A/B)
-│   └── ledger.jsonl
+│   └── {project_id}/
+│       ├── ledger.jsonl                     # Per-project, epoch-scoped entries
+│       └── epochs/                          # Epoch metadata files
+│           └── {epoch_id}.json
 │
 ├── semantic-corpus/                         # Semantic signals
+│   └── {project_id}/
+│       └── signals.jsonl                    # Per-project, epoch-scoped signals
 │   └── signals.jsonl
 │
 ├── migrations/                              # Database migrations

@@ -35,7 +35,7 @@
 |---|----------|------|---------|
 | 1 | Business Requirements Document | `docs/BRD_V20_6_4_COMPLETE.md` | V20.6.4 |
 | 2 | Unified Traceability Graph Schema | `docs/UNIFIED_TRACEABILITY_GRAPH_SCHEMA_V20_6_1.md` | V20.6.1 |
-| 3 | Unified Verification Specification | `docs/UNIFIED_VERIFICATION_SPECIFICATION_V20_6_5.md` | V20.6.5 |
+| 3 | Unified Verification Specification | `docs/UNIFIED_VERIFICATION_SPECIFICATION_V20_6_6.md` | V20.6.5 |
 | 4 | Gnosis → Sophia Master Roadmap | `docs/GNOSIS_TO_SOPHIA_MASTER_ROADMAP_V20_6_4.md` | V20.6.4 |
 | 5 | Cursor Implementation Plan | `docs/CURSOR_IMPLEMENTATION_PLAN_V20_8_5.md` | V20.8.5 |
 | 6 | Extension Protocols | `docs/integrations/EP-*.md` | V20.6.1 |
