@@ -7,10 +7,38 @@
   "started_at": "2025-12-28T03:45:17.548Z",
   "completed_at": "2025-12-28T03:45:50.488Z",
   "status": "completed",
+  
+  "_counts_derivation": "Computed by streaming project ledger and filtering entry.epoch_id == this.epoch_id",
+  
   "entities_created": 0,
   "entities_updated": 0,
   "relationships_created": 0,
   "relationships_updated": 4,
   "decisions_logged": 38,
-  "signals_captured": 0
+  "signals_captured": 0,
+  
+  "_signals_note": "0 signals expected in A3 when no ORPHAN_MARKER or TDD_COHERENCE_MISMATCH corpus entries are emitted (all markers valid or logged as DECISION)",
+  
+  "orphans_logged": 3,
+  "_orphan_breakdown": {
+    "classification": "EXPECTED - files created after last A1 extraction",
+    "by_source_file": {
+      "src/extraction/evidence-path.ts": 2,
+      "src/ledger/epoch-service.ts": 1
+    },
+    "reason": "Source entity FILE-* not found in entity registry",
+    "fix": "Re-run A1 extraction to pick up new E11 entities"
+  },
+  
+  "_decision_breakdown": {
+    "ORPHAN": 3,
+    "TDD_COHERENCE_OK": 35
+  },
+  
+  "_jq_proof": {
+    "total_entries": "jq -c 'select(.epoch_id==\"30bc998d-91e0-413b-bfb5-1546e1350be0\")' ledger.jsonl | wc -l → 42",
+    "decision_count": "jq -c 'select(.epoch_id==... and .operation==\"DECISION\")' | wc -l → 38",
+    "relationship_update_count": "jq -c 'select(.epoch_id==... and .operation==\"UPDATE\" and .kind==\"relationship\")' | wc -l → 4",
+    "verification": "42 = 38 + 4 ✓"
+  }
 }
