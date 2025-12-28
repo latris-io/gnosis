@@ -8,7 +8,7 @@
 
 import { createHash } from 'crypto';
 import { pool, setProjectContext, getClient } from '../../db/postgres.js';
-import { shadowLedger } from '../../ledger/shadow-ledger.js';
+import { getProjectLedger } from '../../ledger/shadow-ledger.js';
 import { createEvidenceAnchor } from '../../extraction/evidence.js';
 import type { Entity, EntityTypeCode } from '../../schema/track-a/entities.js';
 import type { ExtractedEntity, EvidenceAnchor } from '../../extraction/types.js';
@@ -137,8 +137,9 @@ export async function upsert(
     const operation = row.inserted ? 'CREATE' : 'UPDATE';
 
     // Log to shadow ledger only on CREATE/UPDATE (never on NO-OP)
+    const ledger = getProjectLedger(projectId);
     if (operation === 'CREATE') {
-      await shadowLedger.logCreate(
+      await ledger.logCreate(
         entity.entity_type,
         entity.id,
         entity.instance_id,
@@ -147,7 +148,7 @@ export async function upsert(
         projectId
       );
     } else {
-      await shadowLedger.logUpdate(
+      await ledger.logUpdate(
         entity.entity_type,
         entity.id,
         entity.instance_id,

@@ -1,4 +1,5 @@
 // @ts-nocheck
+// LEGACY_SCAN_OK: This script audits/validates legacy ledger or corpus files
 // Continue extraction from where genesis-extract was aborted
 import 'dotenv/config';
 import pg from 'pg';

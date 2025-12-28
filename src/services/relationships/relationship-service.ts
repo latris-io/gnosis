@@ -14,7 +14,7 @@
 
 import { createHash } from 'crypto';
 import { pool, setProjectContext, getClient } from '../../db/postgres.js';
-import { shadowLedger } from '../../ledger/shadow-ledger.js';
+import { getProjectLedger } from '../../ledger/shadow-ledger.js';
 import { createEvidenceAnchor } from '../../extraction/evidence.js';
 import { syncRelationshipsToNeo4j, syncEntitiesToNeo4j } from '../sync/sync-service.js';
 import type { Relationship, RelationshipTypeCode } from '../../schema/track-a/relationships.js';
@@ -220,8 +220,9 @@ export async function upsert(
     const operation = row.inserted ? 'CREATE' : 'UPDATE';
 
     // Log to shadow ledger only on CREATE/UPDATE (never on NO-OP)
+    const ledger = getProjectLedger(projectId);
     if (operation === 'CREATE') {
-      await shadowLedger.logRelationshipCreate(
+      await ledger.logRelationshipCreate(
         relationship.relationship_type,
         relationship.id,
         relationship.instance_id,
@@ -230,7 +231,7 @@ export async function upsert(
         projectId
       );
     } else {
-      await shadowLedger.logRelationshipUpdate(
+      await ledger.logRelationshipUpdate(
         relationship.relationship_type,
         relationship.id,
         relationship.instance_id,
@@ -576,11 +577,12 @@ export async function batchUpsert(
     }
 
     // Step 7: Batch log to shadow ledger (fire-and-forget for performance)
+    const ledger = getProjectLedger(projectId);
     for (const log of createLogs) {
-      await shadowLedger.logRelationshipCreate(log.type, log.id, log.instanceId, log.hash, log.evidence, projectId);
+      await ledger.logRelationshipCreate(log.type, log.id, log.instanceId, log.hash, log.evidence, projectId);
     }
     for (const log of updateLogs) {
-      await shadowLedger.logRelationshipUpdate(log.type, log.id, log.instanceId, log.hash, log.evidence, projectId);
+      await ledger.logRelationshipUpdate(log.type, log.id, log.instanceId, log.hash, log.evidence, projectId);
     }
 
     return results;

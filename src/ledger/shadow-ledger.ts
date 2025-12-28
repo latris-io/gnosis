@@ -3,6 +3,7 @@
 // @implements STORY-64.3
 // @tdd TDD-A1-ENTITY-REGISTRY
 // @tdd TDD-A3-MARKER-EXTRACTION
+// LEGACY_OK: This module contains migration documentation for removed singleton
 //
 // Append-only JSONL ledger for entity CREATE/UPDATE operations
 // and DECISION entries for non-mutation outcomes (A3 marker extraction)
@@ -26,6 +27,19 @@
 // - DECISION entries are idempotent by (project_id, marker_target, source_entity)
 //
 // ═══════════════════════════════════════════════════════════════════════════
+// EPOCH SEMANTICS (V11)
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// Each ledger entry includes epoch_id and repo_sha for:
+// - Epoch binding: entries tied to specific extraction run
+// - Reproducibility: same (project_id, repo_sha) produces same entries
+// - Duplicate detection: scoped to epoch (in-memory Set)
+//
+// Duplicate CREATE policy:
+// - Within an epoch: FORBIDDEN for same (kind, entity_type, instance_id)
+// - Across epochs: ALLOWED (represents re-extraction)
+//
+// ═══════════════════════════════════════════════════════════════════════════
 // PROJECT ISOLATION
 // ═══════════════════════════════════════════════════════════════════════════
 //
@@ -40,6 +54,7 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import type { EvidenceAnchor } from '../extraction/types.js';
+import { getCurrentEpoch, isDuplicateCreate, recordCreate } from './epoch-service.js';
 
 /**
  * Ledger entry operations - CREATE, UPDATE, or DECISION.
@@ -64,17 +79,24 @@ export type DecisionType = 'ORPHAN' | 'TDD_COHERENCE_OK' | 'TDD_COHERENCE_MISMAT
 
 /**
  * A shadow ledger entry captures the provenance of an entity mutation.
+ * 
+ * V11 changes:
+ * - `kind` is now REQUIRED (was optional)
+ * - Added `epoch_id` for epoch binding
+ * - Added `repo_sha` for reproducibility
  */
 export interface LedgerEntry {
   timestamp: string;          // ISO 8601 timestamp
   operation: LedgerOperation;
-  kind?: LedgerEntryKind;     // 'entity' | 'relationship' | 'decision'
+  kind: LedgerEntryKind;      // REQUIRED: 'entity' | 'relationship' | 'decision'
   entity_type: string;        // E-code (E01, E02, etc.) or R-code for relationships
   entity_id: string;          // UUID of the entity or relationship
   instance_id: string;        // Business key (EPIC-1, STORY-1.1, R01:..., etc.)
   content_hash: string;       // SHA-256 hash of content
   evidence: EvidenceAnchor;
   project_id: string;
+  epoch_id?: string;          // Epoch ID for run binding (optional for backward compat)
+  repo_sha?: string;          // Git SHA for reproducibility (optional for backward compat)
 }
 
 /**
@@ -105,6 +127,7 @@ export class ShadowLedger {
   private readonly ledgerPath: string;
   private initialized = false;
 
+  // LEGACY_OK: Default path for backward compat - factory functions use project-scoped paths
   constructor(ledgerPath: string = 'shadow-ledger/ledger.jsonl') {
     this.ledgerPath = ledgerPath;
   }
@@ -130,13 +153,38 @@ export class ShadowLedger {
   /**
    * Append an entry to the ledger.
    * Only called on actual CREATE/UPDATE - never on NO-OP.
+   * 
+   * V11 changes:
+   * - `kind` is REQUIRED - throws if missing
+   * - Duplicate CREATE detection within epoch (for 'entity' and 'relationship' kinds)
+   * - Adds epoch_id and repo_sha from current epoch if available
    */
   async append(entry: Omit<LedgerEntry, 'timestamp'>): Promise<void> {
     await this.initialize();
 
+    // Enforce `kind` is required
+    if (!entry.kind) {
+      throw new Error('LedgerEntry.kind is required. Must be "entity", "relationship", or "decision".');
+    }
+
+    // Duplicate CREATE detection (scoped to current epoch)
+    if (entry.operation === 'CREATE' && (entry.kind === 'entity' || entry.kind === 'relationship')) {
+      if (isDuplicateCreate(entry.kind, entry.entity_type, entry.instance_id)) {
+        throw new Error(
+          `Duplicate CREATE in epoch: ${entry.kind}:${entry.entity_type}:${entry.instance_id}`
+        );
+      }
+      recordCreate(entry.kind, entry.entity_type, entry.instance_id);
+    }
+
+    // Get epoch context if available
+    const epoch = getCurrentEpoch();
+
     const fullEntry: LedgerEntry = {
       ...entry,
       timestamp: new Date().toISOString(),
+      epoch_id: epoch?.epoch_id,
+      repo_sha: epoch?.repo_sha,
     };
 
     const line = JSON.stringify(fullEntry) + '\n';
@@ -144,7 +192,7 @@ export class ShadowLedger {
   }
 
   /**
-   * Log a CREATE operation.
+   * Log a CREATE operation for an entity.
    */
   async logCreate(
     entityType: string,
@@ -156,6 +204,7 @@ export class ShadowLedger {
   ): Promise<void> {
     await this.append({
       operation: 'CREATE',
+      kind: 'entity',
       entity_type: entityType,
       entity_id: entityId,
       instance_id: instanceId,
@@ -166,7 +215,7 @@ export class ShadowLedger {
   }
 
   /**
-   * Log an UPDATE operation.
+   * Log an UPDATE operation for an entity.
    */
   async logUpdate(
     entityType: string,
@@ -178,6 +227,7 @@ export class ShadowLedger {
   ): Promise<void> {
     await this.append({
       operation: 'UPDATE',
+      kind: 'entity',
       entity_type: entityType,
       entity_id: entityId,
       instance_id: instanceId,
@@ -343,7 +393,42 @@ export function clearProjectLedgerCache(): void {
   projectLedgers.clear();
 }
 
-// Legacy singleton instance (uses flat structure)
-// DEPRECATED: Use getProjectLedger(projectId) for new code
-export const shadowLedger = new ShadowLedger();
+/**
+ * Get the ledger path for a project.
+ * 
+ * @param projectId - The project UUID
+ * @returns The path to the project's ledger file
+ */
+export function getLedgerPath(projectId: string): string {
+  if (!projectId) {
+    throw new Error('projectId is required for getLedgerPath');
+  }
+  return `shadow-ledger/${projectId}/ledger.jsonl`;
+}
+
+/**
+ * Get the legacy ledger archive path (for migration/audit purposes).
+ * LEGACY_OK: This function is explicitly for accessing legacy files during migration.
+ */
+export function getLegacyLedgerArchivePath(): string {
+  return 'shadow-ledger/archive/ledger.jsonl';
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// LEGACY SINGLETON REMOVED (V11)
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// LEGACY_OK: Documentation of removed singleton
+// The shadowLedger singleton has been REMOVED.
+// Use getProjectLedger(projectId) for all new code.
+//
+// Migration:
+//   BEFORE: import { shadowLedger } from './shadow-ledger.js';
+//           await shadowLedger.logCreate(...);
+//
+//   AFTER:  import { getProjectLedger } from './shadow-ledger.js';
+//           const ledger = getProjectLedger(projectId);
+//           await ledger.logCreate(...);
+//
+// ═══════════════════════════════════════════════════════════════════════════
 

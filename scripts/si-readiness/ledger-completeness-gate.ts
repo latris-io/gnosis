@@ -1,4 +1,5 @@
 // @ts-nocheck
+// LEGACY_SCAN_OK: This script audits/validates legacy ledger or corpus files
 // Ledger Completeness Gate
 // Verifies the invariant: COUNT(entities) + COUNT(relationships) == unique ledger entries
 // Plus type-level coverage checks for Track B readiness

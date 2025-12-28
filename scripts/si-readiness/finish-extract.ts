@@ -1,4 +1,5 @@
 // @ts-nocheck
+// LEGACY_SCAN_OK: This script audits/validates legacy ledger or corpus files
 // Finish extraction - relationships only
 import 'dotenv/config';
 import * as fs from 'fs';

@@ -6,6 +6,17 @@
 // Minimum 50 signals must be captured during A1 execution
 //
 // ═══════════════════════════════════════════════════════════════════════════
+// SCHEMA VERSION (V11)
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// Schema ID: SEMANTIC_SIGNAL_V2
+// Required fields for V2:
+// - schema_id: 'SEMANTIC_SIGNAL_V2' as const
+// - project_id: Project UUID for isolation
+// - repo_sha: Git SHA for epoch binding
+// - epoch_id: Epoch ID for run binding
+//
+// ═══════════════════════════════════════════════════════════════════════════
 // TRACK C PROVENANCE
 // ═══════════════════════════════════════════════════════════════════════════
 //
@@ -28,6 +39,7 @@
 
 import * as fs from 'fs/promises';
 import * as path from 'path';
+import { getCurrentEpoch } from './epoch-service.js';
 
 /**
  * Semantic signal types for Track C learning.
@@ -42,19 +54,32 @@ export type SignalType =
   | 'AMBIGUOUS';             // Multiple interpretations possible
 
 /**
+ * Schema ID for V2 signals.
+ * Used for schema validation in sanity tests.
+ */
+export const SEMANTIC_SIGNAL_SCHEMA_ID = 'SEMANTIC_SIGNAL_V2' as const;
+
+/**
  * A semantic signal captures an extraction validation outcome.
  * Used for Track C semantic learning readiness.
  * 
- * Track C provenance fields (project_id, repo_sha) are optional for
- * backward compatibility but SHOULD be provided for new signals.
+ * V2 SCHEMA (V11):
+ * - schema_id: Required for new signals (backward compat: optional)
+ * - project_id: Required for new signals (backward compat: optional)
+ * - repo_sha: Required for new signals (backward compat: optional)
+ * - epoch_id: Required for new signals (backward compat: optional)
  */
 export interface SemanticSignal {
   timestamp: string;          // ISO 8601 timestamp
   type: SignalType;
   
-  // Track C provenance (optional for backward compat, recommended for new signals)
+  // Schema version (V2 required, optional for backward compat)
+  schema_id?: typeof SEMANTIC_SIGNAL_SCHEMA_ID;
+  
+  // Track C provenance (V2 required, optional for backward compat)
   project_id?: string;        // Project UUID for isolation
   repo_sha?: string;          // Git SHA for epoch binding
+  epoch_id?: string;          // Epoch ID for run binding
   
   // Entity/marker identification
   entity_type?: string;       // E-code if applicable
@@ -77,6 +102,7 @@ export class SemanticCorpus {
   private readonly corpusPath: string;
   private initialized = false;
 
+  // LEGACY_OK: Default path for backward compat - factory functions use project-scoped paths
   constructor(corpusPath: string = 'semantic-corpus/signals.jsonl') {
     this.corpusPath = corpusPath;
   }
@@ -102,6 +128,10 @@ export class SemanticCorpus {
   /**
    * Capture a semantic signal.
    * Idempotent: signals with same signal_instance_id are deduplicated.
+   * 
+   * V11 changes:
+   * - Adds schema_id, epoch_id, repo_sha from current epoch if available
+   * - Deduplication by signal_instance_id
    */
   async capture(signal: Omit<SemanticSignal, 'timestamp'>): Promise<void> {
     await this.initialize();
@@ -120,9 +150,16 @@ export class SemanticCorpus {
       }
     }
 
+    // Get epoch context if available
+    const epoch = getCurrentEpoch();
+
     const fullSignal: SemanticSignal = {
       ...signal,
       timestamp: new Date().toISOString(),
+      schema_id: SEMANTIC_SIGNAL_SCHEMA_ID,
+      epoch_id: epoch?.epoch_id ?? signal.epoch_id,
+      repo_sha: epoch?.repo_sha ?? signal.repo_sha,
+      project_id: epoch?.project_id ?? signal.project_id,
     };
 
     const line = JSON.stringify(fullSignal) + '\n';
@@ -232,22 +269,42 @@ export function clearProjectCorpusCache(): void {
   projectCorpuses.clear();
 }
 
-// Legacy singleton instance (uses flat structure)
-// DEPRECATED: Use getProjectCorpus(projectId) for new code
-export const semanticCorpus = new SemanticCorpus();
+/**
+ * Get the corpus path for a project.
+ * 
+ * @param projectId - The project UUID
+ * @returns The path to the project's corpus file
+ */
+export function getCorpusPath(projectId: string): string {
+  if (!projectId) {
+    throw new Error('projectId is required for getCorpusPath');
+  }
+  return `semantic-corpus/${projectId}/signals.jsonl`;
+}
 
 /**
- * Helper function to capture a semantic signal.
- * Used throughout extraction for Track C readiness.
- * 
- * NOTE: For project-scoped signals, prefer getProjectCorpus(projectId).capture()
- * or use captureSemanticSignalWithProvenance() for automatic provenance.
+ * Get the legacy corpus archive path (for migration/audit purposes).
+ * LEGACY_OK: This function is explicitly for accessing legacy files during migration.
  */
-export async function captureSemanticSignal(
-  signal: Omit<SemanticSignal, 'timestamp'>
-): Promise<void> {
-  await semanticCorpus.capture(signal);
+export function getLegacyCorpusArchivePath(): string {
+  return 'semantic-corpus/archive/signals.jsonl';
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// LEGACY HELPER FUNCTIONS (Transitional)
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// These helper functions are provided for backward compatibility with
+// extraction providers that don't have project context.
+//
+// For project-scoped signals, use:
+//   const corpus = getProjectCorpus(projectId);
+//   await corpus.capture({ ... });
+//
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Default project ID for extraction signals (from environment)
+const DEFAULT_PROJECT_ID = process.env.PROJECT_ID || '6df2f456-440d-4958-b475-d9808775ff69';
 
 /**
  * Capture a semantic signal with full Track C provenance.
@@ -272,16 +329,19 @@ export async function captureSemanticSignalWithProvenance(
 
 /**
  * Capture a CORRECT signal for successful extraction.
+ * Uses default project from environment.
  */
 export async function captureCorrectSignal(
   entityType: string,
   instanceId: string,
   context: Record<string, unknown> = {}
 ): Promise<void> {
-  await captureSemanticSignal({
+  const corpus = getProjectCorpus(DEFAULT_PROJECT_ID);
+  await corpus.capture({
     type: 'CORRECT',
     entity_type: entityType,
     instance_id: instanceId,
+    project_id: DEFAULT_PROJECT_ID,
     context,
     evidence: { extraction_successful: true },
   });
@@ -289,6 +349,7 @@ export async function captureCorrectSignal(
 
 /**
  * Capture an INCORRECT signal for failed extraction.
+ * Uses default project from environment.
  */
 export async function captureIncorrectSignal(
   entityType: string,
@@ -296,10 +357,12 @@ export async function captureIncorrectSignal(
   reason: string,
   context: Record<string, unknown> = {}
 ): Promise<void> {
-  await captureSemanticSignal({
+  const corpus = getProjectCorpus(DEFAULT_PROJECT_ID);
+  await corpus.capture({
     type: 'INCORRECT',
     entity_type: entityType,
     instance_id: instanceId,
+    project_id: DEFAULT_PROJECT_ID,
     context: { ...context, reason },
     evidence: { extraction_successful: false },
   });
@@ -307,6 +370,7 @@ export async function captureIncorrectSignal(
 
 /**
  * Capture a PARTIAL signal for partially successful extraction.
+ * Uses default project from environment.
  */
 export async function capturePartialSignal(
   entityType: string,
@@ -314,10 +378,12 @@ export async function capturePartialSignal(
   matchPercentage: number,
   context: Record<string, unknown> = {}
 ): Promise<void> {
-  await captureSemanticSignal({
+  const corpus = getProjectCorpus(DEFAULT_PROJECT_ID);
+  await corpus.capture({
     type: 'PARTIAL',
     entity_type: entityType,
     instance_id: instanceId,
+    project_id: DEFAULT_PROJECT_ID,
     context: { ...context, match_percentage: matchPercentage },
     evidence: { partial_match: true },
   });
@@ -325,6 +391,7 @@ export async function capturePartialSignal(
 
 /**
  * Capture an ORPHAN_MARKER signal for markers without entities.
+ * Uses default project from environment.
  */
 export async function captureOrphanMarkerSignal(
   markerType: string,
@@ -332,10 +399,12 @@ export async function captureOrphanMarkerSignal(
   sourceFile: string,
   lineNumber: number
 ): Promise<void> {
-  await captureSemanticSignal({
+  const corpus = getProjectCorpus(DEFAULT_PROJECT_ID);
+  await corpus.capture({
     type: 'ORPHAN_MARKER',
     marker_type: markerType,
     target_id: targetId,
+    project_id: DEFAULT_PROJECT_ID,
     context: { source_file: sourceFile, line_number: lineNumber },
     evidence: { orphan: true },
   });
@@ -343,6 +412,7 @@ export async function captureOrphanMarkerSignal(
 
 /**
  * Capture an AMBIGUOUS signal for unclear extraction cases.
+ * Uses default project from environment.
  */
 export async function captureAmbiguousSignal(
   entityType: string,
@@ -350,10 +420,12 @@ export async function captureAmbiguousSignal(
   alternatives: string[],
   context: Record<string, unknown> = {}
 ): Promise<void> {
-  await captureSemanticSignal({
+  const corpus = getProjectCorpus(DEFAULT_PROJECT_ID);
+  await corpus.capture({
     type: 'AMBIGUOUS',
     entity_type: entityType,
     instance_id: instanceId,
+    project_id: DEFAULT_PROJECT_ID,
     context: { ...context, alternatives },
     evidence: { ambiguous: true },
   });

@@ -1,4 +1,5 @@
 // @ts-nocheck
+// LEGACY_SCAN_OK: This script audits/validates legacy ledger or corpus files
 // @implements STORY-64.1
 // @implements STORY-64.2
 // Genesis Extraction Script

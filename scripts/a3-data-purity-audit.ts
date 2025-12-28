@@ -1,4 +1,5 @@
 // scripts/a3-data-purity-audit.ts
+// LEGACY_SCAN_OK: This script audits/validates legacy ledger or corpus files
 // Phase 5: Data Purity Audit for A3 Validation
 // Note: Uses metaQuery for cross-project queries (G-API compliant)
 

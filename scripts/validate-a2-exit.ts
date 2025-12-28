@@ -1,4 +1,5 @@
 // scripts/validate-a2-exit.ts
+// LEGACY_SCAN_OK: This script audits/validates legacy ledger or corpus files
 // @implements STORY-64.2
 // A2 Relationship Registry Exit Validation
 // Hard-fail validator - NO skips, NO soft passes

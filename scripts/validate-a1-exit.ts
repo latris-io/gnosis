@@ -1,4 +1,5 @@
 // scripts/validate-a1-exit.ts
+// LEGACY_SCAN_OK: This script audits/validates legacy ledger or corpus files
 // A1 Entity Registry Exit Validation
 // Verifies all A1 exit criteria per spec/track_a/EXIT.md
 

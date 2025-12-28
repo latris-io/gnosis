@@ -1,4 +1,5 @@
 // @ts-nocheck
+// LEGACY_SCAN_OK: This script audits/validates legacy ledger or corpus files
 // Forensic analysis: identify E03 ledger gap
 import 'dotenv/config';
 import * as fs from 'fs';

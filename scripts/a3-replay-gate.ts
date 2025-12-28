@@ -1,4 +1,5 @@
 // scripts/a3-replay-gate.ts
+// LEGACY_SCAN_OK: This script audits/validates legacy ledger or corpus files
 // Phase 6: Replay Gate - prove idempotency
 
 import { rlsQuery } from '../test/utils/rls.js';

@@ -12,7 +12,7 @@ import { astProvider } from '../src/extraction/providers/ast-provider.js';
 import { gitProvider } from '../src/extraction/providers/git-provider.js';
 import { changesetProvider } from '../src/extraction/providers/changeset-provider.js';
 import { initProject, persistEntities, type UpsertResult } from '../src/ops/track-a.js';
-import { semanticCorpus, captureCorrectSignal, captureIncorrectSignal } from '../src/ledger/semantic-corpus.js';
+import { getProjectCorpus } from '../src/ledger/semantic-corpus.js';
 import type { RepoSnapshot, ExtractionProvider, ExtractedEntity } from '../src/extraction/types.js';
 import type { EntityTypeCode } from '../src/schema/track-a/entities.js';
 
@@ -97,6 +97,41 @@ async function main(): Promise<void> {
   }
 
   const projectId = project.id;
+  
+  // Get project-scoped corpus for signal capture
+  const corpus = getProjectCorpus(projectId);
+  
+  // Helper functions for signal capture
+  async function captureCorrectSignal(
+    entityType: string,
+    instanceId: string,
+    context: Record<string, unknown> = {}
+  ): Promise<void> {
+    await corpus.capture({
+      type: 'CORRECT',
+      entity_type: entityType,
+      instance_id: instanceId,
+      project_id: projectId,
+      context,
+      evidence: { extraction_successful: true },
+    });
+  }
+  
+  async function captureIncorrectSignal(
+    entityType: string,
+    instanceId: string,
+    reason: string,
+    context: Record<string, unknown> = {}
+  ): Promise<void> {
+    await corpus.capture({
+      type: 'INCORRECT',
+      entity_type: entityType,
+      instance_id: instanceId,
+      project_id: projectId,
+      context: { ...context, reason },
+      evidence: { extraction_successful: false },
+    });
+  }
 
   console.log(`Project: ${project.slug}`);
   console.log(`Project ID: ${project.id}`);
@@ -217,7 +252,7 @@ async function main(): Promise<void> {
   signalCount++;
 
   // Get actual signal count from corpus
-  const actualSignalCount = await semanticCorpus.getCount();
+  const actualSignalCount = await corpus.getCount();
 
   console.log('');
   console.log('=== SUMMARY ===');

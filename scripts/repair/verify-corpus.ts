@@ -1,4 +1,5 @@
 // @ts-nocheck
+// LEGACY_SCAN_OK: This script audits/validates legacy ledger or corpus files
 // Verify corpus references for newly inserted E03 entities
 import 'dotenv/config';
 import * as fs from 'fs';

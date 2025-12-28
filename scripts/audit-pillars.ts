@@ -38,6 +38,7 @@ interface SemanticSignal {
 const VALID_OPERATIONS = ['CREATE', 'UPDATE'];
 const VALID_SIGNAL_TYPES = ['CORRECT', 'INCORRECT', 'PARTIAL', 'ORPHAN_MARKER', 'AMBIGUOUS'];
 
+// AUDIT_ONLY: These paths are for auditing legacy data, not production use
 const LEDGER_PATH = 'shadow-ledger/ledger.jsonl';
 const CORPUS_PATH = 'semantic-corpus/signals.jsonl';
 
@@ -304,4 +305,5 @@ function main() {
 }
 
 main();
+
 

@@ -1,4 +1,5 @@
 // @ts-nocheck
+// LEGACY_SCAN_OK: This script audits/validates legacy ledger or corpus files
 // @implements STORY-64.1
 // Ledger Coverage Audit
 // Verifies 100% shadow ledger coverage for all Track A mutations

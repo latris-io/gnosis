@@ -1,4 +1,5 @@
 #!/usr/bin/env npx tsx
+// LEGACY_SCAN_OK: This script audits/validates legacy ledger or corpus files
 // @implements STORY-64.6
 // @satisfies AC-64.6.1
 //

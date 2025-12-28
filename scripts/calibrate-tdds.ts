@@ -20,7 +20,7 @@ import { rlsQuery } from '../test/utils/rls.js';
 import { discoverTDDs, parseFrontmatter, ParsedFrontmatter } from '../src/extraction/providers/tdd-frontmatter-provider.js';
 import { computeExpectedCounts } from '../src/extraction/providers/tdd-relationship-provider.js';
 import { persistEntities } from '../src/ops/track-a.js';
-import { shadowLedger } from '../src/ledger/shadow-ledger.js';
+import { getProjectLedger } from '../src/ledger/shadow-ledger.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
@@ -152,8 +152,10 @@ async function validateE08References(
           await persistEntities(projectId, [seedEntity]);
           
           // Log to shadow ledger
-          await shadowLedger.append({
-            operation: 'E08_SEED',
+          const projectLedger = getProjectLedger(projectId);
+          await projectLedger.append({
+            operation: 'CREATE',
+            kind: 'entity',
             entity_type: 'E08',
             entity_id: 'seeded',
             instance_id: entry.value,
@@ -464,4 +466,5 @@ main().catch(err => {
   console.error('FATAL:', err);
   process.exit(1);
 });
+
 

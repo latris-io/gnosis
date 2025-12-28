@@ -20,8 +20,8 @@
 
 import { MarkerProvider } from '../../extraction/providers/marker-provider.js';
 import { MarkerValidator } from '../../markers/validator.js';
-import { shadowLedger } from '../../ledger/shadow-ledger.js';
-import { captureSemanticSignal } from '../../ledger/semantic-corpus.js';
+import { getProjectLedger } from '../../ledger/shadow-ledger.js';
+import { getProjectCorpus } from '../../ledger/semantic-corpus.js';
 import * as relationshipService from '../../services/relationships/relationship-service.js';
 import type { RepoSnapshot, ExtractedRelationship } from '../../extraction/types.js';
 import type { 
@@ -77,11 +77,15 @@ export async function extractAndValidateMarkers(
     tdd_ok_count: 0,
   };
 
+  // Get project-scoped ledger and corpus
+  const ledger = getProjectLedger(projectId);
+  const corpus = getProjectCorpus(projectId);
+
   // 3. Process validated markers
   for (const marker of validated) {
     if (marker.type === 'tdd') {
       // @tdd is coherence-only - log decision, no relationship
-      await shadowLedger.logDecision({
+      await ledger.logDecision({
         decision: 'TDD_COHERENCE_OK',
         marker_type: marker.type,
         target_id: marker.target_id,
@@ -124,11 +128,12 @@ export async function extractAndValidateMarkers(
   // 4. Signal orphans to semantic corpus and log DECISION
   for (const orphan of orphans) {
     // Signal with deterministic ID for idempotent replay
-    await captureSemanticSignal({
+    await corpus.capture({
       type: 'ORPHAN_MARKER',
       marker_type: orphan.type,
       target_id: orphan.target_id,
       source_entity_id: orphan.source_entity_id,
+      project_id: projectId,
       context: {
         source_file: orphan.source_file,
         line_start: orphan.line_start,
@@ -142,7 +147,7 @@ export async function extractAndValidateMarkers(
     });
 
     // Log ORPHAN decision to shadow ledger
-    await shadowLedger.logDecision({
+    await ledger.logDecision({
       decision: 'ORPHAN',
       marker_type: orphan.type,
       target_id: orphan.target_id,
@@ -159,11 +164,12 @@ export async function extractAndValidateMarkers(
   for (const mismatch of tddMismatches) {
     // Signal with deterministic ID for idempotent replay
     // Use TDD_COHERENCE_MISMATCH type - distinct from ORPHAN_MARKER
-    await captureSemanticSignal({
+    await corpus.capture({
       type: 'TDD_COHERENCE_MISMATCH',
       marker_type: mismatch.type,
       target_id: mismatch.target_id,
       source_entity_id: mismatch.source_entity_id,
+      project_id: projectId,
       context: {
         source_file: mismatch.source_file,
         line_start: mismatch.line_start,
@@ -178,7 +184,7 @@ export async function extractAndValidateMarkers(
     });
 
     // Log TDD_COHERENCE_MISMATCH decision to shadow ledger
-    await shadowLedger.logDecision({
+    await ledger.logDecision({
       decision: 'TDD_COHERENCE_MISMATCH',
       marker_type: mismatch.type,
       target_id: mismatch.target_id,

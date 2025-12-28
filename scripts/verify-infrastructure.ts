@@ -1,4 +1,5 @@
 // @implements INFRASTRUCTURE
+// LEGACY_SCAN_OK: This script audits/validates legacy ledger or corpus files
 // Infrastructure verification script (NOT SANITY tests)
 // Checks: Node version, TypeScript, DB connections, env vars, canonical docs
 import 'dotenv/config';

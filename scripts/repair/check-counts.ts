@@ -1,4 +1,5 @@
 // @ts-nocheck
+// LEGACY_SCAN_OK: This script audits/validates legacy ledger or corpus files
 import 'dotenv/config';
 import pg from 'pg';
 import * as fs from 'fs';

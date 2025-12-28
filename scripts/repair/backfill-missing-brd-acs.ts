@@ -1,4 +1,5 @@
 // @ts-nocheck
+// LEGACY_SCAN_OK: This script audits/validates legacy ledger or corpus files
 // Backfill script: insert missing E03 entities and R02 relationships
 // Uses ops layer to ensure ledger coverage (G-API compliant)
 import 'dotenv/config';

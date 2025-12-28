@@ -7,11 +7,15 @@
 
 import 'dotenv/config';
 import { rlsQuery } from '../test/utils/rls.js';
-import { shadowLedger, type LedgerEntry, type DecisionEntry } from '../src/ledger/shadow-ledger.js';
-import { semanticCorpus } from '../src/ledger/semantic-corpus.js';
+import { getProjectLedger, type LedgerEntry, type DecisionEntry } from '../src/ledger/shadow-ledger.js';
+import { getProjectCorpus } from '../src/ledger/semantic-corpus.js';
 import { A3_BASELINE } from '../test/fixtures/a3-baseline-manifest.js';
 
 const PROJECT_ID = process.env.PROJECT_ID || '6df2f456-440d-4958-b475-d9808775ff69';
+
+// Get project-scoped ledger and corpus
+const ledger = getProjectLedger(PROJECT_ID);
+const corpus = getProjectCorpus(PROJECT_ID);
 
 interface RelationshipRow {
   relationship_type: string;
@@ -103,7 +107,7 @@ async function main(): Promise<void> {
   console.log('└─────────────────────────────────────────────────────────────────┘');
   console.log();
   
-  const ledgerEntries = await shadowLedger.getEntries();
+  const ledgerEntries = await ledger.getEntries();
   
   // Filter to current project
   const projectEntries = ledgerEntries.filter(
@@ -154,7 +158,7 @@ async function main(): Promise<void> {
   console.log('└─────────────────────────────────────────────────────────────────┘');
   console.log();
   
-  const signalCounts = await semanticCorpus.getCountsByType();
+  const signalCounts = await corpus.getCountsByType();
   
   console.log('  Signal type              │ Count');
   console.log('  ─────────────────────────┼──────');
