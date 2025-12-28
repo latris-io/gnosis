@@ -97,7 +97,8 @@ export async function computeBrdHash(brdPath: string = 'docs/BRD_V20_6_4_COMPLET
       .split('\n')
       .map(line => line.trimEnd())
       .join('\n');
-    return crypto.createHash('sha256').update(canonical).digest('hex').substring(0, 16);
+    // Return full SHA-256 hash (64 hex chars) with prefix for identification
+    return `sha256:${crypto.createHash('sha256').update(canonical).digest('hex')}`;
   } catch {
     return 'brd-not-found';
   }
