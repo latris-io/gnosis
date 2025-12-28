@@ -17,17 +17,22 @@
   "decisions_logged": 38,
   "signals_captured": 0,
   
-  "_signals_note": "0 signals expected in A3 when no ORPHAN_MARKER or TDD_COHERENCE_MISMATCH corpus entries are emitted (all markers valid or logged as DECISION)",
+  "_signals_note": "0 signals is expected in A3 because ORPHAN and TDD_COHERENCE_* are recorded as ledger DECISION entries, not emitted to semantic-corpus in Track A.",
   
   "orphans_logged": 3,
   "_orphan_breakdown": {
-    "classification": "EXPECTED - files created after last A1 extraction",
+    "classification": "EXPECTED",
+    "reason": "These files exist in the repo at repo_sha but were not present in the last A1 extraction snapshot.",
     "by_source_file": {
       "src/extraction/evidence-path.ts": 2,
       "src/ledger/epoch-service.ts": 1
     },
-    "reason": "Source entity FILE-* not found in entity registry",
-    "fix": "Re-run A1 extraction to pick up new E11 entities"
+    "_proof": {
+      "query": "SELECT instance_id FROM entities WHERE instance_id IN ('FILE-src/extraction/evidence-path.ts', 'FILE-src/ledger/epoch-service.ts') AND entity_type = 'E11'",
+      "result": "0 rows - both entities NOT FOUND in entities table",
+      "context": "Total E11 entities in project: 39"
+    },
+    "fix": "Re-run A1 extraction to add E11 entities for new files"
   },
   
   "_decision_breakdown": {
