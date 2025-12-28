@@ -17,18 +17,19 @@ describe('Organ Parity Parsers', () => {
   
   describe('parseBrdStats', () => {
     it('should parse canonical BRD statistics table', () => {
+      // Fixture uses V20.6.4 counts
       const fixture = `
 | Metric | Count | Verification |
 |--------|-------|--------------|
 | **Total Epics** | 65 | Enumerated in Appendix E |
-| **Total Stories** | 351 | Enumerated in Appendix A |
-| **Total Acceptance Criteria** | 2,849 | Enumerated in Appendix B |
+| **Total Stories** | 397 | Enumerated in Appendix A |
+| **Total Acceptance Criteria** | 3,147 | Enumerated in Appendix B |
 `;
       const result = parseBrdStats(fixture);
       expect(result).toEqual({
         epics: 65,
         stories: 397,
-        acs: 2849,
+        acs: 3147,
       });
     });
     

@@ -12,6 +12,7 @@
 // This is NOT marker-based extraction - it's test structure parsing.
 
 import type { ExtractedEntity, ExtractedRelationship } from '../types.js';
+import { normalizeEvidencePath } from '../evidence-path.js';
 
 // Patterns for extracting story/AC references from test names
 const STORY_PATTERN = /STORY-(\d+\.\d+)/i;
@@ -55,6 +56,9 @@ export function deriveTestedByRelationships(
     const fullName = `${storyId} TESTED_BY ${suite.instance_id}`;
     const name = fullName.length > 100 ? fullName.slice(0, 97) + '...' : fullName;
 
+    // Normalize source_file to repo-relative path (fails loudly if outside repo)
+    const normalizedSourceFile = normalizeEvidencePath(suite.source_file || '');
+
     relationships.push({
       relationship_type: 'R36',
       instance_id: instanceId,
@@ -62,7 +66,7 @@ export function deriveTestedByRelationships(
       to_instance_id: suite.instance_id,
       name,
       // Evidence from the TestSuite location (where the describe() is)
-      source_file: suite.source_file || '',
+      source_file: normalizedSourceFile,
       line_start: suite.line_start || 0,
       line_end: suite.line_end || suite.line_start || 0,
       attributes: {
@@ -113,6 +117,9 @@ export function deriveVerifiedByRelationships(
     const fullName = `${acId} VERIFIED_BY ${testCase.instance_id}`;
     const name = fullName.length > 100 ? fullName.slice(0, 97) + '...' : fullName;
 
+    // Normalize source_file to repo-relative path (fails loudly if outside repo)
+    const normalizedSourceFile = normalizeEvidencePath(testCase.source_file || '');
+
     relationships.push({
       relationship_type: 'R37',
       instance_id: instanceId,
@@ -120,7 +127,7 @@ export function deriveVerifiedByRelationships(
       to_instance_id: testCase.instance_id,
       name,
       // Evidence from the TestCase location (where the it() is)
-      source_file: testCase.source_file || '',
+      source_file: normalizedSourceFile,
       line_start: testCase.line_start || 0,
       line_end: testCase.line_end || testCase.line_start || 0,
       attributes: {

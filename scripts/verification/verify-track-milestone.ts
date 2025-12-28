@@ -554,9 +554,73 @@ export async function verifyTrackMilestone(projectId?: string): Promise<Verifica
   result.summary.warned = allChecks.filter(c => c.status === 'WARN').length;
   result.summary.skipped = allChecks.filter(c => c.status === 'SKIP').length;
   
+  // Validate skipped codes against phase-specific allowlist
+  const skipViolations = validateSkipAllowlist(phase, allChecks);
+  if (skipViolations.length > 0) {
+    result.summary.failed += skipViolations.length;
+    result.integrityChecks.push(...skipViolations);
+  }
+  
   result.verdict = result.summary.failed > 0 ? 'FAIL' : 'PASS';
   
   return result;
+}
+
+// -----------------------------------------------------------------------------
+// Skip Allowlist Validation
+// -----------------------------------------------------------------------------
+
+/**
+ * A3 Skip Allowlist - ONLY these codes may be skipped in A3 phase.
+ * Any other skip is a governance violation.
+ */
+const A3_SKIP_ALLOWLIST = new Set([
+  'E52',  // BuildArtifact - Git extraction (A4)
+  'R07',  // HAS_BUILD_ARTIFACT (A4)
+  'R14',  // IMPLEMENTED_BY - TDD frontmatter (A4)
+  'R21',  // IMPORTS - AST extraction (A4)
+  'R22',  // CALLS - AST extraction (A4)
+  'R23',  // EXTENDS - AST extraction (A4)
+  'R26',  // DEPENDS_ON - AST extraction (A4)
+  'R63',  // INTRODUCED_IN - Git extraction (A4)
+  'R67',  // MODIFIED_IN - Git extraction (A4)
+  'R70',  // CONTAINS_FILE - Git extraction (A4)
+]);
+
+/**
+ * Validate that all skipped checks are in the phase-specific allowlist.
+ * Returns FAIL checks for any violations.
+ */
+function validateSkipAllowlist(
+  phase: Phase, 
+  checks: VerificationCheck[]
+): VerificationCheck[] {
+  // Only enforce allowlist for A3
+  if (phase !== 'A3') {
+    return [];
+  }
+  
+  const violations: VerificationCheck[] = [];
+  const skippedChecks = checks.filter(c => c.status === 'SKIP');
+  
+  for (const check of skippedChecks) {
+    // Extract code from check name (e.g., "Entity E52" -> "E52", "Relationship R14" -> "R14")
+    const codeMatch = check.name.match(/(?:Entity|Relationship)\s+([A-Z]\d+)/);
+    if (!codeMatch) continue;
+    
+    const code = codeMatch[1];
+    if (!A3_SKIP_ALLOWLIST.has(code)) {
+      violations.push({
+        name: `Skip Allowlist: ${code}`,
+        status: 'FAIL',
+        message: `${code} is skipped but NOT in A3 allowlist. Fix the expectation or implement the extraction.`,
+        expected: 'In allowlist',
+        actual: 'NOT in allowlist',
+      });
+    }
+  }
+  
+  return violations;
 }
 
 // -----------------------------------------------------------------------------
@@ -615,3 +679,4 @@ if (isMainModule) {
     process.exit(1);
   });
 }
+

@@ -3,9 +3,39 @@
 // @implements STORY-64.3
 // @tdd TDD-A1-ENTITY-REGISTRY
 // @tdd TDD-A3-MARKER-EXTRACTION
+//
 // Append-only JSONL ledger for entity CREATE/UPDATE operations
 // and DECISION entries for non-mutation outcomes (A3 marker extraction)
 // NO emission on NO-OP (when content_hash unchanged)
+//
+// ═══════════════════════════════════════════════════════════════════════════
+// REPLAY SEMANTICS (Formal Invariant)
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// Idempotent replay is achieved via INSTANCE_ID:
+// - Each entity/relationship has a deterministic instance_id (business key)
+// - instance_id = f(entity_type, source_content) - pure function
+// - Re-running extraction on same snapshot produces same instance_id
+// - Ledger entries are CREATE on first run, UPDATE on content_hash change
+// - NO-OP (no ledger entry) when content_hash unchanged
+//
+// Replay guarantees:
+// - Given (project_id, instance_id), ledger history is append-only
+// - First entry for (project_id, instance_id) is always CREATE
+// - Subsequent entries are UPDATE (content_hash changed)
+// - DECISION entries are idempotent by (project_id, marker_target, source_entity)
+//
+// ═══════════════════════════════════════════════════════════════════════════
+// PROJECT ISOLATION
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// Per-project ledger isolation:
+// - Default path: shadow-ledger/{project_id}/ledger.jsonl
+// - Each project gets its own ledger file
+// - No cross-project pollution possible
+// - Use getProjectLedger(projectId) to get project-scoped instance
+//
+// ═══════════════════════════════════════════════════════════════════════════
 
 import * as fs from 'fs/promises';
 import * as path from 'path';
@@ -273,7 +303,47 @@ export class ShadowLedger {
   }
 }
 
-// Singleton instance for convenience
-export const shadowLedger = new ShadowLedger();
+// ═══════════════════════════════════════════════════════════════════════════
+// Project-Scoped Ledger Factory
+// ═══════════════════════════════════════════════════════════════════════════
 
+// Cache of project-scoped ledgers
+const projectLedgers = new Map<string, ShadowLedger>();
+
+/**
+ * Get a project-scoped shadow ledger instance.
+ * 
+ * Each project gets its own ledger file at:
+ *   shadow-ledger/{project_id}/ledger.jsonl
+ * 
+ * This ensures complete isolation between projects.
+ * 
+ * @param projectId - The project UUID
+ * @returns ShadowLedger instance scoped to the project
+ */
+export function getProjectLedger(projectId: string): ShadowLedger {
+  if (!projectId) {
+    throw new Error('projectId is required for getProjectLedger');
+  }
+  
+  let ledger = projectLedgers.get(projectId);
+  if (!ledger) {
+    const ledgerPath = `shadow-ledger/${projectId}/ledger.jsonl`;
+    ledger = new ShadowLedger(ledgerPath);
+    projectLedgers.set(projectId, ledger);
+  }
+  return ledger;
+}
+
+/**
+ * Clear the project ledger cache.
+ * Useful for testing.
+ */
+export function clearProjectLedgerCache(): void {
+  projectLedgers.clear();
+}
+
+// Legacy singleton instance (uses flat structure)
+// DEPRECATED: Use getProjectLedger(projectId) for new code
+export const shadowLedger = new ShadowLedger();
 

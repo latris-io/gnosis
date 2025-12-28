@@ -158,9 +158,9 @@ export async function extractAndValidateMarkers(
   // 5. Signal TDD mismatches to semantic corpus and log DECISION
   for (const mismatch of tddMismatches) {
     // Signal with deterministic ID for idempotent replay
-    // Note: mismatch: true, NOT orphan: true (semantically different)
+    // Use TDD_COHERENCE_MISMATCH type - distinct from ORPHAN_MARKER
     await captureSemanticSignal({
-      type: 'ORPHAN_MARKER',
+      type: 'TDD_COHERENCE_MISMATCH',
       marker_type: mismatch.type,
       target_id: mismatch.target_id,
       source_entity_id: mismatch.source_entity_id,
@@ -171,7 +171,6 @@ export async function extractAndValidateMarkers(
         signal_instance_id: computeSignalInstanceId(mismatch),
       },
       evidence: {
-        kind: 'TDD_COHERENCE_MISMATCH',
         expected_entity_type: 'E06',
         mismatch: true,
         validation_error: mismatch.validation_error,
