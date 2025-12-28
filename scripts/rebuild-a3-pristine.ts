@@ -344,17 +344,11 @@ async function main() {
     if (!result.passed) allPassed = false;
   }
   
-  // Step 5: Complete epoch
+  // Step 5: Complete epoch (counts computed from ledger/corpus)
   console.log('\n[5/5] Completing epoch...');
   if (allPassed) {
-    await completeEpoch({
-      relationships_created: 0, // Will be populated by extraction
-      relationships_updated: 0,
-      entities_created: 0,
-      entities_updated: 0,
-      decisions_logged: 0,
-      signals_captured: 0,
-    });
+    const epochMeta = await completeEpoch();
+    console.log(`  Epoch counts: ${epochMeta.decisions_logged} decisions, ${epochMeta.relationships_created} rels created`);
   } else {
     await failEpoch('Pristine conditions not met');
   }

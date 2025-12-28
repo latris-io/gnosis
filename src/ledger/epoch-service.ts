@@ -171,33 +171,115 @@ export async function startEpoch(
 }
 
 /**
- * Complete the current epoch.
- * 
- * @param counts - Optional counts of operations performed
- * @returns The completed epoch metadata
+ * Compute actual counts from the ledger for the current epoch.
+ * Streams the ledger file and counts entries matching the epoch_id.
  */
-export async function completeEpoch(counts?: {
-  entities_created?: number;
-  entities_updated?: number;
-  relationships_created?: number;
-  relationships_updated?: number;
-  decisions_logged?: number;
-  signals_captured?: number;
-}): Promise<EpochMetadata> {
+async function computeEpochCounts(projectId: string, epochId: string): Promise<{
+  entities_created: number;
+  entities_updated: number;
+  relationships_created: number;
+  relationships_updated: number;
+  decisions_logged: number;
+}> {
+  const ledgerPath = `shadow-ledger/${projectId}/ledger.jsonl`;
+  
+  let content = '';
+  try {
+    content = await fs.readFile(ledgerPath, 'utf8');
+  } catch {
+    // Ledger doesn't exist yet - all zeros
+    return {
+      entities_created: 0,
+      entities_updated: 0,
+      relationships_created: 0,
+      relationships_updated: 0,
+      decisions_logged: 0,
+    };
+  }
+  
+  const counts = {
+    entities_created: 0,
+    entities_updated: 0,
+    relationships_created: 0,
+    relationships_updated: 0,
+    decisions_logged: 0,
+  };
+  
+  const lines = content.split('\n').filter(l => l.trim());
+  for (const line of lines) {
+    try {
+      const entry = JSON.parse(line);
+      if (entry.epoch_id !== epochId) continue;
+      
+      if (entry.operation === 'DECISION') {
+        counts.decisions_logged++;
+      } else if (entry.operation === 'CREATE') {
+        if (entry.kind === 'entity') counts.entities_created++;
+        else if (entry.kind === 'relationship') counts.relationships_created++;
+      } else if (entry.operation === 'UPDATE') {
+        if (entry.kind === 'entity') counts.entities_updated++;
+        else if (entry.kind === 'relationship') counts.relationships_updated++;
+      }
+    } catch {
+      // Skip malformed lines
+    }
+  }
+  
+  return counts;
+}
+
+/**
+ * Compute signal count from the corpus for the current epoch.
+ */
+async function computeSignalCount(projectId: string, epochId: string): Promise<number> {
+  const corpusPath = `semantic-corpus/${projectId}/signals.jsonl`;
+  
+  let content = '';
+  try {
+    content = await fs.readFile(corpusPath, 'utf8');
+  } catch {
+    return 0;
+  }
+  
+  let count = 0;
+  const lines = content.split('\n').filter(l => l.trim());
+  for (const line of lines) {
+    try {
+      const signal = JSON.parse(line);
+      if (signal.epoch_id === epochId) count++;
+    } catch {
+      // Skip malformed lines
+    }
+  }
+  
+  return count;
+}
+
+/**
+ * Complete the current epoch.
+ * Computes actual counts from ledger/corpus by filtering on epoch_id.
+ * 
+ * @returns The completed epoch metadata with computed counts
+ */
+export async function completeEpoch(): Promise<EpochMetadata> {
   if (!currentEpoch) {
     throw new Error('No epoch in progress. Call startEpoch() first.');
   }
+
+  // Compute actual counts from ledger and corpus
+  const ledgerCounts = await computeEpochCounts(currentEpoch.project_id, currentEpoch.epoch_id);
+  const signalCount = await computeSignalCount(currentEpoch.project_id, currentEpoch.epoch_id);
 
   const metadata: EpochMetadata = {
     ...currentEpoch,
     completed_at: new Date().toISOString(),
     status: 'completed',
-    entities_created: counts?.entities_created ?? 0,
-    entities_updated: counts?.entities_updated ?? 0,
-    relationships_created: counts?.relationships_created ?? 0,
-    relationships_updated: counts?.relationships_updated ?? 0,
-    decisions_logged: counts?.decisions_logged ?? 0,
-    signals_captured: counts?.signals_captured ?? 0,
+    entities_created: ledgerCounts.entities_created,
+    entities_updated: ledgerCounts.entities_updated,
+    relationships_created: ledgerCounts.relationships_created,
+    relationships_updated: ledgerCounts.relationships_updated,
+    decisions_logged: ledgerCounts.decisions_logged,
+    signals_captured: signalCount,
   };
 
   // Write completed epoch file

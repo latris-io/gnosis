@@ -271,14 +271,9 @@ export async function extractAndPersistMarkerRelationships(
     
     const result = await extractAndValidateMarkers(projectId, snapshot);
     
-    // Complete epoch if we started it
+    // Complete epoch if we started it (counts computed from ledger/corpus)
     if (epochStarted) {
-      await completeEpoch({
-        relationships_created: result.stats.r18_created + result.stats.r19_created,
-        relationships_updated: 0,
-        decisions_logged: result.stats.tdd_ok_count + result.stats.orphan_count + result.stats.tdd_mismatch_count,
-        signals_captured: result.stats.orphan_count + result.stats.tdd_mismatch_count,
-      });
+      await completeEpoch();
     }
     
     return {
@@ -344,7 +339,7 @@ export async function extractAndPersistTestRelationships(
     if (testRels.length === 0) {
       // Complete epoch if we started it before returning
       if (epochStarted) {
-        await completeEpoch({ relationships_created: 0, relationships_updated: 0 });
+        await completeEpoch();
       }
       return { r36_created: 0, r37_created: 0, r36_updated: 0, r37_updated: 0 };
     }
@@ -364,12 +359,9 @@ export async function extractAndPersistTestRelationships(
       }
     }
     
-    // Complete epoch if we started it
+    // Complete epoch if we started it (counts computed from ledger/corpus)
     if (epochStarted) {
-      await completeEpoch({
-        relationships_created: r36_created + r37_created,
-        relationships_updated: r36_updated + r37_updated,
-      });
+      await completeEpoch();
     }
     
     return { r36_created, r37_created, r36_updated, r37_updated };
