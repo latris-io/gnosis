@@ -9,7 +9,7 @@
 import type { PoolClient } from 'pg';
 import type { Session } from 'neo4j-driver';
 import { pool, getClient, setProjectContext } from '../../db/postgres.js';
-import { getSession, ensureConstraintsOnce } from '../../db/neo4j.js';
+import { getSession, ensureConstraintsOnce, withSessionRetry } from '../../db/neo4j.js';
 
 /**
  * Sync all entities for a project from Postgres to Neo4j.
@@ -23,10 +23,8 @@ export async function syncEntitiesToNeo4j(projectId: string): Promise<{ synced: 
   await ensureConstraintsOnce();
 
   let client: PoolClient | null = null;
-  let session: Session | null = null;
 
   try {
-    session = getSession();
     client = await pool.connect();
 
     // Set project context for RLS
@@ -44,34 +42,36 @@ export async function syncEntitiesToNeo4j(projectId: string): Promise<{ synced: 
       return { synced: 0 };
     }
 
-    // UNWIND batch - single Cypher query for all entities (like relationship sync)
-    // Use MERGE to create or update with (project_id, instance_id) identity
-    // Per EXIT.md Upsert Rule (Locked): identity lookup is project-scoped
-    const mergeResult = await session.run(`
-      UNWIND $entities AS entity
-      MERGE (n:Entity {project_id: $projectId, instance_id: entity.instanceId})
-      SET n.entity_type = entity.entityType,
-          n.name = entity.name,
-          n.attributes = entity.attributes,
-          n.synced_at = datetime()
-      WITH count(n) AS mergedCount
-      RETURN mergedCount
-    `, {
-      projectId,
-      entities: entities.map(e => ({
-        instanceId: e.instance_id,
-        entityType: e.entity_type,
-        name: e.name,
-        attributes: JSON.stringify(e.attributes || {}),
-      })),
-    });
+    // Use withSessionRetry for resilience against transient Neo4j errors
+    const synced = await withSessionRetry(async (session) => {
+      // UNWIND batch - single Cypher query for all entities (like relationship sync)
+      // Use MERGE to create or update with (project_id, instance_id) identity
+      // Per EXIT.md Upsert Rule (Locked): identity lookup is project-scoped
+      const mergeResult = await session.run(`
+        UNWIND $entities AS entity
+        MERGE (n:Entity {project_id: $projectId, instance_id: entity.instanceId})
+        SET n.entity_type = entity.entityType,
+            n.name = entity.name,
+            n.attributes = entity.attributes,
+            n.synced_at = datetime()
+        WITH count(n) AS mergedCount
+        RETURN mergedCount
+      `, {
+        projectId,
+        entities: entities.map(e => ({
+          instanceId: e.instance_id,
+          entityType: e.entity_type,
+          name: e.name,
+          attributes: JSON.stringify(e.attributes || {}),
+        })),
+      });
 
-    const synced = mergeResult.records[0]?.get('mergedCount')?.toNumber() ?? 0;
+      return mergeResult.records[0]?.get('mergedCount')?.toNumber() ?? 0;
+    });
 
     return { synced };
   } finally {
     client?.release();
-    if (session) await session.close();
   }
 }
 
@@ -99,10 +99,8 @@ export async function syncRelationshipsToNeo4j(
   await ensureConstraintsOnce();
 
   let client: PoolClient | null = null;
-  let session: Session | null = null;
 
   try {
-    session = getSession();
     // Use getClient() for consistency with RLS hardening
     client = await getClient();
     await setProjectContext(client, projectId);
@@ -131,49 +129,53 @@ export async function syncRelationshipsToNeo4j(
       return { synced: 0, skipped: 0 };
     }
 
-    // UNWIND batch - single Cypher query for all relationships
-    // MATCH+MERGE pattern: if either endpoint is missing, that row produces no result
-    // Use explicit count() for auditable "Extract → Persist → Sync → Verify" pipeline
-    const mergeResult = await session.run(`
-      UNWIND $rels AS rel
-      MATCH (from:Entity {instance_id: rel.fromInstanceId, project_id: $projectId})
-      MATCH (to:Entity {instance_id: rel.toInstanceId, project_id: $projectId})
-      MERGE (from)-[r:RELATIONSHIP {project_id: $projectId, instance_id: rel.instanceId}]->(to)
-      SET r.relationship_type = rel.type,
-          r.name = rel.name,
-          r.confidence = rel.confidence,
-          r.source_file = rel.sourceFile,
-          r.line_start = rel.lineStart,
-          r.line_end = rel.lineEnd,
-          r.synced_at = datetime()
-      WITH count(r) AS mergedCount
-      RETURN mergedCount
-    `, {
-      projectId,
-      rels: relationships.map(rel => ({
-        instanceId: rel.instance_id,
-        fromInstanceId: rel.from_instance_id,
-        toInstanceId: rel.to_instance_id,
-        type: rel.relationship_type,
-        name: rel.name,
-        confidence: rel.confidence,
-        sourceFile: rel.source_file,
-        lineStart: rel.line_start,
-        lineEnd: rel.line_end,
-      })),
+    // Use withSessionRetry for resilience against transient Neo4j errors
+    const { synced, skipped } = await withSessionRetry(async (session) => {
+      // UNWIND batch - single Cypher query for all relationships
+      // MATCH+MERGE pattern: if either endpoint is missing, that row produces no result
+      // Use explicit count() for auditable "Extract → Persist → Sync → Verify" pipeline
+      const mergeResult = await session.run(`
+        UNWIND $rels AS rel
+        MATCH (from:Entity {instance_id: rel.fromInstanceId, project_id: $projectId})
+        MATCH (to:Entity {instance_id: rel.toInstanceId, project_id: $projectId})
+        MERGE (from)-[r:RELATIONSHIP {project_id: $projectId, instance_id: rel.instanceId}]->(to)
+        SET r.relationship_type = rel.type,
+            r.name = rel.name,
+            r.confidence = rel.confidence,
+            r.source_file = rel.sourceFile,
+            r.line_start = rel.lineStart,
+            r.line_end = rel.lineEnd,
+            r.synced_at = datetime()
+        WITH count(r) AS mergedCount
+        RETURN mergedCount
+      `, {
+        projectId,
+        rels: relationships.map(rel => ({
+          instanceId: rel.instance_id,
+          fromInstanceId: rel.from_instance_id,
+          toInstanceId: rel.to_instance_id,
+          type: rel.relationship_type,
+          name: rel.name,
+          confidence: rel.confidence,
+          sourceFile: rel.source_file,
+          lineStart: rel.line_start,
+          lineEnd: rel.line_end,
+        })),
+      });
+
+      // Explicit count for measurable sync verification
+      const syncedCount = mergeResult.records[0]?.get('mergedCount')?.toNumber() ?? 0;
+      const skippedCount = relationships.length - syncedCount;
+
+      // Post-sync duplicate detection gate
+      await detectDuplicateRelationships(session, projectId);
+
+      return { synced: syncedCount, skipped: skippedCount };
     });
-
-    // Explicit count for measurable sync verification
-    const synced = mergeResult.records[0]?.get('mergedCount')?.toNumber() ?? 0;
-    const skipped = relationships.length - synced;
-
-    // Post-sync duplicate detection gate
-    await detectDuplicateRelationships(session, projectId);
 
     return { synced, skipped };
   } finally {
     client?.release();
-    if (session) await session.close();
   }
 }
 
