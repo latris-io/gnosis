@@ -1,0 +1,51 @@
+═══════════════════════════════════════════════════════════════════════════
+  REBUILD A3 PRISTINE
+═══════════════════════════════════════════════════════════════════════════
+
+Project ID: de31c49e-8dba-4bef-a49b-51372579d040
+
+[1/5] Creating fresh epoch...
+  Epoch ID:   4ec50510-e397-45fd-8a3e-88a816429b01
+  Repo SHA:   3f3ce41f07230b1c81bed692a03c7739810065b5
+  Runner SHA: 3f3ce41f07230b1c81bed692a03c7739810065b5
+  BRD Hash:   sha256:f419ddf0ce5879b39b72c0e9ec9441ed7c03db1b4df2446b70061b91f2893d49
+  Status:     running
+
+[2/5] Verifying project directories...
+  Ledger:  shadow-ledger/de31c49e-8dba-4bef-a49b-51372579d040/ledger.jsonl
+  Corpus:  semantic-corpus/de31c49e-8dba-4bef-a49b-51372579d040/signals.jsonl
+  Epoch entries will be appended with epoch_id: 4ec50510-e397-45fd-8a3e-88a816429b01
+
+[3/5] Running A3 marker extraction...
+  - Extracting markers (R18, R19)...
+    Extracted 102 markers, 0 orphans
+    R18: 40, R19: 27
+  - Extracting test relationships (R36, R37)...
+    R36: 1 created, R37: 4 created
+
+[4/5] Validating pristine conditions...
+
+  LEDGER VALIDATION:
+    ✓ Total ledger entries: 4464 (107 this epoch, 4357 from other epochs)
+    ✓ Epoch fields: all present
+    ✓ SHA fields: all match
+    ✓ Kind field: all present
+    ✓ Duplicate CREATEs: none (idempotent)
+    ✓ Epoch statistics: 107 entries
+
+  CORPUS VALIDATION:
+    ✓ Total corpus signals: 4417 (35 this epoch, 4382 from other epochs)
+    ✓ Schema V2: all signals
+    ✓ Provenance fields: all present
+    ✓ Duplicates: none (idempotent)
+    ✓ Epoch statistics: 35 signals
+
+[5/5] Completing epoch...
+  Epoch counts: 35 decisions, 72 rels created
+
+═══════════════════════════════════════════════════════════════════════════
+  ✓ REBUILD COMPLETE - ALL PRISTINE CONDITIONS MET
+═══════════════════════════════════════════════════════════════════════════
+
+Epoch file: epochs/4ec50510-e397-45fd-8a3e-88a816429b01.json
+

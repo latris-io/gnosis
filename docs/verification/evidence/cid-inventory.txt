@@ -1,0 +1,11 @@
+=== CID Files in docs/verification/ ===
+-rw-r--r--@ 1 martybremer  staff  2990 Dec 29 09:58 docs/verification/CID-2025-001.md
+-rw-r--r--@ 1 martybremer  staff  3332 Dec 29 09:58 docs/verification/CID-2025-002.md
+-rwx------@ 1 martybremer  staff  5686 Dec 29 09:58 docs/verification/CID-2025-003.md
+
+=== Git log for CID files ===
+026c1ec fix(governance): Rename CIDs to canonical format per CID_TEMPLATE.md
+b625d8e docs(governance): CID-2025-12-28-001 epoch documentation for cdce180
+263cc4b CID-2025-12-27-001: Correct R36/R37 scope to A3 per BRD AC-64.3.4/5
+fbf3df6 chore: Rename BRD to V20.6.4 per ORGAN_VERSIONING_RULES
+9241812 chore: Update locked invariants per CID-2025-12-25-001

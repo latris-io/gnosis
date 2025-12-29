@@ -1,0 +1,12 @@
+=== LEDGER CREATE entries in Epoch 1 (showing relationships_created) ===
+{"operation":"CREATE","kind":"relationship","entity_type":"R18","instance_id":"R18:FILE-src/extraction/evidence-path.ts:STORY-64.3","epoch_id":"4ec50510-e397-45fd-8a3e-88a816429b01"}
+{"operation":"CREATE","kind":"relationship","entity_type":"R19","instance_id":"R19:FILE-src/extraction/evidence-path.ts:AC-64.3.1","epoch_id":"4ec50510-e397-45fd-8a3e-88a816429b01"}
+{"operation":"CREATE","kind":"relationship","entity_type":"R18","instance_id":"R18:FILE-src/extraction/evidence.ts:STORY-64.1","epoch_id":"4ec50510-e397-45fd-8a3e-88a816429b01"}
+{"operation":"CREATE","kind":"relationship","entity_type":"R18","instance_id":"R18:FILE-src/ledger/epoch-service.ts:STORY-64.1","epoch_id":"4ec50510-e397-45fd-8a3e-88a816429b01"}
+{"operation":"CREATE","kind":"relationship","entity_type":"R18","instance_id":"R18:FILE-src/ledger/semantic-corpus.ts:STORY-64.1","epoch_id":"4ec50510-e397-45fd-8a3e-88a816429b01"}
+
+=== Count of relationship CREATEs in Epoch 1 ===
+      72
+
+=== Count of relationship CREATEs in Epoch 2 (should be 0) ===
+       0

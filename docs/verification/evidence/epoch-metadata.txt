@@ -1,0 +1,34 @@
+=== EPOCH 1 (First Run - Creates relationships) ===
+{
+  "epoch_id": "4ec50510-e397-45fd-8a3e-88a816429b01",
+  "project_id": "de31c49e-8dba-4bef-a49b-51372579d040",
+  "repo_sha": "3f3ce41f07230b1c81bed692a03c7739810065b5",
+  "runner_sha": "3f3ce41f07230b1c81bed692a03c7739810065b5",
+  "brd_hash": "sha256:f419ddf0ce5879b39b72c0e9ec9441ed7c03db1b4df2446b70061b91f2893d49",
+  "started_at": "2025-12-29T19:14:51.447Z",
+  "completed_at": "2025-12-29T19:15:18.736Z",
+  "status": "completed",
+  "entities_created": 0,
+  "entities_updated": 0,
+  "relationships_created": 72,
+  "relationships_updated": 0,
+  "decisions_logged": 35,
+  "signals_captured": 35
+}
+=== EPOCH 2 (Second Run - Idempotent) ===
+{
+  "epoch_id": "ea9a6ef0-408b-4af7-b751-d867cda9b9ee",
+  "project_id": "de31c49e-8dba-4bef-a49b-51372579d040",
+  "repo_sha": "3f3ce41f07230b1c81bed692a03c7739810065b5",
+  "runner_sha": "3f3ce41f07230b1c81bed692a03c7739810065b5",
+  "brd_hash": "sha256:f419ddf0ce5879b39b72c0e9ec9441ed7c03db1b4df2446b70061b91f2893d49",
+  "started_at": "2025-12-29T19:15:24.991Z",
+  "completed_at": "2025-12-29T19:15:50.773Z",
+  "status": "completed",
+  "entities_created": 0,
+  "entities_updated": 0,
+  "relationships_created": 0,
+  "relationships_updated": 0,
+  "decisions_logged": 35,
+  "signals_captured": 0
+}

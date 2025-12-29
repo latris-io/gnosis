@@ -1,0 +1,89 @@
+=== verify:organ-parity ===
+
+> @gnosis/core@0.0.1 verify:organ-parity
+> npx tsx scripts/verify-organ-parity.ts
+
+
+[PHASE 0] Organ Parity Verification
+=============================================
+
+Checking end-marker parity...
+Checking for forward version references...
+Checking story card version references...
+Checking invariant counts...
+
+Results:
+---------------------------------------------
+
+PASS: 11 checks passed
+  - endmarker-parity: V20.6.4
+  - endmarker-parity: V20.6.1
+  - endmarker-parity: V20.6.6
+  - endmarker-parity: V20.6.4
+  - endmarker-parity: V20.8.5
+  - endmarker-parity: V20.6.1
+  - no-forward-refs: No forward version references found
+  - story-version-refs: No V20.7.0 references in story cards
+  - brd-counts: 65/397/3147 (matches expected)
+  - utg-counts: 83 entities, 114 relationships (matches expected)
+  - gate-count: 21 gates (matches expected)
+
+=============================================
+Summary: 11 pass, 0 warn, 0 fail
+Exit: 0 (Phase 0 = warnings only)
+
+=== verify:track-milestone (A3 mode) ===
+
+> @gnosis/core@0.0.1 verify:track-milestone
+> npx tsx scripts/verification/verify-track-milestone.ts
+
+=== Track Milestone Verifier (Mode 1) ===
+Phase: A3
+Project: de31c49e-8dba-4bef-a49b-51372579d040
+
+Running drift detection...
+✓ Drift detection passed
+
+Verifying entities...
+  14/16 passed
+
+Verifying relationships...
+  5/20 passed
+
+Checking for unexpected types...
+  No unexpected types found
+
+Verifying cross-store consistency...
+  1/1 passed
+
+Checking referential integrity...
+  1/1 passed
+
+=== Summary ===
+Total checks: 39
+  Passed: 22
+  Failed: 7
+  Warned: 0
+  Skipped: 10
+
+Failed checks:
+  ❌ Entity E15: E15 (Module): expected > 0, found 0
+  ❌ Relationship R01: R01 (HAS_STORY): expected > 0, found 0
+  ❌ Relationship R02: R02 (HAS_AC): expected > 0, found 0
+  ❌ Relationship R04: R04 (CONTAINS_FILE): expected > 0, found 0
+  ❌ Relationship R05: R05 (CONTAINS_ENTITY): expected > 0, found 0
+  ❌ Relationship R06: R06 (CONTAINS_SUITE): expected > 0, found 0
+  ❌ Relationship R16: R16 (DEFINED_IN): expected > 0, found 0
+
+
+NOTE: The above failures are for A1/A2 scope relationships (R01, R02, R04, R05, R06, R16) which require
+      additional extraction steps. A3 scope is R18, R19, R36, R37 which are CORRECTLY created above.
+
+=== A3-SPECIFIC VERIFICATION ===
+Query: R18/R19/R36/R37 counts in fresh project
+A3 Relationship Counts:
+  R18: 40
+  R19: 27
+  R36: 1
+  R37: 4
+  TOTAL: 72

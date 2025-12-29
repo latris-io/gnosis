@@ -1,0 +1,44 @@
+=== A1 Entity Extraction ===
+Project: de31c49e-8dba-4bef-a49b-51372579d040
+Project ID: de31c49e-8dba-4bef-a49b-51372579d040
+Timestamp: 2025-12-29T19:08:19.207Z
+Repo Root: /Users/martybremer/Library/CloudStorage/OneDrive-Latris/Projects/Sophia/Gnosis
+
+Running providers:
+  [32m[OK][0m brd-provider: 3609 entities (E01:65, E02:397, E03:3147) [191ms]
+  [32m[OK][0m filesystem-provider: 71 entities (E06:2, E11:41, E27:28) [12ms]
+  [32m[OK][0m ast-provider: 541 entities (E08:4, E12:179, E13:12, E28:104, E29:242) [94ms]
+  [32m[OK][0m git-provider: 133 entities (E49:6, E50:127) [32ms]
+  [32m[OK][0m changeset-provider: 3 entities (E52:3) [11ms]
+
+Persisting 4357 entities to PostgreSQL...
+  (This may take several minutes for remote databases)
+  Persisting...
+
+  Completed in 385.0s
+  Created: 4356
+  Updated: 1
+  No-Op: 0
+
+=== SUMMARY ===
+Total entities extracted: 4357
+Total entities persisted: 4357 (0 unchanged)
+Semantic signals captured: 4382 (target: >= 50)
+
+Entity breakdown:
+  E01: 65
+  E02: 397
+  E03: 3147
+  E06: 2
+  E08: 4
+  E11: 41
+  E12: 179
+  E13: 12
+  E27: 28
+  E28: 104
+  E29: 242
+  E49: 6
+  E50: 127
+  E52: 3
+
+[32mA1 EXTRACTION: SUCCESS[0m
