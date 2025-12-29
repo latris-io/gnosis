@@ -19,7 +19,7 @@ import { fileURLToPath } from 'url';
 import { rlsQuery } from '../test/utils/rls.js';
 import { discoverTDDs, parseFrontmatter, ParsedFrontmatter } from '../src/extraction/providers/tdd-frontmatter-provider.js';
 import { computeExpectedCounts } from '../src/extraction/providers/tdd-relationship-provider.js';
-import { persistEntities } from '../src/ops/track-a.js';
+import { persistEntities, closeConnections } from '../src/ops/track-a.js';
 import { getProjectLedger } from '../src/ledger/shadow-ledger.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -455,15 +455,18 @@ async function main(): Promise<void> {
     if (hasWarnings) {
       console.log('⚠ Warnings present (review recommended)');
     }
+    await closeConnections();
     process.exit(0);
   } else {
     console.log('✗ Some checks failed');
+    await closeConnections();
     process.exit(1);
   }
 }
 
-main().catch(err => {
+main().catch(async err => {
   console.error('FATAL:', err);
+  await closeConnections();
   process.exit(1);
 });
 

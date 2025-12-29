@@ -11,7 +11,7 @@ import { filesystemProvider } from '../src/extraction/providers/filesystem-provi
 import { astProvider } from '../src/extraction/providers/ast-provider.js';
 import { gitProvider } from '../src/extraction/providers/git-provider.js';
 import { changesetProvider } from '../src/extraction/providers/changeset-provider.js';
-import { initProject, persistEntities, type UpsertResult } from '../src/ops/track-a.js';
+import { initProject, persistEntities, closeConnections, type UpsertResult } from '../src/ops/track-a.js';
 import { getProjectCorpus } from '../src/ledger/semantic-corpus.js';
 import type { RepoSnapshot, ExtractionProvider, ExtractedEntity } from '../src/extraction/types.js';
 import type { EntityTypeCode } from '../src/schema/track-a/entities.js';
@@ -272,10 +272,13 @@ async function main(): Promise<void> {
 
   console.log('');
   console.log('\x1b[32mA1 EXTRACTION: SUCCESS\x1b[0m');
+  
+  await closeConnections();
 }
 
 // Run
-main().catch((error) => {
+main().catch(async (error) => {
   console.error('\x1b[31m[FATAL]\x1b[0m', error);
+  await closeConnections();
   process.exit(1);
 });

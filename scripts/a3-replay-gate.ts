@@ -3,7 +3,7 @@
 // Phase 6: Replay Gate - prove idempotency
 
 import { rlsQuery } from '../test/utils/rls.js';
-import { extractAndPersistMarkerRelationships } from '../src/ops/track-a.js';
+import { extractAndPersistMarkerRelationships, closeConnections } from '../src/ops/track-a.js';
 import fs from 'fs/promises';
 
 const projectId = process.env.PROJECT_ID || '6df2f456-440d-4958-b475-d9808775ff69';
@@ -87,8 +87,13 @@ async function main() {
   console.log('REPLAY GATE:', dbIdempotent && corpusIdempotent ? 'PASS ✓' : 'FAIL ✗');
 
   console.log('\n=== End of Phase 6 ===');
+  await closeConnections();
   process.exit(0);
 }
 
-main().catch(console.error);
+main().catch(async err => {
+  console.error(err);
+  await closeConnections();
+  process.exit(1);
+});
 

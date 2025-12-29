@@ -3,7 +3,7 @@
 // Run: npx tsx scripts/test-r36-r37.ts
 
 import 'dotenv/config';
-import { extractAndPersistTestRelationships } from '../src/ops/track-a.js';
+import { extractAndPersistTestRelationships, closeConnections } from '../src/ops/track-a.js';
 import { rlsQuery } from '../test/utils/rls.js';
 import { astProvider } from '../src/extraction/providers/ast-provider.js';
 import { batchCreateEntities } from '../src/api/v1/entities.js';
@@ -132,11 +132,13 @@ async function main() {
     console.log('✗ R36/R37 count is 0 - no patterns matched');
   }
 
+  await closeConnections();
   process.exit(0);
 }
 
-main().catch(err => {
+main().catch(async err => {
   console.error(err);
+  await closeConnections();
   process.exit(1);
 });
 

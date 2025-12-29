@@ -30,7 +30,7 @@ import {
 } from '../src/ledger/epoch-service.js';
 import { getLedgerPath, LedgerEntry } from '../src/ledger/shadow-ledger.js';
 import { getCorpusPath, SemanticSignal, SEMANTIC_SIGNAL_SCHEMA_ID } from '../src/ledger/semantic-corpus.js';
-import { extractAndPersistMarkerRelationships, extractAndPersistTestRelationships } from '../src/ops/track-a.js';
+import { extractAndPersistMarkerRelationships, extractAndPersistTestRelationships, closeConnections } from '../src/ops/track-a.js';
 import { A3_BASELINE } from '../test/fixtures/a3-baseline-manifest.js';
 
 const PROJECT_ID = process.env.PROJECT_ID;
@@ -359,16 +359,21 @@ async function main() {
     console.log('  ✓ REBUILD COMPLETE - ALL PRISTINE CONDITIONS MET');
   } else {
     console.log('  ✗ REBUILD FAILED - PRISTINE CONDITIONS NOT MET');
+    await closeConnections();
     process.exit(1);
   }
   console.log('═══════════════════════════════════════════════════════════════════════════');
   console.log('');
   console.log('Epoch file:', `epochs/${epoch.epoch_id}.json`);
   console.log('');
+  
+  // Close database connections to allow process to exit
+  await closeConnections();
 }
 
-main().catch(err => {
+main().catch(async err => {
   console.error('Fatal error:', err);
+  await closeConnections();
   process.exit(1);
 });
 
