@@ -15,7 +15,7 @@
  * - Relationships: 20 (R01-R03, R04-R07, R14, R16, R18-R19, R21-R23, R26, R36-R37, R63, R67, R70)
  * 
  * EXCLUSIONS:
- * - R08/R09/R11: Internal linkages (TDD bridge), not counted in 20
+ * - R08/R09/R11: Post-HGR-1 (author-declared design-intent bindings), not counted in 20
  * - R24: Out-of-scope (requires E14, which is Post-Track-A)
  * - E84/E85, R113/R114: DORMANT (forbidden until Track D.9)
  */
@@ -50,8 +50,9 @@ export type RelationshipTypeCode =
   | 'R36' | 'R37'
   | 'R63' | 'R67' | 'R70';
 
-// Internal linkages (not counted in 20)
-export type InternalLinkageCode = 'R08' | 'R09' | 'R11';
+// Post-HGR-1 relationships (not counted in 20, not required for Track A)
+// R08/R09/R11 are author-declared design-intent bindings, not structural inventory
+export type PostHGR1Code = 'R08' | 'R09' | 'R11';
 
 // Dormant codes (forbidden)
 export type DormantEntityCode = 'E84' | 'E85';
@@ -543,7 +544,7 @@ export const RELATIONSHIP_EXPECTATIONS: RelationshipExpectation[] = [
 // Internal Linkages (not counted in 20)
 // -----------------------------------------------------------------------------
 
-export const INTERNAL_LINKAGES: InternalLinkageCode[] = ['R08', 'R09', 'R11'];
+export const POST_HGR1_RELATIONSHIPS: PostHGR1Code[] = ['R08', 'R09', 'R11'];
 
 // -----------------------------------------------------------------------------
 // Out-of-Scope (Post-Track-A)
@@ -622,8 +623,8 @@ export function isDormantRelationship(code: string): boolean {
   return DORMANT_RELATIONSHIPS.includes(code as DormantRelationshipCode);
 }
 
-export function isInternalLinkage(code: string): boolean {
-  return INTERNAL_LINKAGES.includes(code as InternalLinkageCode);
+export function isPostHGR1Relationship(code: string): boolean {
+  return POST_HGR1_RELATIONSHIPS.includes(code as PostHGR1Code);
 }
 
 export function isOutOfScope(code: string): boolean {

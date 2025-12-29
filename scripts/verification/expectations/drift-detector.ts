@@ -18,7 +18,7 @@ import { fileURLToPath } from 'url';
 import {
   ENTITY_EXPECTATIONS,
   RELATIONSHIP_EXPECTATIONS,
-  INTERNAL_LINKAGES,
+  POST_HGR1_RELATIONSHIPS,
   OUT_OF_SCOPE_RELATIONSHIPS,
   EntityTypeCode,
   RelationshipTypeCode,
@@ -107,7 +107,7 @@ function parseExitMd(content: string): OrganScope | ParseError {
   
   // Filter out internal linkages and out-of-scope from relationship count
   const canonicalRelationships = relationships.filter(r => 
-    !INTERNAL_LINKAGES.includes(r as any) && 
+    !POST_HGR1_RELATIONSHIPS.includes(r as any) && 
     !OUT_OF_SCOPE_RELATIONSHIPS.includes(r as any)
   );
   
@@ -294,7 +294,7 @@ export async function detectDrift(): Promise<DriftReport> {
     const allRels = [...story.activeRelationships, ...story.deferredRelationships];
     for (const rel of allRels) {
       if (!organScope.relationships.includes(rel) && 
-          !INTERNAL_LINKAGES.includes(rel as any) &&
+          !POST_HGR1_RELATIONSHIPS.includes(rel as any) &&
           !OUT_OF_SCOPE_RELATIONSHIPS.includes(rel as any)) {
         report.primacyViolations.storiesExceedOrgan.push(`${story.filename}: Relationship ${rel}`);
         report.matches = false;
@@ -424,3 +424,4 @@ if (isMainModule) {
 }
 
 export { parseExitMd, parseStoryScope, DriftReport };
+

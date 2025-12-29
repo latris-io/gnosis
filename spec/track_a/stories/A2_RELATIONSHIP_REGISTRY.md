@@ -2,7 +2,7 @@
 tdd:
   id: TDD-A2-RELATIONSHIP-REGISTRY
   type: TechnicalDesign
-  version: "2.0.0"
+  version: "2.1.0"
   status: implemented
   addresses:
     stories:
@@ -34,13 +34,13 @@ tdd:
 <!-- @scope-entities: E01,E02,E03,E04,E06,E08,E11,E12,E13,E15,E27,E28,E29,E49,E50,E52 -->
 <!-- @scope-relationships-active: R01,R02,R03,R04,R05,R06,R07,R14,R16,R63,R67,R70 -->
 <!-- @scope-relationships-deferred: R18,R19,R21,R22,R23,R26,R36,R37 -->
-<!-- @internal-linkages: R08,R09,R11 -->
+<!-- @post-hgr1: R08,R09,R11 -->
 <!-- @out-of-scope: R24 -->
 <!-- END SCOPE -->
 
 # Story A.2: Relationship Registry
 
-**Version:** 2.0.0  
+**Version:** 2.1.0  
 **Implements:** STORY-64.2 (UTG Relationship Extraction)  
 **Track:** A  
 **Duration:** 2-3 days  
@@ -49,8 +49,9 @@ tdd:
 - UTG Schema V20.6.1 §Relationship Registry
 - Verification Spec V20.6.5 §Part IX
 
-> **v2.0.0:** TDD Retrofit - Add R08/R09/R11 (TDD Bridge), R14 derived from TDD frontmatter (not deferred), scope expanded to 18 in-scope relationships
-> **v1.6.0:** Organ Patch - Defer R14/R18/R19 to A3 (marker-dependent), defer R24 until E14 exists, scope reduced to 15 in-scope relationships  
+> **v2.1.0:** Epistemic Boundary - R08/R09/R11 deferred post-HGR-1 (author-declared design-intent bindings, not structural inventory)
+> **v2.0.0:** TDD Retrofit - R14 derived from TDD frontmatter (not deferred)
+> **v1.6.0:** Organ Patch - Defer R14/R18/R19 to A3 (marker-dependent), defer R24 until E14 exists  
 > **v1.5.0:** Pre-A2 Hardening - Added Evidence Fields section, R36/R37 deferral to A3, instance_id format validation  
 > **v1.4.0:** Added R70 GROUPS extraction logic, endpoint deviation note  
 > **v1.3.0:** Multi-tenant identity fix: ON CONFLICT (project_id, instance_id)  
@@ -61,15 +62,17 @@ tdd:
 
 ## User Story
 
-> As the Gnosis system, I need to extract and store 18 Track A relationship types between entities so that I can traverse the structural connections in my codebase.
+> As the Gnosis system, I need to extract and store Track A relationship types between entities so that I can traverse the structural connections in my codebase.
 >
-> **A2 Scope:** R01, R02, R03, R04, R05, R06, R07, R08, R09, R11, R14, R16, R21, R22, R23, R26, R63, R67, R70
->
-> **TDD Bridge (NEW):** R08 (DESIGNED_IN), R09 (SPECIFIED_IN), R11 (DEFINES_SCHEMA), R14 (IMPLEMENTED_BY) - derived from TDD frontmatter
+> **A2 Scope (Structural Inventory):** R01, R02, R03, R04, R05, R06, R07, R14, R16, R63, R67, R70
 >
 > **Deferred to A3:** R18, R19, R36, R37 (marker-dependent)
 >
+> **Deferred to A4:** R21, R22, R23, R26 (AST-dependent)
+>
 > **Deferred until E14 exists:** R24 (requires Interface entity)
+>
+> **Deferred post-HGR-1:** R08, R09, R11 (author-declared design-intent bindings; not structural inventory)
 
 ---
 
@@ -144,20 +147,29 @@ The service layer validates this format before upsert and rejects malformed IDs.
 
 ---
 
-## TDD Bridge Relationships (NEW in v2.0.0)
+## TDD Bridge Relationships
 
-### R08/R09/R11/R14 - Derived from TDD Frontmatter
+### R14 - Derived from TDD Frontmatter (A2 Scope)
 
-These relationships are derived from TDD (Technical Design Document) frontmatter in Track A story files:
+R14 (IMPLEMENTED_BY) is derived from TDD frontmatter `implements.files[]` arrays:
 
 | R-Code | Name | From | To | Source |
 |--------|------|------|-----|--------|
-| R08 | DESIGNED_IN | Story | TechnicalDesign | `addresses.stories[]` |
-| R09 | SPECIFIED_IN | AcceptanceCriterion | TechnicalDesign | `addresses.acceptance_criteria[]` |
-| R11 | DEFINES_SCHEMA | Story | DataSchema | `addresses.schemas[]` |
 | R14 | IMPLEMENTED_BY | TechnicalDesign | SourceFile | `implements.files[]` |
 
 > **R14 Change (v2.0.0):** R14 is NO LONGER marker-dependent. It is derived from TDD frontmatter `implements.files[]` arrays. A2 extracts R14; A3 validates bidirectional consistency via `@tdd` markers.
+
+### R08/R09/R11 - Deferred Post-HGR-1
+
+The following relationships are **NOT** Track A scope:
+
+| R-Code | Name | From | To | Reason for Deferral |
+|--------|------|------|-----|---------------------|
+| R08 | DESIGNED_IN | Story | TechnicalDesign | Author-declared design-intent binding |
+| R09 | SPECIFIED_IN | AcceptanceCriterion | TechnicalDesign | Author-declared design-intent binding |
+| R11 | DEFINES_SCHEMA | Story | DataSchema | Author-declared design-intent binding |
+
+> **Epistemic Boundary (v2.1.0):** Track A is structural inventory + explicit markers. R08/R09/R11 are author-declared design-intent bindings that describe semantic relationships between business requirements and technical designs. These require human validation and are deferred until post-HGR-1. Track A exit criteria do NOT require R08/R09/R11 extraction.
 
 ---
 

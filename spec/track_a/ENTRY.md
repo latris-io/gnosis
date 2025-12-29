@@ -116,37 +116,41 @@
 > of E11 SourceFile entities. R04 now correctly uses `Module (E15) → SourceFile (E11)`
 > per BRD V20.6.3 Appendix I.
 >
-> **TDD Retrofit (v2.0.0):** R08, R09, R11, R14 are now derived from TDD frontmatter.
+> **TDD Retrofit (v2.0.0):** R14 is now derived from TDD frontmatter.
 > R14 semantics changed from "Story → Function/Class" to "TechnicalDesign → SourceFile".
+>
+> **Epistemic Boundary (v2.1.0):** R08, R09, R11 are deferred post-HGR-1. Track A is structural
+> inventory + explicit markers. R08/R09/R11 are author-declared design-intent bindings that
+> require human validation and are NOT Track A requirements.
 
-### Relationships to Implement (24)
+### Relationships to Implement (20 Track A + 3 Post-HGR-1)
 
-| ID | Name | From → To |
-|----|------|-----------|
-| R01 | HAS_STORY | Epic → Story |
-| R02 | HAS_AC | Story → AcceptanceCriterion |
-| R03 | HAS_CONSTRAINT | AcceptanceCriterion → Constraint |
-| R04 | CONTAINS_FILE | Module → SourceFile |
-| R05 | CONTAINS_ENTITY | SourceFile → Function/Class |
-| R06 | CONTAINS_SUITE | TestFile → TestSuite |
-| R07 | CONTAINS_CASE | TestSuite → TestCase |
-| R08 | DESIGNED_IN | Story → TechnicalDesign |
-| R09 | SPECIFIED_IN | AcceptanceCriterion → TechnicalDesign |
-| R11 | DEFINES_SCHEMA | Story → DataSchema |
-| R14 | IMPLEMENTED_BY | TechnicalDesign → SourceFile |
-| R16 | DEFINED_IN | Function/Class → SourceFile |
-| R18 | IMPLEMENTS | SourceFile → Story |
-| R19 | SATISFIES | Function/Class → AcceptanceCriterion |
-| R21 | IMPORTS | SourceFile → SourceFile |
-| R22 | CALLS | Function → Function |
-| R23 | EXTENDS | Class → Class |
-| R24 | IMPLEMENTS_INTERFACE | Class → Interface |
-| R26 | DEPENDS_ON | Module → Module |
-| R36 | TESTED_BY | Function/Class → TestCase |
-| R37 | VERIFIED_BY | AcceptanceCriterion → TestCase |
-| R63 | INTRODUCED_IN | SourceFile → Commit |
-| R67 | MODIFIED_IN | SourceFile → Commit |
-| R70 | GROUPS | ChangeSet → Commit |
+| ID | Name | From → To | Scope |
+|----|------|-----------|-------|
+| R01 | HAS_STORY | Epic → Story | A1 |
+| R02 | HAS_AC | Story → AcceptanceCriterion | A1 |
+| R03 | HAS_CONSTRAINT | AcceptanceCriterion → Constraint | A2 |
+| R04 | CONTAINS_FILE | Module → SourceFile | A2 |
+| R05 | CONTAINS_ENTITY | SourceFile → Function/Class | A2 |
+| R06 | CONTAINS_SUITE | TestFile → TestSuite | A2 |
+| R07 | CONTAINS_CASE | TestSuite → TestCase | A2 |
+| R08 | DESIGNED_IN | Story → TechnicalDesign | **Post-HGR-1** |
+| R09 | SPECIFIED_IN | AcceptanceCriterion → TechnicalDesign | **Post-HGR-1** |
+| R11 | DEFINES_SCHEMA | Story → DataSchema | **Post-HGR-1** |
+| R14 | IMPLEMENTED_BY | TechnicalDesign → SourceFile | A2 |
+| R16 | DEFINED_IN | Function/Class → SourceFile | A2 |
+| R18 | IMPLEMENTS | SourceFile → Story | A3 |
+| R19 | SATISFIES | Function/Class → AcceptanceCriterion | A3 |
+| R21 | IMPORTS | SourceFile → SourceFile | A4 |
+| R22 | CALLS | Function → Function | A4 |
+| R23 | EXTENDS | Class → Class | A4 |
+| R24 | IMPLEMENTS_INTERFACE | Class → Interface | Post-A |
+| R26 | DEPENDS_ON | Module → Module | A4 |
+| R36 | TESTED_BY | Function/Class → TestCase | A3 |
+| R37 | VERIFIED_BY | AcceptanceCriterion → TestCase | A3 |
+| R63 | INTRODUCED_IN | SourceFile → Commit | A2 |
+| R67 | MODIFIED_IN | SourceFile → Commit | A2 |
+| R70 | GROUPS | ChangeSet → Commit | A2 |
 
 > **Provenance Relationship Note:** R63 INTRODUCED_IN is a Track A-scoped deviation from global canon.
 > Global canon defines R63 as Story → ReleaseVersion, but Track A restricts it

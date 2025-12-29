@@ -24,7 +24,7 @@ import {
   isCanonicalRelationship,
   isDormantEntity,
   isDormantRelationship,
-  isInternalLinkage,
+  isPostHGR1Relationship,
   isOutOfScope,
   CANONICAL_COUNTS,
   Phase,
@@ -302,8 +302,8 @@ async function checkUnexpectedTypes(phase: Phase, projectId?: string): Promise<V
   const relTypes = await pgReader.getRelationshipTypes(projectId);
   
   for (const relType of relTypes) {
-    // Skip internal linkages (expected but not counted)
-    if (isInternalLinkage(relType)) {
+    // Skip post-HGR-1 relationships (not required for Track A)
+    if (isPostHGR1Relationship(relType)) {
       continue;
     }
     

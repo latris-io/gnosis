@@ -23,7 +23,7 @@ tdd:
 <!-- @scope-entities: E01,E02,E03,E04,E06,E08,E11,E12,E13,E15,E27,E28,E29,E49,E50,E52 -->
 <!-- @scope-relationships-active: R01,R02,R03,R04,R05,R06,R07,R14,R16,R18,R19,R36,R37,R63,R67,R70 -->
 <!-- @scope-relationships-deferred: R21,R22,R23,R26 -->
-<!-- @internal-linkages: R08,R09,R11 -->
+<!-- @post-hgr1: R08,R09,R11 -->
 <!-- @out-of-scope: R24 -->
 <!-- END SCOPE -->
 
