@@ -42,7 +42,7 @@ All command outputs embedded or referenced in this document were captured **AFTE
 | Document | Git SHA | Timestamp |
 |----------|---------|-----------|
 | Initial Closeout Packet | `3f3ce41` | 2025-12-29 |
-| This Addendum + Evidence | **TBD (this commit)** | 2025-12-29 |
+| This Addendum + Evidence | `80bc361` | 2025-12-29 |
 
 ### 2.3 Evidence File Commit SHA
 All files in `docs/verification/evidence/` are committed in the **same commit** as this updated packet. This proves:
@@ -320,7 +320,7 @@ All evidence files are committed in `docs/verification/evidence/`:
 ---
 
 **Closeout Packet Generated:** 2025-12-29T19:20:00Z  
-**Evidence Commit SHA:** (this commit)
+**Evidence Commit SHA:** `80bc361`
 
 ---
 
