@@ -1,6 +1,7 @@
 // @implements INFRASTRUCTURE
 // Test setup file - loads environment and initializes connections
 import 'dotenv/config';
+import { afterAll, beforeAll } from 'vitest';
 
 // Ensure NODE_ENV is 'test' for test-only modules
 process.env.NODE_ENV = 'test';
@@ -30,5 +31,18 @@ export const TEST_PROJECT_ID = '00000000-0000-0000-0000-000000000001';
 export function testLog(message: string): void {
   console.log(`[TEST ${new Date().toISOString()}] ${message}`);
 }
+
+// ────────────────────────────────────────────────────────────────
+// GLOBAL TEARDOWN - Prevent hanging on open connections
+// ────────────────────────────────────────────────────────────────
+// Note: This afterAll runs after EACH test file, not the entire suite.
+// For cross-file cleanup, we ensure each file's connections are closed.
+afterAll(async () => {
+  try {
+    await closeConnections();
+  } catch (err) {
+    // Ignore errors - connections may already be closed
+  }
+});
 
 

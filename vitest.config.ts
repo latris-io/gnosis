@@ -10,6 +10,8 @@ export default defineConfig({
     setupFiles: ['test/setup.ts'],
     testTimeout: 30000,
     hookTimeout: 30000,
+    // Longer teardown timeout to ensure connections close
+    teardownTimeout: 10000,
     // Run test files sequentially to prevent database race conditions
     // Tests within a file still run in parallel unless fileParallelism is false
     fileParallelism: false,
@@ -19,6 +21,10 @@ export default defineConfig({
         useAtomics: true,
       },
     },
+    // Gracefully exit after tests to avoid hanging on open connections
+    forceRerunTriggers: [],
+    // Close handles on completion
+    dangerouslyIgnoreUnhandledErrors: false,
   },
 });
 

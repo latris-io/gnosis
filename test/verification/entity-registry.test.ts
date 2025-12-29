@@ -21,6 +21,7 @@ import { changesetProvider } from '../../src/extraction/providers/changeset-prov
 import { ShadowLedger, getProjectLedger } from '../../src/ledger/shadow-ledger.js';
 import { SemanticCorpus } from '../../src/ledger/semantic-corpus.js';
 import { createEvidenceAnchor, isValidEvidenceAnchor } from '../../src/extraction/evidence.js';
+import { clearEpochState } from '../../src/ledger/epoch-service.js';
 
 // API v1 (for VERIFY-LEDGER test with DB persistence) - G-API compliant
 import { createEntity, batchCreateEntities } from '../../src/api/v1/entities.js';
@@ -543,6 +544,9 @@ describe('Entity Registry - Story A.1', () => {
     let persistenceDir: string;
 
     beforeEach(async () => {
+      // Clear epoch state to avoid "duplicate CREATE" errors from V11 enforcement
+      clearEpochState();
+      
       // Create fresh temp directory for each test
       persistenceDir = path.join(os.tmpdir(), 'gnosis-ledger-test-' + Date.now());
       await fs.mkdir(persistenceDir, { recursive: true });
@@ -625,6 +629,9 @@ describe('Entity Registry - Story A.1', () => {
     const DB_TEST_PROJECT_ID = randomUUID();
 
     beforeAll(async () => {
+      // Clear epoch state to avoid "duplicate CREATE" errors from V11 enforcement
+      clearEpochState();
+      
       // Hard fail if no DB configured - report which var to use
       const dbUrl = process.env.TEST_DATABASE_URL || process.env.DATABASE_URL;
       if (!dbUrl) {

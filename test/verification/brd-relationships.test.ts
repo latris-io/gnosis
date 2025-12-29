@@ -62,7 +62,7 @@ describe('A2 Phase 1: BRD relationships (R01/R02/R03)', () => {
       FROM relationships
       WHERE relationship_type IN ('R01','R02','R03')
     `);
-    expect(rels.length).toBe(3200);
+    expect(rels.length).toBe(3544);  // R01=397 + R02=3147 = 3544 (BRD V20.6.4)
     for (const rel of rels) {
       expect(rel.source_file).toBeTruthy();
       expect(rel.line_start).toBeGreaterThan(0);
@@ -117,7 +117,7 @@ describe('A2 Phase 1: BRD relationships (R01/R02/R03)', () => {
     expect(firstRunResult.persisted).toBeGreaterThan(0);
     
     // Second run must still extract all 3200 (not skip extraction)
-    expect(run2.extracted).toBe(3200);
+    expect(run2.extracted).toBe(3544);  // BRD V20.6.4
     
     // Second run should persist 0 (idempotent - all NO-OP)
     expect(run2.persisted).toBe(0);
@@ -126,7 +126,7 @@ describe('A2 Phase 1: BRD relationships (R01/R02/R03)', () => {
     const total = await rlsQuery(PROJECT_ID!, 
       `SELECT COUNT(*)::int AS n FROM relationships WHERE relationship_type IN ('R01','R02','R03')`
     );
-    expect(total[0].n).toBe(3200);
+    expect(total[0].n).toBe(3544);  // BRD V20.6.4
   }, 900000); // 15 minute timeout for second extraction
 });
 
@@ -147,7 +147,7 @@ describe('Neo4j entities-first prerequisite', () => {
     
     // 4) Verify Neo4j now has entities and relationships synced
     // Entity count: 3830 (all Track A entities)
-    expect(await countNeo4jNodes(PROJECT_ID)).toBe(3830);
+    expect(await countNeo4jNodes(PROJECT_ID)).toBe(4309);  // BRD V20.6.4
     
     // Relationship count: ALL PostgreSQL relationships get synced (not just BRD)
     // 3613 = 3200 (R01+R02) + 413 (R04+R05+R06+R16 containment)

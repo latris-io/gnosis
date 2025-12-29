@@ -12,6 +12,12 @@ export const pool = new Pool({
   ssl: {
     rejectUnauthorized: false, // Required for Render
   },
+  // Idle timeout: close connections after 30s of inactivity to prevent hanging tests
+  idleTimeoutMillis: 30000,
+  // Connection timeout: 10s to connect
+  connectionTimeoutMillis: 10000,
+  // Allow pool to close when no connections are active
+  allowExitOnIdle: true,
 });
 
 /**
@@ -52,4 +58,5 @@ export async function setProjectContext(client: PoolClient, projectId: string): 
 export async function closePool(): Promise<void> {
   await pool.end();
 }
+
 

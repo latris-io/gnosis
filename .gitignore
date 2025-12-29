@@ -9,9 +9,9 @@ dist/
 .env.local
 .env.*.local
 
-# Shadow ledger and semantic corpus data
-shadow-ledger/*.jsonl
-semantic-corpus/*.jsonl
+# Shadow ledger and semantic corpus data (per-project structure)
+shadow-ledger/
+semantic-corpus/
 
 # IDE
 .idea/
