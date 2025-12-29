@@ -8,23 +8,14 @@ export default defineConfig({
     environment: 'node',
     globals: true,
     setupFiles: ['test/setup.ts'],
+    // Global setup runs once before all tests, returns teardown function
+    globalSetup: ['test/globalSetup.ts'],
     testTimeout: 30000,
     hookTimeout: 30000,
     // Longer teardown timeout to ensure connections close
     teardownTimeout: 10000,
     // Run test files sequentially to prevent database race conditions
-    // Tests within a file still run in parallel unless fileParallelism is false
     fileParallelism: false,
-    // Increase pool timeout for Neo4j connections
-    pool: {
-      vmThreads: {
-        useAtomics: true,
-      },
-    },
-    // Gracefully exit after tests to avoid hanging on open connections
-    forceRerunTriggers: [],
-    // Close handles on completion
-    dangerouslyIgnoreUnhandledErrors: false,
   },
 });
 

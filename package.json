@@ -7,7 +7,7 @@
   "scripts": {
     "sanity": "vitest run test/sanity/",
     "test:sanity": "vitest run test/sanity/",
-    "test": "vitest",
+    "test": "vitest run",
     "verify:gates": "vitest run test/verification/gates/",
     "verify:integrity": "vitest run test/verification/integrity/",
     "verify:env": "npx tsx scripts/verify-env.ts",
@@ -51,4 +51,5 @@
     "node": ">=20.0.0"
   }
 }
+
 

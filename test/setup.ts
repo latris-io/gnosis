@@ -1,7 +1,6 @@
 // @implements INFRASTRUCTURE
-// Test setup file - loads environment and initializes connections
+// Test setup file - loads environment and per-file configuration
 import 'dotenv/config';
-import { afterAll, beforeAll } from 'vitest';
 
 // Ensure NODE_ENV is 'test' for test-only modules
 process.env.NODE_ENV = 'test';
@@ -33,16 +32,8 @@ export function testLog(message: string): void {
 }
 
 // ────────────────────────────────────────────────────────────────
-// GLOBAL TEARDOWN - Prevent hanging on open connections
+// NOTE: Connection cleanup handled by globalSetup.ts teardown.
+// vitest run mode (not watch) ensures clean exit after tests.
 // ────────────────────────────────────────────────────────────────
-// Note: This afterAll runs after EACH test file, not the entire suite.
-// For cross-file cleanup, we ensure each file's connections are closed.
-afterAll(async () => {
-  try {
-    await closeConnections();
-  } catch (err) {
-    // Ignore errors - connections may already be closed
-  }
-});
 
 
