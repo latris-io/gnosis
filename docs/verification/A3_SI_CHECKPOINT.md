@@ -71,7 +71,7 @@ npm run verify:scripts-boundary
 
 | Entity/Relationship | Expected | Notes |
 |---------------------|----------|-------|
-| Marker relationships | **R18/R19/R36/R37** | All A3 scope per BRD AC-64.3.4/5 (CID-2025-12-27-001) |
+| Marker relationships | **R18/R19/R36/R37** | All A3 scope per BRD AC-64.3.4/5 (CID-2025-002) |
 | ORPHAN_MARKER signals | 0 or documented | If >0, must be in corpus with deterministic IDs |
 
 ---

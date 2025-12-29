@@ -218,10 +218,10 @@ When in doubt: read the spec, follow the spec, verify against the spec.
 | **Verified** | 2025-12-25T15:00:00.000Z |
 | **Git SHA** | `73529a60acaccf3c0d36ad21d59f6cecc1a39740` |
 | **Project ID** | `6df2f456-440d-4958-b475-d9808775ff69` |
-| **State Doc** | `docs/verification/CID-2025-12-25-001.md` |
+| **State Doc** | `docs/verification/CID-2025-001.md` |
 | **Universe Freeze** | `.si-universe.env` (tag: si-readiness-v3) |
 
-### Locked Invariants (Updated per CID-2025-12-25-001)
+### Locked Invariants (Updated per CID-2025-001)
 
 These invariants were verified and MUST NOT drift:
 

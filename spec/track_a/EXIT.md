@@ -5,7 +5,7 @@
 **Purpose:** Verification checklist before HGR-1 (Human Gate Review 1)  
 **Canonical Source:** GNOSIS_TO_SOPHIA_MASTER_ROADMAP_V20_6_4.md §Track A
 
-> **v1.5.3:** CID-2025-12-27-001: Corrected R36/R37 scope to A3 per BRD AC-64.3.4/5
+> **v1.5.3:** CID-2025-002: Corrected R36/R37 scope to A3 per BRD AC-64.3.4/5
 > **v1.5.2:** Performance fixes for Neo4j/PostgreSQL sync; all 210 tests passing (55 sanity + 106 unit + 49 verification)
 > **v1.5.1:** E15 extraction test repair - VERIFY-E15 now uses module derivation provider; 188 core tests passing
 > **v1.5.0:** A.3 Marker Extraction complete; 25 marker tests; R36/R37 extraction implemented; DECISION ledger entries ready
@@ -92,8 +92,8 @@ All 21 Track A relationship types extractable and verified:
 | R23 | EXTENDS | VERIFY-R23 | [ ] Pass |
 | R24 | IMPLEMENTS_INTERFACE | VERIFY-R24 | [ ] Pass |
 | R26 | DEPENDS_ON | VERIFY-R26 | [ ] Pass |
-| R36 | TESTED_BY | VERIFY-R36 | [x] Pass (A3 scope per CID-2025-12-27-001) |
-| R37 | VERIFIED_BY | VERIFY-R37 | [x] Pass (A3 scope per CID-2025-12-27-001) |
+| R36 | TESTED_BY | VERIFY-R36 | [x] Pass (A3 scope per CID-2025-002) |
+| R37 | VERIFIED_BY | VERIFY-R37 | [x] Pass (A3 scope per CID-2025-002) |
 | R63 | INTRODUCED_IN | VERIFY-R63 | [ ] Pass |
 | R67 | MODIFIED_IN | VERIFY-R67 | [ ] Pass |
 | R70 | GROUPS | VERIFY-R70 | [ ] Pass |
@@ -187,7 +187,7 @@ All `@satisfies AC-*` and `@implements STORY-*` markers must resolve to entities
 
 ### Pending Clarifications
 
-- **R36/R37:** IMPLEMENTED IN A3 per BRD AC-64.3.4/5. Derived from test structure patterns (`describe('STORY-XX.YY')`, `it('AC-XX.YY.ZZ')`). Previous deferral was incorrect (CID-2025-12-27-001).
+- **R36/R37:** IMPLEMENTED IN A3 per BRD AC-64.3.4/5. Derived from test structure patterns (`describe('STORY-XX.YY')`, `it('AC-XX.YY.ZZ')`). Previous deferral was incorrect (CID-2025-002).
 - **DECISION ledger entries:** Implementation ready; will be observed on first A4 pipeline integration when `extractAndValidateMarkers()` is called.
 
 ### E15 Repair (v1.5.1)
