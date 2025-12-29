@@ -570,9 +570,11 @@ export async function extractAndPersistContainmentRelationships(projectId: strin
   ]);
   
   // Normalize to EntityInput format
+  // CRITICAL: name field is required for R07 derivation (suite matching)
   const normalize = (e: any): EntityInput => ({
     entity_type: e.entity_type ?? e.entityType,
     instance_id: e.instance_id ?? e.instanceId,
+    name: e.name,
     source_file: e.source_file ?? e.sourceFile,
     line_start: e.line_start ?? e.lineStart ?? 1,
     line_end: e.line_end ?? e.lineEnd ?? 1,
