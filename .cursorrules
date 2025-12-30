@@ -208,30 +208,32 @@ When in doubt: read the spec, follow the spec, verify against the spec.
 
 ---
 
-## TRACK STATE LOCK — SI-READINESS VERIFIED
+## TRACK STATE LOCK — HGR-1 BASELINE (A1–A3 COMPLETE)
 
 ### Checkpoint Metadata
 
 | Field | Value |
 |-------|-------|
-| **Phase** | A3 SI-Readiness COMPLETE |
-| **Verified** | 2025-12-25T15:00:00.000Z |
-| **Git SHA** | `73529a60acaccf3c0d36ad21d59f6cecc1a39740` |
+| **Phase** | HGR-1 BASELINE (A1–A3 COMPLETE) |
+| **Verified** | 2025-12-30T02:39:00.000Z |
+| **Git SHA** | `d6c2c9e2171eb2c3019f1b2cd2a3eba96e1e33ab` |
 | **Project ID** | `6df2f456-440d-4958-b475-d9808775ff69` |
-| **State Doc** | `docs/verification/CID-2025-001.md` |
-| **Universe Freeze** | `.si-universe.env` (tag: si-readiness-v3) |
+| **State Doc** | `docs/verification/A3_CLOSEOUT_PACKET_2025-12-29.md` |
+| **Universe Freeze** | `.si-universe.env` (tag: hgr-1-baseline) |
+| **Canonical Epoch** | `8179a4ff-c848-4538-8fc0-30726dc3ba6c` |
 
-### Locked Invariants (Updated per CID-2025-001)
+### Locked Invariants (HGR-1 Baseline)
 
 These invariants were verified and MUST NOT drift:
 
 1. **Entity counts:** E01=65, E02=397, E03=3147, Total=4309
-2. **Relationship counts:** Total=4078 (R01-R67)
+2. **Relationship counts:** Total=4078 (R01-R67, including R18/R19/R36/R37)
 3. **Cross-store parity:** PostgreSQL = Neo4j = 4078 relationships
 4. **Neo4j property model:** Single `:RELATIONSHIP` type with `r.relationship_type` property
 5. **Determinism:** Entity and relationship instance_ids are stable and reproducible
-6. **Shadow ledger coverage:** 100%
-7. **Evidence anchors:** All R16/R63/R67 have complete evidence
+6. **Shadow ledger coverage:** 100% (epoch-scoped, per-project isolation)
+7. **Evidence anchors:** All relationships have complete evidence
+8. **Epoch fields:** All new ledger entries include epoch_id, repo_sha, runner_sha, brd_hash
 
 ### Locked Surfaces
 
@@ -252,7 +254,7 @@ These invariants were verified and MUST NOT drift:
 
 **If a change request touches locked surfaces:**
 
-1. **WARN:** "This would invalidate the SI-readiness checkpoint (SHA: 73529a60)."
+1. **WARN:** "This would invalidate the HGR-1 baseline checkpoint (SHA: d6c2c9e2)."
 2. **LIST:** Show which invariants may be affected.
 3. **ASK:** "Confirm you want to proceed. Changes require re-running verification gates."
 4. **PROCEED:** Only with explicit human confirmation.
