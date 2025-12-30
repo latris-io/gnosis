@@ -1,10 +1,11 @@
 # Track A Exit Criteria
 
-**Version:** 1.5.3  
+**Version:** 1.5.4  
 **Implements:** Roadmap V20.6.4 Track A Exit  
 **Purpose:** Verification checklist before HGR-1 (Human Gate Review 1)  
 **Canonical Source:** GNOSIS_TO_SOPHIA_MASTER_ROADMAP_V20_6_4.md §Track A
 
+> **v1.5.4:** Updated BRD registry counts to V20.6.4 (65/397/3147) and corrected entity verification counts
 > **v1.5.3:** CID-2025-002: Corrected R36/R37 scope to A3 per BRD AC-64.3.4/5
 > **v1.5.2:** Performance fixes for Neo4j/PostgreSQL sync; all 210 tests passing (55 sanity + 106 unit + 49 verification)
 > **v1.5.1:** E15 extraction test repair - VERIFY-E15 now uses module derivation provider; 188 core tests passing
@@ -52,8 +53,8 @@ All 16 Track A entity types in scope; 15 extractable and verified (E14 Interface
 | ID | Entity | Test | Status |
 |----|--------|------|--------|
 | E01 | Epic | VERIFY-E01 | [x] Pass (65) |
-| E02 | Story | VERIFY-E02 | [x] Pass (351) |
-| E03 | AcceptanceCriterion | VERIFY-E03 | [x] Pass (2,849) |
+| E02 | Story | VERIFY-E02 | [x] Pass (397) |
+| E03 | AcceptanceCriterion | VERIFY-E03 | [x] Pass (3,147) |
 | E04 | Constraint | VERIFY-E04 | [x] Pass (0..n; BRD-dependent) |
 | E06 | TechnicalDesign | VERIFY-E06 | [x] Pass (1) |
 | E08 | DataSchema | VERIFY-E08 | [x] Pass (4) |
@@ -250,10 +251,11 @@ All `@satisfies AC-*` and `@implements STORY-*` markers must resolve to entities
 | Metric | Expected | Actual | Status |
 |--------|----------|--------|--------|
 | Epics | 65 | 65 | [x] Match |
-| Stories | 351 | 351 | [x] Match |
-| Acceptance Criteria | 2,849 | 2,849 | [x] Match |
+| Stories | 397 | 397 | [x] Match |
+| Acceptance Criteria | 3,147 | 3,147 | [x] Match |
 
 **Note:** These counts MUST match exactly. Any mismatch indicates extraction error.
+**Source:** BRD V20.6.4 (`docs/BRD_V20_6_4_COMPLETE.md`)
 
 ---
 
