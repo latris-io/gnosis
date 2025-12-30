@@ -19,6 +19,9 @@ jobs:
       
       - run: npm ci
       
+      - name: Type check (optional)
+        run: npx tsc --noEmit
+      
       - name: Verify organ document parity
         run: GOVERNANCE_PHASE=1 npm run verify:organ-parity
 
