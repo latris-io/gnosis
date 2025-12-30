@@ -1,6 +1,10 @@
-// scripts/pristine-gate-neo4j.ts
-// @g-api-exception: audit script (direct db import allowed)
-// Pristine Gate Neo4j verification
+/**
+ * scripts/pristine-gate-neo4j.ts
+ * Pristine Gate Neo4j verification
+ * 
+ * Direct DB access required for low-level verification queries.
+ * @g-api-exception AUDIT_SCRIPT
+ */
 import { getSession, closeDriver } from '../src/db/neo4j.js';
 
 const PROJECT_ID = '6df2f456-440d-4958-b475-d9808775ff69';

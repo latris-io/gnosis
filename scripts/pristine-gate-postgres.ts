@@ -1,6 +1,10 @@
-// scripts/pristine-gate-postgres.ts
-// @g-api-exception: audit script (direct db import allowed)
-// Pristine Gate Postgres verification
+/**
+ * scripts/pristine-gate-postgres.ts
+ * Pristine Gate Postgres verification
+ * 
+ * Direct DB access required for low-level verification queries.
+ * @g-api-exception AUDIT_SCRIPT
+ */
 import { pool, setProjectContext, getClient } from '../src/db/postgres.js';
 
 const PROJECT_ID = '6df2f456-440d-4958-b475-d9808775ff69';
