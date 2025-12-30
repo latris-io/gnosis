@@ -63,7 +63,7 @@ test('SANITY-002: TypeScript compiles without errors', async () => {
 ### SANITY-003: PostgreSQL Connection
 ```typescript
 // @implements SANITY-003
-// @satisfies BRD V20.6.3 AC-39.6.1
+// @satisfies BRD V20.6.4 AC-39.6.1
 
 test('SANITY-003: PostgreSQL connection succeeds', async () => {
   const pool = new Pool({ connectionString: process.env.DATABASE_URL });
@@ -76,7 +76,7 @@ test('SANITY-003: PostgreSQL connection succeeds', async () => {
 ### SANITY-004: Neo4j Connection
 ```typescript
 // @implements SANITY-004
-// @satisfies BRD V20.6.3 AC-39.5.7
+// @satisfies BRD V20.6.4 AC-39.5.7
 
 test('SANITY-004: Neo4j connection succeeds', async () => {
   const driver = neo4j.driver(process.env.NEO4J_URL, neo4j.auth.basic(user, pass));

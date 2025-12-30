@@ -29,8 +29,9 @@ const EXCLUDE_PATTERNS = [
 ];
 
 // Marker for explicit exemption from G-API boundary checks
-// Usage: Add "// @g-api-exception: <reason>" to file header
-const G_API_EXCEPTION_MARKER = /@g-api-exception:/;
+// Usage: Add "@g-api-exception REASON" or "@g-api-exception: <reason>" to file header
+// Both formats are accepted (JSDoc and single-line comment styles)
+const G_API_EXCEPTION_MARKER = /@g-api-exception[:\s]/;
 
 // ============================================================
 // Forbidden Patterns (Authority-Aligned)
