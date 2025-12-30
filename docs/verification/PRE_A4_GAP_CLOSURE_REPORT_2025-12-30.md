@@ -70,6 +70,16 @@ All pre-A4 gap closure tasks have been completed. The repository is now pristine
 - **Risk:** Medium (caused incorrect skip behavior)
 - **Fix:** Changed to `EXPECTED_NONZERO` for A3
 
+### Gap 4: Stale Counts in Governing Files
+
+- **Files:** `.cursorrules:229-231`, `scripts/pristine-gate-neo4j.ts:50-51`
+- **Issue:** Hardcoded counts (4309/4078) are stale after A1 refresh (now 4424/4408)
+- **Root Cause:** Counts were frozen at HGR-1 but entity/relationship totals grow legitimately
+- **Risk:** Medium (pristine-gate would fail; .cursorrules was semantically confusing)
+- **Fix:** 
+  - `.cursorrules`: Clarify BRD counts are FROZEN, totals are minimums (≥)
+  - `pristine-gate-neo4j.ts`: Refactor to query-based parity check (no hardcoded values)
+
 ### Acceptable Items (No Fix Needed)
 
 | Item | Classification | Reason |
@@ -78,6 +88,7 @@ All pre-A4 gap closure tasks have been completed. The repository is now pristine
 | Historical V20.6.3 comments | Acceptable Historical | Document past behavior, actual assertions correct |
 | @g-api-exception markers | Governed Exemptions | Per PROMPTS.md: "mark with @g-api-exception" |
 | Corpus ORPHAN_MARKER=3 | Historical Signals | From earlier runs; current extraction shows 0 |
+| `.si-universe.env` | Freeze Artifact | Documents specific freeze point; DO NOT MODIFY |
 
 ---
 
@@ -164,6 +175,8 @@ Allowed-to-be-zero: R03=0, R14=0 ✓
 | `src/schema/track-a/relationships.ts` | fix | V20.7.0 → V20.6.6 |
 | `scripts/verification/verify-track-milestone.ts` | fix | Remove R07 from skip allowlist |
 | `scripts/verification/expectations/track-a-expectations.ts` | fix | R07: DEFERRED_TO_A4 → EXPECTED_NONZERO |
+| `.cursorrules` | chore | Clarify BRD counts frozen, total counts are minimums (≥) |
+| `scripts/pristine-gate-neo4j.ts` | chore | Refactor to query-based parity check (no hardcoded counts) |
 
 ---
 
@@ -171,6 +184,7 @@ Allowed-to-be-zero: R03=0, R14=0 ✓
 
 | SHA | Message |
 |-----|---------|
+| `6bb1980` | chore(pre-a4): Update governing files with growth semantics |
 | `23bc677` | fix(pre-a4): Correct R07/version drift in verifier and expectations |
 
 Previous session commits:
