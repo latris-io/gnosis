@@ -7,7 +7,7 @@
  * Scope: src/** and scripts/** only (not test/**)
  * Format: Canonical markers at line-start only
  * 
- * Authority: Verification Spec V20.6.5 Part XVII
+ * Authority: Verification Spec V20.6.6 Part XVII
  */
 import { describe, test, expect } from 'vitest';
 import { execSync } from 'child_process';
@@ -115,4 +115,5 @@ describe('GOVERNANCE Tests', () => {
     });
   });
 });
+
 
