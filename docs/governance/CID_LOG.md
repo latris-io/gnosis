@@ -18,6 +18,7 @@ This log tracks all CIDs governing organ document changes. Per GOVERNANCE_PHASED
 | CID-2025-001 | BRD Format Standardization | 2025-12-25 | MB | `633c4cac` | BRD V20.6.4, parser expectations, test expectations |
 | CID-2025-002 | R36/R37 Scope Correction | 2025-12-27 | MB | — | EXIT.md, A3_SI_CHECKPOINT.md |
 | CID-2025-003 | Execution Epoch Documentation | 2025-12-28 | MB | `cdce180` | UVS V20.6.6, LEDGER_COVERAGE_SPEC, A3_SI_CHECKPOINT, CURSOR_IMPLEMENTATION_PLAN, EXIT.md |
+| CID-2025-004 | UVS Version Parity | 2025-12-30 | MB | — | ORGAN_VERSIONING_RULES.md, GOVERNANCE_PHASED_PLAN.md |
 
 ---
 

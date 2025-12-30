@@ -56,7 +56,7 @@ When referencing another organ doc, use its actual current version.
 |----------|-----------------|
 | BRD | V20.6.4 |
 | UTG Schema | V20.6.1 |
-| Verification Spec | V20.6.5 |
+| Verification Spec | V20.6.6 |
 | Roadmap | V20.6.4 |
 | Cursor Plan | V20.8.5 |
 | EP-D-002 | V20.6.1 |

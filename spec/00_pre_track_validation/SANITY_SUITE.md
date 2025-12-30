@@ -1,7 +1,7 @@
 # SANITY Test Suite Specification
 
 **Version:** 1.5.3  
-**Implements:** Verification Spec V20.6.5 Part II  
+**Implements:** Verification Spec V20.6.6 Part II  
 **Purpose:** Foundational tests that must pass before any track begins  
 **Canonical Source:** UNIFIED_VERIFICATION_SPECIFICATION_V20_6_6.md §Part II
 
@@ -172,7 +172,7 @@ test('SANITY-016: All canonical docs have valid version headers', () => {
   const docs = [
     { path: 'docs/BRD_V20_6_4_COMPLETE.md', expected: '20.6.4' },
     { path: 'docs/UNIFIED_TRACEABILITY_GRAPH_SCHEMA_V20_6_1.md', expected: '20.6.1' },
-    { path: 'docs/UNIFIED_VERIFICATION_SPECIFICATION_V20_6_6.md', expected: '20.6.5' },
+    { path: 'docs/UNIFIED_VERIFICATION_SPECIFICATION_V20_6_6.md', expected: '20.6.6' },
     { path: 'docs/GNOSIS_TO_SOPHIA_MASTER_ROADMAP_V20_6_4.md', expected: '20.6.4' },
   ];
   
@@ -689,7 +689,7 @@ test('SANITY-057: Story IDs reference valid epics', async () => {
 ### SANITY-053: AC Marker Integrity
 ```typescript
 // @implements SANITY-053
-// @satisfies Verification Spec V20.6.5 Part XVII
+// @satisfies Verification Spec V20.6.6 Part XVII
 
 test('SANITY-053: All @satisfies AC-* markers resolve to E03 entities', async () => {
   if (!PROJECT_ID) throw new Error('[SANITY-053] PROJECT_ID required');
@@ -714,7 +714,7 @@ test('SANITY-053: All @satisfies AC-* markers resolve to E03 entities', async ()
 ### SANITY-054: Story Marker Integrity
 ```typescript
 // @implements SANITY-054
-// @satisfies Verification Spec V20.6.5 Part XVII
+// @satisfies Verification Spec V20.6.6 Part XVII
 
 test('SANITY-054: All @implements STORY-* markers resolve to E02 entities', async () => {
   if (!PROJECT_ID) throw new Error('[SANITY-054] PROJECT_ID required');
