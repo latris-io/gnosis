@@ -99,7 +99,8 @@ export interface LedgerEntry {
   epoch_id?: string;          // Epoch ID for run binding
   repo_sha?: string;          // Git SHA of repository at extraction time
   runner_sha?: string;        // Git SHA of Gnosis codebase
-  brd_hash?: string;          // SHA-256 hash of BRD content
+  brd_hash?: string;          // SHA-256 hash of BRD content (legacy)
+  brd_blob_hash?: string;     // SHA-256 of git blob (canonical, matches baseline)
 }
 
 /**
@@ -124,7 +125,8 @@ export interface DecisionEntry {
   epoch_id?: string;           // Epoch ID for run binding
   repo_sha?: string;           // Git SHA of repository at extraction time
   runner_sha?: string;         // Git SHA of Gnosis codebase
-  brd_hash?: string;           // SHA-256 hash of BRD content
+  brd_hash?: string;           // SHA-256 hash of BRD content (legacy)
+  brd_blob_hash?: string;      // SHA-256 of git blob (canonical, matches baseline)
 }
 
 /**
@@ -195,6 +197,7 @@ export class ShadowLedger {
       repo_sha: epoch?.repo_sha,
       runner_sha: epoch?.runner_sha,
       brd_hash: epoch?.brd_hash,
+      brd_blob_hash: epoch?.brd_blob_hash,
     };
 
     const line = JSON.stringify(fullEntry) + '\n';
@@ -304,7 +307,7 @@ export class ShadowLedger {
    * - DECISION (ORPHAN, TDD_COHERENCE_OK, TDD_COHERENCE_MISMATCH)
    * - No entry for NO-OP (relationship unchanged)
    */
-  async logDecision(entry: Omit<DecisionEntry, 'timestamp' | 'operation' | 'kind' | 'epoch_id' | 'repo_sha' | 'runner_sha' | 'brd_hash'>): Promise<void> {
+  async logDecision(entry: Omit<DecisionEntry, 'timestamp' | 'operation' | 'kind' | 'epoch_id' | 'repo_sha' | 'runner_sha' | 'brd_hash' | 'brd_blob_hash'>): Promise<void> {
     await this.initialize();
 
     // Get epoch context if available
@@ -319,6 +322,7 @@ export class ShadowLedger {
       repo_sha: epoch?.repo_sha,
       runner_sha: epoch?.runner_sha,
       brd_hash: epoch?.brd_hash,
+      brd_blob_hash: epoch?.brd_blob_hash,
     };
 
     const line = JSON.stringify(fullEntry) + '\n';

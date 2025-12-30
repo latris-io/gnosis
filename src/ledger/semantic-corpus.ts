@@ -80,7 +80,8 @@ export interface SemanticSignal {
   project_id?: string;        // Project UUID for isolation
   repo_sha?: string;          // Git SHA for epoch binding
   epoch_id?: string;          // Epoch ID for run binding
-  brd_hash?: string;          // SHA-256 hash of BRD content
+  brd_hash?: string;          // SHA-256 hash of BRD content (legacy, canonicalized)
+  brd_blob_hash?: string;     // SHA-256 of git blob (canonical, matches baseline)
   
   // Entity/marker identification
   entity_type?: string;       // E-code if applicable
@@ -162,6 +163,7 @@ export class SemanticCorpus {
       repo_sha: epoch?.repo_sha ?? signal.repo_sha,
       project_id: epoch?.project_id ?? signal.project_id,
       brd_hash: epoch?.brd_hash ?? signal.brd_hash,
+      brd_blob_hash: epoch?.brd_blob_hash ?? signal.brd_blob_hash,
     };
 
     const line = JSON.stringify(fullSignal) + '\n';

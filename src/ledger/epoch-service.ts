@@ -36,7 +36,9 @@ export interface EpochContext {
   project_id: string;         // Project UUID
   repo_sha: string;           // Git SHA of the repository
   runner_sha: string;         // Git SHA of Gnosis codebase
-  brd_hash: string;           // SHA-256 of BRD content
+  brd_hash: string;           // SHA-256 of BRD content (legacy, canonicalized)
+  brd_blob_hash: string;      // SHA-256 of git blob (canonical, matches baseline)
+  brd_blob_hash_source: 'git_blob' | 'filesystem_fallback' | 'error';  // Provenance of brd_blob_hash
   started_at: string;         // ISO 8601 timestamp
   completed_at: string | null; // ISO 8601 timestamp or null if incomplete
   status: 'running' | 'completed' | 'failed';
@@ -87,6 +89,8 @@ export function getRunnerSha(): string {
 /**
  * Compute a deterministic hash of the BRD content.
  * Canonicalizes line endings and trailing whitespace before hashing.
+ * 
+ * @deprecated Use computeBrdBlobHash() for canonical git-blob-based hashing.
  */
 export async function computeBrdHash(brdPath: string = 'docs/BRD_V20_6_4_COMPLETE.md'): Promise<string> {
   try {
@@ -102,6 +106,62 @@ export async function computeBrdHash(brdPath: string = 'docs/BRD_V20_6_4_COMPLET
   } catch {
     return 'brd-not-found';
   }
+}
+
+/**
+ * Result of BRD blob hash computation, including provenance source.
+ */
+export interface BrdBlobHashResult {
+  hash: string;                           // "sha256:<hex>" or "brd-not-found"
+  source: 'git_blob' | 'filesystem_fallback' | 'error';
+}
+
+/**
+ * Compute canonical BRD hash from the git blob at a specific commit.
+ * This matches the hash computed by universe-freeze.ts and stored in .si-universe.env.
+ * 
+ * Uses: git show <repoSha>:docs/BRD_V20_6_4_COMPLETE.md | sha256sum
+ * 
+ * @param repoSha - Git commit SHA to read the BRD from
+ * @param brdPath - Path to BRD file relative to repo root
+ * @returns Hash result with source provenance
+ */
+export function computeBrdBlobHashWithSource(
+  repoSha: string,
+  brdPath: string = 'docs/BRD_V20_6_4_COMPLETE.md'
+): BrdBlobHashResult {
+  try {
+    // Get the git blob content at the specified commit
+    const blobContent = execSync(`git show ${repoSha}:${brdPath}`, { encoding: 'buffer' });
+    const hash = crypto.createHash('sha256').update(blobContent).digest('hex');
+    return { hash: `sha256:${hash}`, source: 'git_blob' };
+  } catch (error) {
+    // Fall back to filesystem if git fails (e.g., uncommitted changes)
+    // Uses raw bytes (no canonicalization) to match git blob semantics
+    console.warn(`[WARN] computeBrdBlobHash: git show failed for ${repoSha}, falling back to filesystem`);
+    try {
+      const content = require('fs').readFileSync(brdPath);
+      const hash = crypto.createHash('sha256').update(content).digest('hex');
+      return { hash: `sha256:${hash}`, source: 'filesystem_fallback' };
+    } catch {
+      return { hash: 'brd-not-found', source: 'error' };
+    }
+  }
+}
+
+/**
+ * Compute canonical BRD hash from the git blob at a specific commit.
+ * Simple wrapper that returns just the hash string.
+ * 
+ * @param repoSha - Git commit SHA to read the BRD from
+ * @param brdPath - Path to BRD file relative to repo root
+ * @returns Hash in format "sha256:<hex>" or "brd-not-found"
+ */
+export function computeBrdBlobHash(
+  repoSha: string,
+  brdPath: string = 'docs/BRD_V20_6_4_COMPLETE.md'
+): string {
+  return computeBrdBlobHashWithSource(repoSha, brdPath).hash;
 }
 
 /**
@@ -144,6 +204,7 @@ export async function startEpoch(
   const repoSha = getRepoSha();
   const runnerSha = getRunnerSha();
   const brdHash = await computeBrdHash(brdPath);
+  const brdBlobResult = computeBrdBlobHashWithSource(repoSha, brdPath);
 
   currentEpoch = {
     epoch_id: epochId,
@@ -151,6 +212,8 @@ export async function startEpoch(
     repo_sha: repoSha,
     runner_sha: runnerSha,
     brd_hash: brdHash,
+    brd_blob_hash: brdBlobResult.hash,
+    brd_blob_hash_source: brdBlobResult.source,
     started_at: new Date().toISOString(),
     completed_at: null,
     status: 'running',

@@ -26,7 +26,8 @@ import {
   completeEpoch, 
   failEpoch, 
   getCurrentEpoch,
-  EpochContext 
+  EpochContext,
+  computeBrdBlobHash
 } from '../src/ledger/epoch-service.js';
 import { getLedgerPath, LedgerEntry } from '../src/ledger/shadow-ledger.js';
 import { getCorpusPath, SemanticSignal, SEMANTIC_SIGNAL_SCHEMA_ID } from '../src/ledger/semantic-corpus.js';
@@ -98,10 +99,22 @@ async function validateLedgerPristine(epochId: string, repoSha: string, runnerSh
   const kindCounts: Record<string, number> = {};
   const opCounts: Record<string, number> = {};
   
+  let brdBlobHashMismatches = 0;
+  
   for (const entry of epochEntries) {
-    // Check required fields
-    if (!entry.epoch_id || !entry.repo_sha || !entry.runner_sha || !entry.brd_hash) {
+    // Check required fields (brd_hash OR brd_blob_hash is acceptable)
+    const hasBrdHash = entry.brd_hash || (entry as any).brd_blob_hash;
+    if (!entry.epoch_id || !entry.repo_sha || !entry.runner_sha || !hasBrdHash) {
       missingFields++;
+    }
+    
+    // If brd_blob_hash exists, verify it matches computed value
+    const entryBlobHash = (entry as any).brd_blob_hash;
+    if (entryBlobHash && entry.repo_sha) {
+      const expected = computeBrdBlobHash(entry.repo_sha);
+      if (entryBlobHash !== expected) {
+        brdBlobHashMismatches++;
+      }
     }
     
     if (entry.repo_sha !== repoSha || entry.runner_sha !== runnerSha) {
@@ -137,6 +150,12 @@ async function validateLedgerPristine(epochId: string, repoSha: string, runnerSh
     passed: wrongSha === 0,
     message: `SHA fields: ${wrongSha === 0 ? 'all match' : `${wrongSha} entries have wrong SHA`}`,
     details: { wrongSha, expectedRepoSha: repoSha }
+  });
+  
+  results.push({
+    passed: brdBlobHashMismatches === 0,
+    message: `BRD blob hash: ${brdBlobHashMismatches === 0 ? 'all verified' : `${brdBlobHashMismatches} mismatches`}`,
+    details: { brdBlobHashMismatches }
   });
   
   results.push({
@@ -218,7 +237,9 @@ async function validateCorpusPristine(epochId: string, repoSha: string, brdHash:
       legacyCount++;
     }
     
-    if (!signal.project_id || !signal.repo_sha || !signal.epoch_id || !signal.brd_hash) {
+    // brd_hash OR brd_blob_hash is acceptable
+    const hasBrdHash = signal.brd_hash || (signal as any).brd_blob_hash;
+    if (!signal.project_id || !signal.repo_sha || !signal.epoch_id || !hasBrdHash) {
       missingFields++;
     }
     

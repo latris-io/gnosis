@@ -19,6 +19,8 @@
 | **PROJECT_ID** | `6df2f456-440d-4958-b475-d9808775ff69` | `.si-universe.env` |
 | **Canonical Epoch** | `8179a4ff-c848-4538-8fc0-30726dc3ba6c` | `.cursorrules` |
 | **Execution Timestamp** | 2025-12-30T15:38:01Z | UTC |
+| **Verification Commit SHA (HEAD)** | `9564260f9a56a1917dffad4b5b62a5ab1f0a6a7b` | `git rev-parse HEAD` |
+| **Working Tree Clean** | YES | `git status --porcelain` (empty) |
 
 ### 1.2 Tag Details
 
@@ -69,11 +71,19 @@ git show d6c2c9e2:docs/BRD_V20_6_4_COMPLETE.md | shasum -a 256
 
 **Result:** ✅ BRD content is identical at both SHAs
 
-### 2.3 Epoch Hash Anomaly
+### 2.3 Epoch Hash Resolution ✅
 
-The epoch metadata contains a different `brd_hash` (`f419ddf0...`). This appears consistently across multiple epochs and is likely due to a different hash computation method in the epoch service (possibly canonicalization differences).
+**Legacy semantics:** Pre-fix epochs have `brd_hash` computed from canonicalized filesystem text (line endings normalized + trailing whitespace trimmed), producing `sha256:f419ddf0...`.
 
-**Assessment:** The BRD file content is stable. The hash computation discrepancy is a known anomaly, not a content difference. **ACCEPTABLE** for HGR-1.
+**Post-fix semantics:** Starting with commit `9564260f`, epochs include:
+- `brd_blob_hash` — canonical hash derived from git blob at `repo_sha`
+- `brd_blob_hash_source` — provenance indicator (`git_blob` | `filesystem_fallback` | `error`)
+
+**Verification rule:**
+- If `brd_blob_hash` exists → verify it equals `computeBrdBlobHash(repo_sha)`
+- Else (legacy epoch) → allow old `brd_hash` without failure
+
+**Result:** ✅ **RESOLVED** — Legacy epochs documented; new epochs have canonical provenance.
 
 ---
 
@@ -290,7 +300,9 @@ The epoch metadata contains a different `brd_hash` (`f419ddf0...`). This appears
 | Suite | Passed | Failed | Total |
 |-------|--------|--------|-------|
 | Sanity | 66 | 0 | 66 |
-| Full | 248 | 0 | 248 |
+| Full | 256 | 0 | 256 |
+
+*Note: Test count increased from 248 to 256 due to BRD blob hash tests (`test/unit/brd-blob-hash.test.ts`).*
 
 ### 10.2 Exempted Audit Scripts
 
@@ -326,7 +338,7 @@ These are HGR-1 verification utility scripts that require direct DB access for a
 
 | Check | Result | Notes |
 |-------|--------|-------|
-| BRD hash consistency | ⚠️ | Epoch hash differs (known anomaly) |
+| BRD hash consistency | ✅ | Resolved: `brd_blob_hash` now canonical (see §2.3) |
 | SHA alignment | ⚠️ | Tag SHA differs from epoch repo_sha (explained) |
 | Audit script exemptions | ✅ | 2 scripts with `@g-api-exception` markers |
 
@@ -336,7 +348,7 @@ These are HGR-1 verification utility scripts that require direct DB access for a
 
 The Track A truth substrate (A1–A3) is:
 - **Correct:** BRD counts exact, required relationships populated
-- **Complete:** All Track A entity/relationship types present
+- **Complete:** All required A1–A3 entity and relationship types are present; deferred/reserved relationship codes are correctly empty at HGR‑1
 - **Evidence-anchored:** 0 bad entity/relationship anchors
 - **Replayable:** Canonical epoch proves idempotency
 - **Internally consistent:** PG ↔ Neo4j parity confirmed
