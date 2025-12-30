@@ -100,6 +100,8 @@ All CID files exist at `docs/verification/CID-2025-*.md`.
 | Project Name | `a3-fresh-proof` |
 | Created At | 2025-12-29T19:08:00Z |
 
+> ⚠️ **GOVERNANCE NOTE:** Project `de31c49e-8dba-4bef-a49b-51372579d040` is an **A3 marker-proof project only**; it does not represent a full Track A extraction (E15 module derivation was not executed). This project MUST NOT be used as evidence of Track A completion. The canonical HGR-1 baseline is project `6df2f456-440d-4958-b475-d9808775ff69`.
+
 ### 5.2 A1 Extraction (Entity Creation)
 **Evidence File:** `docs/verification/evidence/fresh-a1-extraction.txt`
 
