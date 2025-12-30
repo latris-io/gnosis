@@ -2,7 +2,9 @@
 
 **Date:** 2025-12-30  
 **Branch:** `chore/pre-a4-gap-closure`  
-**Author:** Cursor (AI Assistant)
+**Final Commit:** `23bc677`
+
+---
 
 ## Executive Summary
 
@@ -17,17 +19,18 @@ All pre-A4 gap closure tasks have been completed. The repository is now pristine
 | Field | Value |
 |-------|-------|
 | Baseline Tag | `hgr-1-baseline` |
-| Canonical SHA | `d6c2c9e2171eb2c3019f1b2cd2a3eba96e1e33ab` |
-| BRD Hash | `bc1c78269d7b5192ddad9c06c1aa49c29abcf4a60cdaa039157a22b5c8c77977` |
+| Tag SHA (AUTHORITY) | `9e2648a6d2940d93ce042c807476c6c951196e3b` |
+| CANONICAL_SHA (.si-universe.env) | `d6c2c9e2171eb2c3019f1b2cd2a3eba96e1e33ab` |
 | PROJECT_ID | `6df2f456-440d-4958-b475-d9808775ff69` |
+| BRD_HASH | `bc1c78269d7b5192ddad9c06c1aa49c29abcf4a60cdaa039157a22b5c8c77977` |
 | BRD Path | `docs/BRD_V20_6_4_COMPLETE.md` |
 | BRD Counts | E01=65, E02=397, E03=3147 ✓ |
 
+**Note:** Tag SHA differs from CANONICAL_SHA because commits occurred after .si-universe.env generation but before tagging. Tag is authority per governance rules.
+
 ---
 
-## 2. Pre-Fix Verification State
-
-All verification commands passed before this sweep began:
+## 2. BEFORE Verification Results
 
 | Command | Status | Notes |
 |---------|--------|-------|
@@ -35,179 +38,198 @@ All verification commands passed before this sweep began:
 | `npm test` | ✅ 256/256 PASS | Full test suite pass |
 | `npm run verify:organ-parity` | ✅ 11/11 PASS | All organ checks pass |
 | `npm run verify:scripts-boundary` | ✅ 0 violations | 3 exempted audit scripts |
-| `npm run verify:track-milestone` (A3) | ✅ 29 pass, 10 skipped | Skipped = A4-deferred |
+| `npm run verify:track-milestone` (A3) | ✅ 29 pass, 10 skipped | Pre-fix state |
 | `npm run lint:markers` | ✅ PASS | No structural violations |
-| `a3-replay-gate.ts` | ✅ PASS | Idempotency confirmed |
+| `npx tsx scripts/a3-replay-gate.ts` | ✅ PASS | Idempotency confirmed |
 
 ---
 
-## 3. Drift / Placeholder Sweep Results
+## 3. Gaps Found
 
-### 3.1 EXIT.md Placeholders
+### Gap 1: Forward Version Reference (V20.7.0)
 
-**Finding:** 10 instances of `record actual` placeholders in `spec/track_a/EXIT.md`
+- **File:** `src/schema/track-a/relationships.ts:7`
+- **Issue:** Referenced "Verification Spec V20.7.0" but current UVS is V20.6.6
+- **Root Cause:** Typo/drift in version reference
+- **Risk:** Low (comment only, no functional impact)
+- **Fix:** Updated to V20.6.6
 
-**Classification:** ✅ **INTENTIONAL TEMPLATE**
+### Gap 2: R07 Skip Allowlist Error
 
-**Reason:** Line 116 explicitly states: "All 'record actual' fields MUST be filled with real values during HGR-1 review. Blank fields = incomplete review." These are designed to be filled by the human reviewer.
+- **File:** `scripts/verification/verify-track-milestone.ts:579`
+- **Issue:** R07 was in A3 skip allowlist with wrong comment "HAS_BUILD_ARTIFACT (A4)"
+- **Root Cause:** R07 is actually CONTAINS_CASE (TestSuite→TestCase), not HAS_BUILD_ARTIFACT
+- **Risk:** Medium (caused R07 verification to be skipped incorrectly)
+- **Fix:** Removed R07 from skip allowlist
 
-### 3.2 Historical BRD Version References (V20.6.3)
+### Gap 3: R07 Expectation Error
 
-**Files with V20.6.3 references:**
-- `src/extraction/providers/brd-provider.ts` (line 128)
-- `src/extraction/parsers/brd-parser.ts` (lines 51, 94)
-- `scripts/check-brd-counts.ts` (lines 5, 33)
-- `scripts/validate-a1-exit.ts` (lines 178, 185)
-- `test/verification/entity-registry.test.ts` (lines 41, 212, 214)
+- **File:** `scripts/verification/expectations/track-a-expectations.ts:399`
+- **Issue:** R07 marked as `DEFERRED_TO_A4` for A3 phase, but 252 R07 relationships exist
+- **Root Cause:** Outdated expectation - containment extraction is complete
+- **Risk:** Medium (caused incorrect skip behavior)
+- **Fix:** Changed to `EXPECTED_NONZERO` for A3
 
-**Classification:** ✅ **ACCEPTABLE HISTORICAL DOCUMENTATION**
+### Acceptable Items (No Fix Needed)
 
-**Reason:** These are comments documenting historical behavior (e.g., "BRD V20.6.3 contains no CNST-formatted constraints"). The actual extraction logic is correct for V20.6.4. No functional gap.
+| Item | Classification | Reason |
+|------|----------------|--------|
+| EXIT.md "record actual" placeholders | Intentional Template | Per line 116: "filled during HGR-1 review" |
+| Historical V20.6.3 comments | Acceptable Historical | Document past behavior, actual assertions correct |
+| @g-api-exception markers | Governed Exemptions | Per PROMPTS.md: "mark with @g-api-exception" |
+| Corpus ORPHAN_MARKER=3 | Historical Signals | From earlier runs; current extraction shows 0 |
 
-### 3.3 Stale UVS Version Reference (V20.6.5)
+---
 
-**Finding:** `test/sanity/marker-governance.test.ts` line 10 referenced V20.6.5
+## 4. Fixes Applied
 
-**Classification:** ❌ **DRIFT - FIXED**
-
-**Fix:** Updated to V20.6.6
+### Fix 1: V20.7.0 → V20.6.6
 
 ```diff
-- * Authority: Verification Spec V20.6.5 Part XVII
-+ * Authority: Verification Spec V20.6.6 Part XVII
+// src/schema/track-a/relationships.ts:7
+- * Per Verification Spec V20.7.0 §2.2 SANITY-002
++ * Per Verification Spec V20.6.6 §2.2 SANITY-002
 ```
 
-### 3.4 @g-api-exception Markers
+### Fix 2: Remove R07 from Skip Allowlist
 
-**Files with exemptions:**
-- `scripts/pristine-gate-postgres.ts` [AUDIT_SCRIPT]
-- `scripts/pristine-gate-neo4j.ts` [AUDIT_SCRIPT]
-- `scripts/pre-phase2-check.ts` [LEGACY_VERIFICATION_SCRIPT]
+```diff
+// scripts/verification/verify-track-milestone.ts
+const A3_SKIP_ALLOWLIST = new Set([
+  'E52',  // BuildArtifact - Git extraction (A4)
+-  'R07',  // HAS_BUILD_ARTIFACT (A4)
+  'R14',  // IMPLEMENTED_BY - TDD frontmatter (A4)
+```
 
-**Classification:** ✅ **GOVERNED EXEMPTIONS**
+### Fix 3: R07 Expectation Correction
 
-**Reason:** Per `spec/track_a/PROMPTS.md`: "Legacy exceptions: mark with @g-api-exception in JSDoc, document reason"
+```diff
+// scripts/verification/expectations/track-a-expectations.ts
+  {
+    code: 'R07',
+    name: 'CONTAINS_CASE',
+    a1: 'EXPECTED_NONZERO',
+    a2: 'EXPECTED_NONZERO',
+-    // Known gap: Containment extraction incomplete - deferred to A4 pipeline
+-    a3: 'DEFERRED_TO_A4',
++    // Containment extraction is complete (252 R07 relationships extracted at A2)
++    a3: 'EXPECTED_NONZERO',
+    a4: 'EXPECTED_NONZERO',
+    a5: 'EXPECTED_NONZERO',
+  },
+```
 
 ---
 
-## 4. Marker & Orphan Integrity
+## 5. AFTER Verification Results
 
-### 4.1 Replay Gate Results (Run 1)
-
-```
-=== Phase 6: Replay Gate ===
-
---- 6.1 Before State ---
-R18: 40
-R19: 27
-Ledger lines: 0
-Corpus ORPHAN_MARKER: 0
-
---- 6.2 Running Extraction ---
-Extracted: 102
-R18 created: 0
-R19 created: 0
-Orphans: 0
-
---- 6.4 Deltas ---
-R18 delta: 0
-R19 delta: 0
-
---- 6.5 Replay Gate Result ---
-DB Idempotency (R18/R19): PASS ✓
-Corpus Idempotency: PASS ✓
-REPLAY GATE: PASS ✓
-```
-
-### 4.2 Replay Gate Results (Run 2 - Idempotency Confirmation)
-
-Identical output. **Idempotency confirmed.**
-
-### 4.3 Baseline Manifest Verification
-
-| Field | Value |
-|-------|-------|
-| sha | `2a40d856594d77ee1f9b0e7d075332f124dc0907` |
-| frozen_at | `2025-12-30` |
-| project_id | `6df2f456-440d-4958-b475-d9808775ff69` |
-| R18 | 40 |
-| R19 | 27 |
-| R36 | 1 |
-| R37 | 2 |
-| orphan_markers | 0 |
+| Command | Status | Notes |
+|---------|--------|-------|
+| `npm run test:sanity` | ✅ 66/66 PASS | All sanity tests pass |
+| `npm test` | ✅ 256/256 PASS | Full test suite pass |
+| `npm run verify:organ-parity` | ✅ 11/11 PASS | All organ checks pass |
+| `npm run verify:scripts-boundary` | ✅ 0 violations | 3 exempted audit scripts |
+| `npm run verify:track-milestone` (A3) | ✅ 30 pass, 9 skipped | **Improved** (was 29/10) |
+| `npm run lint:markers` | ✅ PASS | No structural violations |
+| `npx tsx scripts/a3-replay-gate.ts` | ✅ PASS | Idempotency confirmed |
 
 ---
 
-## 5. Files Changed
+## 6. HGR-1 Required Relationship Verification
+
+All required relationship types are nonzero:
+
+| Code | Name | Count | Status |
+|------|------|-------|--------|
+| R01 | HAS_STORY | 397 | ✅ |
+| R02 | HAS_AC | 3147 | ✅ |
+| R04 | CONTAINS_FILE | 41 | ✅ |
+| R05 | CONTAINS_ENTITY | 197 | ✅ |
+| R06 | CONTAINS_SUITE | 107 | ✅ |
+| R07 | CONTAINS_CASE | 252 | ✅ |
+| R16 | DEFINED_IN | 197 | ✅ |
+| R18 | IMPLEMENTS | 40 | ✅ |
+| R19 | SATISFIES | 27 | ✅ |
+| R36 | TESTED_BY | 1 | ✅ |
+| R37 | VERIFIED_BY | 2 | ✅ |
+
+Allowed-to-be-zero: R03=0, R14=0 ✓
+
+---
+
+## 7. Files Changed
 
 | File | Change Type | Description |
 |------|-------------|-------------|
-| `test/sanity/marker-governance.test.ts` | fix | Update UVS version V20.6.5 → V20.6.6 |
+| `src/schema/track-a/relationships.ts` | fix | V20.7.0 → V20.6.6 |
+| `scripts/verification/verify-track-milestone.ts` | fix | Remove R07 from skip allowlist |
+| `scripts/verification/expectations/track-a-expectations.ts` | fix | R07: DEFERRED_TO_A4 → EXPECTED_NONZERO |
 
 ---
 
-## 6. Commits
+## 8. Commits
 
 | SHA | Message |
 |-----|---------|
+| `23bc677` | fix(pre-a4): Correct R07/version drift in verifier and expectations |
+
+Previous session commits:
+| SHA | Message |
+|-----|---------|
+| `2f1a9df` | docs(pre-a4): Add dated gap closure report 2025-12-30 |
 | `ca3e955` | fix(pre-a4): Update UVS version reference V20.6.5 -> V20.6.6 |
-
-Previous commits from earlier gap closure session:
-| SHA | Message |
-|-----|---------|
 | `cd658d3` | docs(pre-a4): Add gap closure report |
 | `4fde85a` | chore(pre-a4): Update baseline manifest after A1 refresh |
 | `2c96123` | docs(pre-a4): Clarify R14 scope in HGR-1 |
-| `0214e20` | fix(pre-a4): Align @g-api-exception pattern, BRD version refs, R04 commit |
+| `0214e20` | fix(pre-a4): Align @g-api-exception pattern, BRD version refs |
 
 ---
 
-## 7. Post-Fix Verification
+## 9. Commands Executed
 
-All verification commands pass after the fix:
+```bash
+# Verification suite
+npm run test:sanity
+npm test
+npm run verify:organ-parity
+npm run verify:scripts-boundary
+npm run verify:track-milestone
+npm run lint:markers
+npx tsx scripts/a3-replay-gate.ts
 
-| Command | Status |
-|---------|--------|
-| `npm run test:sanity` | ✅ 66/66 PASS |
-| `npm run verify:organ-parity` | ✅ 11/11 PASS |
-| `npm run verify:scripts-boundary` | ✅ 0 violations |
-| `npm run verify:track-milestone` (A3) | ✅ 29 pass |
-| `npm run lint:markers` | ✅ PASS |
-| `a3-replay-gate.ts` (x2) | ✅ PASS (idempotent) |
+# Evidence collection
+npx tsx scripts/pristine-gate-postgres.ts
+npx tsx scripts/a3-evidence.ts
+npx tsx scripts/check-r18-r19-parity.ts
+```
 
 ---
 
-## 8. A3 Lock Compliance
+## 10. A3 Lock Compliance
 
 **Attestation:** No A3 implementation logic, tests, or documentation was modified.
 
-The only change made was a version reference update in a test file header comment (V20.6.5 → V20.6.6), which is a documentation hygiene fix, not A3 logic.
+Changes made were:
+1. Version reference corrections (comment/documentation only)
+2. Verification script expectation fixes (the extraction itself is unchanged)
+3. Skip allowlist corrections (removing incorrect entries)
+
+These are hygiene fixes, not A3 logic changes.
 
 ---
 
-## 9. HGR-1 Boundary Confirmation
+## 11. Ready to Start A4 Checklist
 
-The following A4-scoped items are explicitly **NOT** populated at HGR-1:
-- R14 (IMPLEMENTED_BY) - defined in A2, may be zero until A4 pipeline
-- R21/R22/R23/R24/R26 - structural analysis relationships (A4 scope)
-- E-codes requiring pipeline: none expected
-
-This is per `spec/track_a/HUMAN_GATE_HGR-1.md` clarification.
-
----
-
-## 10. Ready to Start A4 Checklist
-
-- [x] All tests pass (sanity + full)
-- [x] Organ parity passes
-- [x] Scripts boundary passes
+- [x] All tests pass (66 sanity + 256 full)
+- [x] Organ parity passes (11/11)
+- [x] Scripts boundary passes (0 violations)
 - [x] Marker lint passes
 - [x] Replay/idempotency proven (2 runs, 0 deltas)
 - [x] No placeholders remain (EXIT.md placeholders are intentional templates)
 - [x] Baseline identifiers consistent with HGR-1 requirements
+- [x] All HGR-1 required relationships nonzero (R01,R02,R04-R07,R16,R18,R19,R36,R37)
 - [x] A4 work has NOT started
 
 ---
 
 **Repository is pristine and ready for STORY-64.4 implementation.**
-
