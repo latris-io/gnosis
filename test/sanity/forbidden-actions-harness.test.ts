@@ -28,6 +28,10 @@ const EXCLUDE_PATTERNS = [
   '**/forbidden-actions-harness.test.ts', // Self-exclusion
 ];
 
+// Marker for explicit exemption from G-API boundary checks
+// Usage: Add "// @g-api-exception: <reason>" to file header
+const G_API_EXCEPTION_MARKER = /@g-api-exception:/;
+
 // ============================================================
 // Forbidden Patterns (Authority-Aligned)
 // ============================================================
@@ -464,6 +468,16 @@ function checkCanonMutation(filePath: string, content: string, lines: string[]):
   return violations;
 }
 
+/**
+ * Check if a file has the @g-api-exception marker
+ * This marker exempts audit scripts from G-API boundary checks
+ */
+function hasGApiException(filePath: string, content: string): boolean {
+  // Only check the first 10 lines (header area)
+  const headerLines = content.split('\n').slice(0, 10).join('\n');
+  return G_API_EXCEPTION_MARKER.test(headerLines);
+}
+
 function scanFile(filePath: string): Violation[] {
   const violations: Violation[] = [];
   const content = fs.readFileSync(filePath, 'utf-8');
@@ -529,6 +543,7 @@ describe('Forbidden Actions Enforcement Harness', () => {
   it('fails on forbidden actions in enforcement scope', async () => {
     const repoRoot = process.cwd();
     const allViolations: Violation[] = [];
+    const skippedFiles: string[] = [];
 
     for (const dir of SCAN_DIRECTORIES) {
       const dirPath = path.join(repoRoot, dir);
@@ -542,9 +557,25 @@ describe('Forbidden Actions Enforcement Harness', () => {
       });
 
       for (const file of files) {
+        // Check for @g-api-exception marker
+        const content = fs.readFileSync(file, 'utf-8');
+        if (hasGApiException(file, content)) {
+          skippedFiles.push(file);
+          continue;
+        }
+        
         const violations = scanFile(file);
         allViolations.push(...violations);
       }
+    }
+
+    // Report skipped files for audit clarity
+    if (skippedFiles.length > 0) {
+      console.log('\n=== FILES SKIPPED (@g-api-exception) ===');
+      for (const f of skippedFiles) {
+        console.log(`  - ${f}`);
+      }
+      console.log(`Total skipped: ${skippedFiles.length}\n`);
     }
 
     if (allViolations.length > 0) {

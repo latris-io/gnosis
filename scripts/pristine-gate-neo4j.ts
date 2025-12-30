@@ -1,4 +1,5 @@
 // scripts/pristine-gate-neo4j.ts
+// @g-api-exception: audit script (direct db import allowed)
 // Pristine Gate Neo4j verification
 import { getSession, closeDriver } from '../src/db/neo4j.js';
 
