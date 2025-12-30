@@ -35,9 +35,9 @@ tdd:
 **Track:** A  
 **Duration:** 2-3 days  
 **Canonical Sources:**
-- BRD V20.6.3 §Epic 64, Story 64.5
+- BRD V20.6.4 §Epic 64, Story 64.5
 - UTG Schema V20.6.1 §API Specification
-- Verification Spec V20.6.5 §8.3 (G-API)
+- Verification Spec V20.6.6 §8.3 (G-API)
 
 > **v2.0.0:** TDD Retrofit - Added TDD frontmatter for E06 TechnicalDesign extraction  
 > **v1.2.0:** Added scope note clarifying pipeline is not public API surface  
@@ -54,7 +54,7 @@ tdd:
 ## BRD Linkage
 
 This story implements **STORY-64.5** (Graph API v1).
-For BRD acceptance criteria, see BRD V20.6.3 §Epic 64, Story 64.5.
+For BRD acceptance criteria, see BRD V20.6.4 §Epic 64, Story 64.5.
 
 > **Governance Rule:** Track docs reference BRD stories but do not define or redefine AC-* identifiers. See Verification Spec Part XVII (Marker Governance).
 
@@ -565,7 +565,7 @@ describe('Graph API v1', () => {
   it('queries coverage information', async () => {
     const coverage = await getStoryCoverage();
     
-    expect(coverage.total).toBe(351);
+    expect(coverage.total).toBe(397);
     expect(coverage.percentage).toBeGreaterThanOrEqual(0);
     expect(coverage.percentage).toBeLessThanOrEqual(100);
   });

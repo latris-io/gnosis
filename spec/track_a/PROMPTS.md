@@ -302,7 +302,7 @@ Constraints:
 - Do not create new migrations unless the story card explicitly requires a schema change; if it does, use migrations/004+
 - Do NOT duplicate type definitions
 - Providers must NOT import from src/db/* or src/services/*
-- Shadow ledger writes to shadow-ledger/ledger.jsonl
+- Shadow ledger writes to shadow-ledger/{project_id}/ledger.jsonl
 
 Mark code with @implements STORY-64.1 and @satisfies AC-64.1.X markers.
 ```
@@ -448,7 +448,7 @@ Key requirements:
 2. Implement orchestrator in src/pipeline/orchestrator.ts
 3. Implement integrity validator in src/pipeline/integrity.ts
 4. Implement incremental extractor in src/pipeline/incremental.ts
-5. Create pipeline API in src/api/v1/pipeline.ts
+5. Create ops entrypoint in src/ops/pipeline.ts (internal, NOT in public API)
 
 Provider execution order:
 1. SNAPSHOT → 2. FILESYSTEM → 3. BRD → 4. AST → 5. TEST → 6. GIT
@@ -581,7 +581,7 @@ Include:
 3. Gate verification status (6 gates)
 4. SANITY test results (58 tests)
 5. Pillar compliance status
-6. BRD count verification (65/351/2849)
+6. BRD count verification (65/397/3147)
 7. Integrity check results
 8. Coverage report
 

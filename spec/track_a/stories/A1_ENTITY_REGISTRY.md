@@ -56,9 +56,9 @@ tdd:
 **Track:** A  
 **Duration:** 2-3 days  
 **Canonical Sources:**
-- BRD V20.6.3 §Epic 64, Story 64.1
+- BRD V20.6.4 §Epic 64, Story 64.1
 - UTG Schema V20.6.1 §Entity Registry
-- Verification Spec V20.6.5 §Part IX
+- Verification Spec V20.6.6 §Part IX
 
 > **v2.0.0:** TDD Retrofit - Added TDD frontmatter for E06 TechnicalDesign extraction  
 > **v1.7.0:** Added AC Deviation Note clarifying Track A acceptance IDs vs BRD semantics  
@@ -81,7 +81,7 @@ tdd:
 ## BRD Linkage
 
 This story implements **STORY-64.1** (Entity Registry Foundation).
-For BRD acceptance criteria, see BRD V20.6.3 §Epic 64, Story 64.1.
+For BRD acceptance criteria, see BRD V20.6.4 §Epic 64, Story 64.1.
 
 > **Governance Rule:** Track docs reference BRD stories but do not define or redefine AC-* identifiers. See Verification Spec Part XVII (Marker Governance).
 
@@ -339,7 +339,7 @@ import * as path from 'path';
 
 export interface LedgerEntry {
   timestamp: Date;
-  operation: 'CREATE' | 'UPDATE' | 'DELETE';
+  operation: 'CREATE' | 'UPDATE' | 'DECISION';  // DELETE not used in Track A
   entity_type: string;
   entity_id: string;
   evidence: EvidenceAnchor;
@@ -349,7 +349,7 @@ export interface LedgerEntry {
 export class ShadowLedger {
   private path: string;
   
-  constructor(ledgerPath: string = 'shadow-ledger/ledger.jsonl') {
+  constructor(ledgerPath: string = 'shadow-ledger/{project_id}/ledger.jsonl') {
     this.path = ledgerPath;
   }
   
@@ -411,7 +411,7 @@ export interface SemanticSignal {
 export class SemanticCorpus {
   private path: string;
   
-  constructor(corpusPath: string = 'semantic-corpus/signals.jsonl') {
+  constructor(corpusPath: string = 'semantic-corpus/{project_id}/signals.jsonl') {
     this.path = corpusPath;
   }
   
@@ -694,7 +694,7 @@ describe('Entity Registry', () => {
   it('extracts all acceptance criteria from BRD', async () => {
     const result = await brdProvider.extract(snapshot);
     const acs = result.entities.filter(e => e.entity_type === 'E03');
-    expect(acs.length).toBe(2849);
+    expect(acs.length).toBe(3147);
     expect(acs[0].instance_id).toMatch(/^AC-\d+\.\d+\.\d+$/);
   });
   
@@ -726,7 +726,7 @@ describe('Entity Registry', () => {
   // VERIFY-CORPUS-01: Semantic corpus initialization
   it('semantic corpus initialized', async () => {
     await semanticCorpus.initialize();
-    const exists = await fs.access('semantic-corpus/signals.jsonl').then(() => true).catch(() => false);
+    const exists = await fs.access(`semantic-corpus/${PROJECT_ID}/signals.jsonl`).then(() => true).catch(() => false);
     expect(exists).toBe(true);
   });
   
@@ -751,10 +751,10 @@ describe('Entity Registry', () => {
 ### Shadow Ledger
 - [ ] Every entity creation logged
 - [ ] Log format: JSONL with timestamp, operation, entity_id, evidence
-- [ ] Log location: `shadow-ledger/ledger.jsonl`
+- [ ] Log location: `shadow-ledger/{project_id}/ledger.jsonl`
 
 ### Semantic Learning
-- [ ] Semantic corpus file created at `semantic-corpus/signals.jsonl`
+- [ ] Semantic corpus file created at `semantic-corpus/{project_id}/signals.jsonl`
 - [ ] `captureSemanticSignal()` function exported
 - [ ] Signal types defined: CORRECT, INCORRECT, PARTIAL, ORPHAN_MARKER, AMBIGUOUS
 - [ ] Minimum 50 signals captured during this story (from extraction validation)
@@ -787,8 +787,8 @@ describe('Entity Registry', () => {
 - [ ] All entity instance_ids match format patterns (SANITY-003)
 - [ ] Entity counts match external verification:
   - [ ] 65 Epics
-  - [ ] 351 Stories
-  - [ ] 2,849 Acceptance Criteria
+  - [ ] 397 Stories
+  - [ ] 3,147 Acceptance Criteria
 - [ ] All tests pass
 - [ ] Shadow ledger contains entries for all extractions
 - [ ] Code reviewed (semantic signal captured)

@@ -114,7 +114,7 @@
 >
 > **Resolution:** E15 extraction was corrected to derive modules from the parent directories
 > of E11 SourceFile entities. R04 now correctly uses `Module (E15) → SourceFile (E11)`
-> per BRD V20.6.3 Appendix I.
+> per BRD V20.6.4 Appendix I.
 >
 > **TDD Retrofit (v2.0.0):** R14 is now derived from TDD frontmatter.
 > R14 semantics changed from "Story → Function/Class" to "TechnicalDesign → SourceFile".
@@ -249,7 +249,7 @@ interface EvidenceFields {
 ### Semantic Learning (Track A)
 - Capture ≥50 signals during Track A
 - Signal types: CORRECT, INCORRECT, PARTIAL
-- Store in `semantic-corpus/signals.jsonl`
+- Store in `semantic-corpus/{project_id}/signals.jsonl`
 
 ### API Boundary (Track A)
 - Graph API v1 exposed at `@gnosis/api`

@@ -30,15 +30,16 @@ tdd:
 
 # Story A.4: Structural Analysis
 
-**Version:** 2.0.0  
+**Version:** 2.1.0  
 **Implements:** STORY-64.4 (Structural Analysis Pipeline)  
 **Track:** A  
 **Duration:** 2-3 days  
 **Canonical Sources:**
-- BRD V20.6.3 §Epic 64, Story 64.4
+- BRD V20.6.4 §Epic 64, Story 64.4
 - UTG Schema V20.6.1 §Analysis Pipeline
-- Verification Spec V20.6.5 §Part IX
+- Verification Spec V20.6.6 §Part IX
 
+> **v2.1.0:** Pre-A4 stabilization: pipeline ops entrypoint (not public API), fixed R-codes, DECISION ledger entries
 > **v2.0.0:** TDD Retrofit - Added TDD frontmatter for E06 TechnicalDesign extraction  
 > **v1.3.0:** Added explicit project_id propagation in PipelineConfig, RepoSnapshot, createSnapshot, and create* calls  
 > **v1.2.0:** Epistemic hygiene: IntegrityValidator→IntegrityEvaluator, pass/fail→findings with severity, schema column fix (entity_type with E-codes)  
@@ -55,7 +56,7 @@ tdd:
 ## BRD Linkage
 
 This story implements **STORY-64.4** (Structural Analysis Pipeline).
-For BRD acceptance criteria, see BRD V20.6.3 §Epic 64, Story 64.4.
+For BRD acceptance criteria, see BRD V20.6.4 §Epic 64, Story 64.4.
 
 > **Governance Rule:** Track docs reference BRD stories but do not define or redefine AC-* identifiers. See Verification Spec Part XVII (Marker Governance).
 
@@ -102,8 +103,8 @@ The pipeline executes providers in dependency order:
 7. MARKERS      → Extract @implements/@satisfies markers
 8. BRD-REL      → Create requirement relationships (R01-R05)
 9. AST-REL      → Create code relationships (R21-R26)
-10. TEST-REL    → Create test relationships (R40-R45)
-11. GIT-REL     → Create provenance relationships (R60-R61)
+10. TEST-REL    → Create test relationships (R36, R37)
+11. GIT-REL     → Create provenance relationships (R63, R67, R70)
 12. VALIDATE    → Verify graph integrity
 ```
 
@@ -208,13 +209,12 @@ export class PipelineOrchestrator {
     const snapshot = await this.createSnapshot(config);
     stages.push(this.recordStage('SNAPSHOT', true, Date.now() - startTime, 0, 0));
     
-    await this.ledger.append({
-      timestamp: new Date(),
-      operation: 'PIPELINE_START',
+    // Log pipeline start as DECISION entry (not PIPELINE_START)
+    await this.ledger.logDecision({
+      decision: 'PIPELINE_STARTED',
       entity_type: 'pipeline',
-      entity_id: snapshot.id,
+      instance_id: snapshot.id,
       evidence: { config },
-      hash: computeHash(config)
     });
     
     // Execute stages in order
@@ -286,13 +286,12 @@ export class PipelineOrchestrator {
       integrity_check: integrity
     };
     
-    await this.ledger.append({
-      timestamp: new Date(),
-      operation: 'PIPELINE_COMPLETE',
+    // Log pipeline completion as DECISION entry (not PIPELINE_COMPLETE)
+    await this.ledger.logDecision({
+      decision: 'PIPELINE_COMPLETED',
       entity_type: 'pipeline',
-      entity_id: snapshot.id,
+      instance_id: snapshot.id,
       evidence: { result },
-      hash: computeHash(result)
     });
     
     return result;
@@ -436,7 +435,7 @@ export class IntegrityEvaluator {
     const storyCount = await pool.query(`SELECT COUNT(*) FROM entities WHERE entity_type = 'E02'`);
     const acCount = await pool.query(`SELECT COUNT(*) FROM entities WHERE entity_type = 'E03'`);
     
-    const expected = { epics: 65, stories: 397, acs: 2980 };
+    const expected = { epics: 65, stories: 397, acs: 3147 };
     const actual = {
       epics: parseInt(epicCount.rows[0].count),
       stories: parseInt(storyCount.rows[0].count),
@@ -575,7 +574,7 @@ export class IncrementalExtractor {
 | `src/pipeline/integrity.ts` | Integrity validation | ~150 |
 | `src/pipeline/incremental.ts` | Incremental extraction | ~100 |
 | `src/pipeline/statistics.ts` | Statistics computation | ~80 |
-| `src/api/v1/pipeline.ts` | Pipeline API | ~50 |
+| `src/ops/pipeline.ts` | Pipeline ops entrypoint (internal) | ~50 |
 | `test/pipeline/pipeline.test.ts` | Pipeline tests | ~300 |
 
 ---

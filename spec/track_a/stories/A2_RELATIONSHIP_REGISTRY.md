@@ -45,9 +45,9 @@ tdd:
 **Track:** A  
 **Duration:** 2-3 days  
 **Canonical Sources:**
-- BRD V20.6.3 §Epic 64, Story 64.2
+- BRD V20.6.4 §Epic 64, Story 64.2
 - UTG Schema V20.6.1 §Relationship Registry
-- Verification Spec V20.6.5 §Part IX
+- Verification Spec V20.6.6 §Part IX
 
 > **v2.1.0:** Epistemic Boundary - R08/R09/R11 deferred post-HGR-1 (author-declared design-intent bindings, not structural inventory)
 > **v2.0.0:** TDD Retrofit - R14 derived from TDD frontmatter (not deferred)
@@ -79,7 +79,7 @@ tdd:
 ## BRD Linkage
 
 This story implements **STORY-64.2** (Relationship Registry with Confidence).
-For BRD acceptance criteria, see BRD V20.6.3 §Epic 64, Story 64.2.
+For BRD acceptance criteria, see BRD V20.6.4 §Epic 64, Story 64.2.
 
 > **Governance Rule:** Track docs reference BRD stories but do not define or redefine AC-* identifiers. See Verification Spec Part XVII (Marker Governance).
 
@@ -634,7 +634,7 @@ describe('Relationship Registry', () => {
   // VERIFY-R01: Epic HAS_STORY Story
   it('extracts Epic→Story relationships', async () => {
     const rels = await queryRelationships('R01');  // HAS_STORY
-    expect(rels.length).toBe(351); // One per story
+    expect(rels.length).toBe(397); // One per story
     // Verify via joined entity instance_ids
     for (const rel of rels.slice(0, 5)) {
       expect(rel.instance_id).toMatch(/^R01:EPIC-\d+:STORY-\d+\.\d+$/);
@@ -644,7 +644,7 @@ describe('Relationship Registry', () => {
   // VERIFY-R02: Story HAS_AC AC
   it('extracts Story→AC relationships', async () => {
     const rels = await queryRelationships('R02');  // HAS_AC
-    expect(rels.length).toBe(2849); // One per AC
+    expect(rels.length).toBe(3147); // One per AC
   });
   
   // VERIFY-R21: IMPORTS
@@ -699,8 +699,8 @@ describe('Relationship Registry', () => {
 
 - [ ] All 15 in-scope relationship types extractable (using R-codes)
 - [ ] Relationship counts validate against entities:
-  - [ ] 351 Epic→Story HAS_STORY (R01)
-  - [ ] 2,849 Story→AC HAS_AC (R02)
+  - [ ] 397 Epic→Story HAS_STORY (R01)
+  - [ ] 3,147 Story→AC HAS_AC (R02)
 - [ ] All tests pass for in-scope relationships
 - [ ] Neo4j traversal operational
 - [ ] Shadow ledger contains entries for all in-scope relationships

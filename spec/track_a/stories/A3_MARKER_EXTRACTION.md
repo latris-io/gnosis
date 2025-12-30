@@ -32,9 +32,9 @@ tdd:
 **Track:** A  
 **Duration:** 1-2 days  
 **Canonical Sources:**
-- BRD V20.6.3 §Epic 64, Story 64.3
+- BRD V20.6.4 §Epic 64, Story 64.3
 - UTG Schema V20.6.1 §Marker Patterns
-- Verification Spec V20.6.5 §Part IX, SANITY-030-033
+- Verification Spec V20.6.6 §Part IX, SANITY-030-033
 
 > **v2.0.0:** TDD Retrofit - R14 moved to A2 (TDD frontmatter), A3 now R18/R19/R36/R37 only; added @tdd marker extraction  
 > **v1.2.0:** Fixed instance_id prefixes to canonical uppercase forms (FILE-, FUNC-, CLASS-) per ENTRY.md  
@@ -51,7 +51,7 @@ tdd:
 ## BRD Linkage
 
 This story implements **STORY-64.3** (Traceability Marker Extraction).
-For BRD acceptance criteria, see BRD V20.6.3 §Epic 64, Story 64.3.
+For BRD acceptance criteria, see BRD V20.6.4 §Epic 64, Story 64.3.
 
 > **Governance Rule:** Track docs reference BRD stories but do not define or redefine AC-* identifiers. See Verification Spec Part XVII (Marker Governance).
 
