@@ -55,13 +55,13 @@ The following identifiers must be recorded and preserved:
 
 Baseline Git Tag: hgr-1-baseline
 
-Baseline Commit SHA: (record actual value)
+Baseline Commit SHA: d6c2c9e2171eb2c3019f1b2cd2a3eba96e1e33ab *(from .si-universe.env)*
 
-Canonical Epoch ID: (record actual value)
+Canonical Epoch ID: *(to be recorded at gate execution)*
 
-BRD Hash: (record actual value)
+BRD Hash: bc1c78269d7b5192ddad9c06c1aa49c29abcf4a60cdaa039157a22b5c8c77977 *(from .si-universe.env)*
 
-Execution Timestamp: (UTC)
+Execution Timestamp: *(to be recorded at gate execution)*
 
 These values define the immutable truth baseline.
 

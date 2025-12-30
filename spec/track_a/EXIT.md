@@ -1,10 +1,11 @@
 # Track A Exit Criteria
 
-**Version:** 1.5.4  
+**Version:** 1.5.5  
 **Implements:** Roadmap V20.6.4 Track A Exit  
 **Purpose:** Verification checklist before HGR-1 (Human Gate Review 1)  
 **Canonical Source:** GNOSIS_TO_SOPHIA_MASTER_ROADMAP_V20_6_4.md §Track A
 
+> **v1.5.5:** Pre-A4 stabilization: clarified HGR-1 scope (A1-A3 only), fixed relationship verification claim
 > **v1.5.4:** Updated BRD registry counts to V20.6.4 (65/397/3147) and corrected entity verification counts
 > **v1.5.3:** CID-2025-002: Corrected R36/R37 scope to A3 per BRD AC-64.3.4/5
 > **v1.5.2:** Performance fixes for Neo4j/PostgreSQL sync; all 210 tests passing (55 sanity + 106 unit + 49 verification)
@@ -73,7 +74,7 @@ All 16 Track A entity types in scope; 15 extractable and verified (E14 Interface
 
 ## Relationship Verification
 
-All 21 Track A relationship types extractable and verified:
+Track A relationship types (HGR-1 requires A1-A3 relationships only; A4/A5 relationships extracted in later stories):
 
 | ID | Relationship | Test | Status |
 |----|--------------|------|--------|
