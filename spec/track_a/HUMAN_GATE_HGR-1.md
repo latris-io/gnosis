@@ -1,256 +1,239 @@
-# Human Gate Review 1 (HGR-1)
+Human Governance Review – HGR-1 (Truth Substrate Freeze)
 
-**Version:** 1.1.0  
-**Gate:** HGR-1  
-**Transition:** Track A → Track B  
-**Criticality:** HIGH — Irreversible transition to self-ingestion capability  
-**Canonical Source:** Verification Spec V20.6.4 §Part XI
+Purpose
 
-> **v1.1.0:** Entity count consistency: "16 in scope, 15 extractable (E14 deferred)"
+HGR-1 certifies that the Track A truth substrate (A1–A3) is:
 
----
+correct
 
-## Purpose
+complete
 
-HGR-1 validates that Track A has successfully built the structural extraction infrastructure required for Track B self-ingestion. This gate is **irreversible** — once approved, Track B begins building on Track A foundations.
+evidence-anchored
 
-**What HGR-1 Certifies:**
-- All 16 Track A entity types in scope (15 extractable; E14 deferred)
-- All 21 Track A relationship types are extractable
-- Graph API v1 is operational
-- Shadow ledger is capturing provenance
-- Semantic corpus is initialized for Track C
-- All gates pass (G01, G03, G04, G06, G-API, G-COGNITIVE)
+replayable
 
-**What HGR-1 Does NOT Certify:**
-- Semantic understanding (Track C)
-- Policy compliance (Track D)
-- Runtime observation (Track D.9)
-- Full autonomy (Sophia)
+internally consistent
 
----
+and frozen as an immutable baseline
 
-## Pre-Review Checklist
+This gate does not certify:
 
-Before requesting HGR-1 review, confirm:
+operational pipelines (A4)
 
-- [ ] EXIT.md checklist completed with actual values
-- [ ] All verification commands executed
-- [ ] Test output artifacts saved
-- [ ] No unresolved errors or warnings
+API surface completeness (A5)
 
----
+self-ingestion or oracle transition (HGR-2)
 
-## Review Sections
+HGR-1 is the final human-verified checkpoint before Track B begins.
 
-### Section 1: Entity Verification
+Scope of HGR-1
+Included
 
-**Requirement:** All 16 Track A entity types in scope (15 extractable; E14 deferred)
+Track A.1 — Entity Registry
 
-| Entity | Expected | Actual | Verified |
-|--------|----------|--------|----------|
-| E01 Epic | 65 | ______ | [ ] |
-| E02 Story | 351 | ______ | [ ] |
-| E03 AcceptanceCriterion | 2,849 | ______ | [ ] |
-| E04 Constraint | ≥0 | ______ | [ ] |
-| E06 TechnicalDesign | ≥0 | ______ | [ ] |
-| E08 DataSchema | ≥1 | ______ | [ ] |
-| E11 SourceFile | ≥10 | ______ | [ ] |
-| E12 Function | ≥10 | ______ | [ ] |
-| E13 Class | ≥1 | ______ | [ ] |
-| E15 Module | ≥1 | ______ | [ ] |
-| E27 TestFile | ≥5 | ______ | [ ] |
-| E28 TestSuite | ≥5 | ______ | [ ] |
-| E29 TestCase | ≥20 | ______ | [ ] |
-| E49 ReleaseVersion | ≥0 | ______ | [ ] |
-| E50 Commit | ≥1 | ______ | [ ] |
+Track A.2 — Relationship Registry
 
-> **Note:** BRD may contain constraints; E04 extraction exists and produces 0..n depending on BRD content.
+Track A.3 — Marker & Test Extraction
 
-**Section 1 Status:** [ ] PASS  [ ] FAIL
+Ledger, corpus, epoch, and parity verification
 
----
+Deterministic replay / idempotent rebuild
 
-### Section 2: Relationship Verification
+Explicitly Excluded
 
-**Requirement:** All 21 Track A relationship types extractable
+Track A.4 — Structural Analysis Pipeline
 
-| Relationship | Expected | Actual | Verified |
-|--------------|----------|--------|----------|
-| R01 CONTAINS (Epic→Story) | 351 | ______ | [ ] |
-| R02 CONTAINS (Story→AC) | 2,849 | ______ | [ ] |
-| R03-R05 Requirement relationships | ≥0 | ______ | [ ] |
-| R10-R11 Design relationships | ≥0 | ______ | [ ] |
-| R21-R26 Implementation relationships | ≥10 | ______ | [ ] |
-| R40-R45 Verification relationships | ≥5 | ______ | [ ] |
-| R60-R61 Provenance relationships | ≥1 | ______ | [ ] |
+Track A.5 — Graph API v1
 
-**Section 2 Status:** [ ] PASS  [ ] FAIL
+Track B — Self-ingestion / closure
 
----
+Oracle transition (HGR-2)
 
-### Section 3: Gate Verification
+Canonical Baseline Identification
 
-**Requirement:** All 6 Track A gates pass
+The following identifiers must be recorded and preserved:
 
-| Gate | Threshold | Actual | Status |
-|------|-----------|--------|--------|
-| G01 | 100% stories have @implements | ______% | [ ] PASS |
-| G03 | 0 orphan code entities | ______ | [ ] PASS |
-| G04 | 100% stories have tests | ______% | [ ] PASS |
-| G06 | 0 orphan tests | ______ | [ ] PASS |
-| G-API | No direct DB imports | ______ violations | [ ] PASS |
-| G-COGNITIVE | Health check | ______ | [ ] PASS |
+Baseline Git Tag: hgr-1-baseline
 
-**Section 3 Status:** [ ] PASS  [ ] FAIL
+Baseline Commit SHA: (record actual value)
 
----
+Canonical Epoch ID: (record actual value)
 
-### Section 4: Pillar Verification
+BRD Hash: (record actual value)
 
-**Requirement:** All four pillars operational
+Execution Timestamp: (UTC)
 
-#### Shadow Ledger
-- [ ] File exists: `shadow-ledger/ledger.jsonl`
-- [ ] Entry count: ______ entries
-- [ ] Sample entry validated (correct schema)
+These values define the immutable truth baseline.
 
-#### Semantic Corpus
-- [ ] File exists: `semantic-corpus/signals.jsonl`
-- [ ] Signal count: ______ signals (minimum 50)
-- [ ] Signal types present: CORRECT, INCORRECT, ORPHAN_MARKER
+Entity Verification (A1)
+Required Entity Types (Track A)
+Code	Entity
+E01	Epic
+E02	Story
+E03	AcceptanceCriterion
+E04	Constraint
+E06	TechnicalDesign
+E08	DataSchema
+E11	SourceFile
+E12	Function
+E13	Class
+E15	Module
+E27	TestFile
+E28	TestSuite
+E29	TestCase
+E49	ReleaseVersion
+E50	Commit
+E52	ChangeSet
+Canonical BRD Registry Counts (MUST MATCH EXACTLY)
+Entity	Expected
+E01 Epics	65
+E02 Stories	397
+E03 Acceptance Criteria	3,147
 
-#### API Boundary
-- [ ] `@gnosis/api/v1` exports verified
-- [ ] No direct DB imports outside `src/db/`
-- [ ] G-API verification passed
+Any mismatch is a hard failure of HGR-1.
 
-#### Extension Protocol
-- [ ] No extensions activated (Track A = base schema)
-- [ ] No E61+ entities referenced
-- [ ] No R100+ relationships referenced
+Relationship Verification (A2–A3)
+Relationship Types Required at HGR-1 (must be nonzero)
 
-**Section 4 Status:** [ ] PASS  [ ] FAIL
+Code	Relationship
+R01	HAS_STORY
+R02	HAS_AC
+R04	CONTAINS_FILE
+R05	CONTAINS_ENTITY
+R06	CONTAINS_SUITE
+R07	CONTAINS_CASE
+R16	DEFINED_IN
+R18	IMPLEMENTS
+R19	SATISFIES
+R36	TESTED_BY
+R37	VERIFIED_BY
 
----
+Relationship Types Allowed to be Zero
 
-### Section 5: Integrity Verification
+Code	Relationship	Reason
+R03	HAS_CONSTRAINT	May be zero if no constraints defined
+R14	IMPLEMENTED_BY	Deferred to A4 pipeline activation
 
-**Requirement:** Graph integrity checks pass
+Deferred / Reserved Relationship Codes
 
-| Check | Result |
-|-------|--------|
-| All relationships reference valid entities | [ ] PASS |
-| All entity IDs unique | [ ] PASS |
-| All required entity types present | [ ] PASS |
-| BRD counts match (65/351/2849) | [ ] PASS |
-| No orphan files | [ ] PASS |
-| Graph connected (Epic→Function paths) | [ ] PASS |
+The following codes are valid identifiers but not required or populated at HGR-1:
 
-**Section 5 Status:** [ ] PASS  [ ] FAIL
+R08, R09, R11 (design-intent bindings)
+R14 (IMPLEMENTED_BY — deferred to A4 pipeline activation)
+R21, R22, R23, R24, R26 (structural AST analysis)
+R63, R67, R70 (provenance/grouping)
 
----
+Their absence at HGR-1 is expected.
 
-### Section 6: Test Summary
+Evidence Anchor Verification
 
-**Requirement:** All tests pass
+For all entities and relationships:
 
-| Suite | Total | Passed | Failed | Skipped |
-|-------|-------|--------|--------|---------|
-| SANITY | gate-critical | ______ | ______ | 4 (dormant) |
-| Entity Registry | ______ | ______ | ______ | ______ |
-| Relationship Registry | ______ | ______ | ______ | ______ |
-| Marker Extraction | ______ | ______ | ______ | ______ |
-| Pipeline | ______ | ______ | ______ | ______ |
-| Graph API | ______ | ______ | ______ | ______ |
+source_file is present
 
-**Section 6 Status:** [ ] PASS  [ ] FAIL
+line_start > 0
 
----
+line_end ≥ line_start
 
-### Section 7: Mission Alignment
+extracted_at is present
 
-**Requirement:** No oracle claims in Track A implementation
+Bad entity anchors: 0
+Bad relationship anchors: 0
 
-- [ ] No "understands" language in code comments
-- [ ] No "knows" language in code comments
-- [ ] Extraction is structural pattern-matching only
-- [ ] Confidence values (if any) are evidence-bounded
-- [ ] No semantic inference in Track A code
+Any violation is a hard failure.
 
-**Section 7 Status:** [ ] PASS  [ ] FAIL
+Ledger / Corpus / Epoch Verification
+Ledger
 
----
+Project-scoped ledger file exists
 
-## Decision
+Append-only semantics verified
 
-### Overall Assessment
+All CREATE / UPDATE / DECISION entries present
 
-| Section | Status |
-|---------|--------|
-| 1. Entity Verification | [ ] PASS  [ ] FAIL |
-| 2. Relationship Verification | [ ] PASS  [ ] FAIL |
-| 3. Gate Verification | [ ] PASS  [ ] FAIL |
-| 4. Pillar Verification | [ ] PASS  [ ] FAIL |
-| 5. Integrity Verification | [ ] PASS  [ ] FAIL |
-| 6. Test Summary | [ ] PASS  [ ] FAIL |
-| 7. Mission Alignment | [ ] PASS  [ ] FAIL |
+Ledger entries reference valid epoch IDs
 
----
+Semantic Corpus
 
-### Gate Decision
+Project-scoped corpus exists
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                        HGR-1 DECISION                               │
-├─────────────────────────────────────────────────────────────────────┤
-│                                                                     │
-│  [ ] APPROVED — Proceed to Track B                                  │
-│                                                                     │
-│  [ ] REJECTED — Return to Track A with issues noted below           │
-│                                                                     │
-│  [ ] DEFERRED — Additional review required                          │
-│                                                                     │
-└─────────────────────────────────────────────────────────────────────┘
-```
+Non-authoritative (structural signals only)
 
----
+Corruption here does not invalidate truth, but must be detectable
 
-### Issues / Notes
+Epoch Metadata
 
-_If REJECTED or DEFERRED, list specific issues that must be resolved:_
+Epoch file exists for baseline
 
-1. ________________________________________________________________
-2. ________________________________________________________________
-3. ________________________________________________________________
+Fields present:
 
----
+epoch_id
 
-### Approval Signature
+project_id
 
-```
-Gate:       HGR-1 (Track A → Track B)
-Decision:   ____________________
-Date:       ____________________
-Reviewer:   ____________________
-Signature:  ____________________
-```
+repo_sha
 
----
+runner_sha
 
-## Post-Approval
+brd_hash
 
-**IF APPROVED:**
-- [ ] This document committed to repository
-- [ ] Track A branch tagged: `track-a-complete`
-- [ ] Proceed to `../track_b/ENTRY.md`
+started_at
 
-**IF REJECTED:**
-- [ ] Issues documented above
-- [ ] Return to Track A implementation
-- [ ] Re-run EXIT.md verification after fixes
-- [ ] Request HGR-1 re-review
+completed_at
 
----
+status
 
-**END OF HUMAN GATE HGR-1**
+Parity Verification
+Cross-Store Parity (Project-Scoped)
+
+PostgreSQL entity count == Neo4j node count
+
+PostgreSQL relationship count == Neo4j edge count
+
+Key relationship types (R01, R02, R07, R18, R19, R36, R37) must match exactly.
+
+Any mismatch is a hard failure.
+
+Deterministic Replay Verification
+
+A pristine rebuild must demonstrate:
+
+Fresh epoch creation
+
+Zero duplicate CREATEs
+
+Idempotent behavior (no new entities or relationships)
+
+All invariants preserved
+
+Replay success confirms determinism and replayability.
+
+Human Attestation
+
+By approving HGR-1, the reviewer attests that:
+
+Track A.1–A.3 truth substrate is correct and complete
+
+Evidence and audit artifacts are present and consistent
+
+The baseline is frozen and immutable
+
+No oracle transition has occurred
+
+Track B may proceed using this baseline
+
+Outcome
+
+PASS: Baseline is locked; proceed to Track A4 / Track A5 and Track B
+
+FAIL: Resolve discrepancies before any further development
+
+Notes
+
+HGR-1 is not reversible, but corrections may occur via explicit, governed epochs later.
+
+Oracle transition occurs at HGR-2, not here.
+
+This document reflects the executed state as of the baseline tag.
+
+END OF HUMAN_GATE_HGR-1
