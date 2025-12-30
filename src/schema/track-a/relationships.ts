@@ -4,7 +4,7 @@
 
 /**
  * Track A Relationship Type Codes (24 total)
- * Per Verification Spec V20.7.0 §2.2 SANITY-002
+ * Per Verification Spec V20.6.6 §2.2 SANITY-002
  */
 export type RelationshipTypeCode =
   // Hierarchical (R01-R03)

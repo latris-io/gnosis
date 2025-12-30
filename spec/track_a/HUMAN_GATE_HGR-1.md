@@ -112,14 +112,13 @@ Relationship Types Allowed to be Zero
 
 Code	Relationship	Reason
 R03	HAS_CONSTRAINT	May be zero if no constraints defined
-R14	IMPLEMENTED_BY	Deferred to A4 pipeline activation
+R14	IMPLEMENTED_BY	Defined in A2 (TDD frontmatter), may be zero if no TDD files with `implements.files[]` exist
 
 Deferred / Reserved Relationship Codes
 
 The following codes are valid identifiers but not required or populated at HGR-1:
 
 R08, R09, R11 (design-intent bindings)
-R14 (IMPLEMENTED_BY — deferred to A4 pipeline activation)
 R21, R22, R23, R24, R26 (structural AST analysis)
 R63, R67, R70 (provenance/grouping)
 

@@ -107,7 +107,7 @@
 
 ### Relationship Endpoint Resolution Notice
 
-> **Deviation Resolved:** As of commit [TBD], the R04 deviation has been corrected.
+> **Deviation Resolved:** As of commit `c81e3ad`, the R04 deviation has been corrected.
 >
 > **Original deviation:** R04 was defined as `SourceFile → SourceFile` because E15 Module
 > entities were incorrectly extracted from npm import targets instead of directory structure.

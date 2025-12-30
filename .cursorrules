@@ -226,14 +226,15 @@ When in doubt: read the spec, follow the spec, verify against the spec.
 
 These invariants were verified and MUST NOT drift:
 
-1. **Entity counts:** E01=65, E02=397, E03=3147, Total=4309
-2. **Relationship counts:** Total=4078 (R01-R67, including R18/R19/R36/R37)
-3. **Cross-store parity:** PostgreSQL = Neo4j = 4078 relationships
-4. **Neo4j property model:** Single `:RELATIONSHIP` type with `r.relationship_type` property
-5. **Determinism:** Entity and relationship instance_ids are stable and reproducible
-6. **Shadow ledger coverage:** 100% (epoch-scoped, per-project isolation)
-7. **Evidence anchors:** All relationships have complete evidence
-8. **Epoch fields:** All new ledger entries include epoch_id, repo_sha, runner_sha, brd_hash
+1. **BRD counts (FROZEN):** E01=65, E02=397, E03=3147 — these never change
+2. **Entity total:** ≥4424 (grows as extraction covers new source files)
+3. **Relationship total:** ≥4408 (grows with extracted entities)
+4. **Cross-store parity:** PostgreSQL = Neo4j (counts must match exactly)
+5. **Neo4j property model:** Single `:RELATIONSHIP` type with `r.relationship_type` property
+6. **Determinism:** Entity and relationship instance_ids are stable and reproducible
+7. **Shadow ledger coverage:** 100% (epoch-scoped, per-project isolation)
+8. **Evidence anchors:** All relationships have complete evidence
+9. **Epoch fields:** All new ledger entries include epoch_id, repo_sha, runner_sha, brd_hash
 
 ### Locked Surfaces
 

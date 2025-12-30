@@ -18,10 +18,10 @@
  */
 export const A3_BASELINE = {
   // Git SHA at which these counts were frozen
-  sha: '263cc4b69c42b1ae6e9007f769d61561e4e12f95',
+  sha: '2a40d856594d77ee1f9b0e7d075332f124dc0907',
   
   // When the manifest was frozen
-  frozen_at: '2025-12-28',
+  frozen_at: '2025-12-30',
   
   // Project ID for which counts are valid
   project_id: '6df2f456-440d-4958-b475-d9808775ff69',
@@ -29,19 +29,19 @@ export const A3_BASELINE = {
   // Exact frozen counts - tests MUST assert equality
   counts: {
     // Marker extraction results
-    total_markers_extracted: 64,  // Total @implements + @satisfies + @tdd markers
-    orphan_markers: 22,           // Markers with no valid target entity
+    total_markers_extracted: 67,  // Total @implements + @satisfies + @tdd markers
+    orphan_markers: 0,            // Markers with no valid target entity (0 after A1 refresh)
     
     // Relationship counts (from PostgreSQL)
-    R18: 38,  // IMPLEMENTS relationships
-    R19: 26,  // SATISFIES relationships
+    R18: 40,  // IMPLEMENTS relationships
+    R19: 27,  // SATISFIES relationships
     R36: 1,   // TESTED_BY relationships (from describe('STORY-XX.YY'))
     R37: 2,   // VERIFIED_BY relationships (from it('AC-XX.YY.ZZ'))
   },
   
   // Semantic signal counts by type
   signals: {
-    ORPHAN_MARKER: 22,       // True orphans
+    ORPHAN_MARKER: 0,        // True orphans (0 after A1 refresh)
     TDD_COHERENCE_MISMATCH: 0,  // TDD markers pointing to non-E06 entities
   },
 } as const;

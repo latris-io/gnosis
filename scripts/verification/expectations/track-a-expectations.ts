@@ -395,8 +395,8 @@ export const RELATIONSHIP_EXPECTATIONS: RelationshipExpectation[] = [
     name: 'CONTAINS_CASE',
     a1: 'EXPECTED_NONZERO',
     a2: 'EXPECTED_NONZERO',
-    // Known gap: Containment extraction incomplete - deferred to A4 pipeline
-    a3: 'DEFERRED_TO_A4',
+    // Containment extraction is complete (252 R07 relationships extracted at A2)
+    a3: 'EXPECTED_NONZERO',
     a4: 'EXPECTED_NONZERO',
     a5: 'EXPECTED_NONZERO',
   },

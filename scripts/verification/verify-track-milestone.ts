@@ -576,7 +576,6 @@ export async function verifyTrackMilestone(projectId?: string): Promise<Verifica
  */
 const A3_SKIP_ALLOWLIST = new Set([
   'E52',  // BuildArtifact - Git extraction (A4)
-  'R07',  // HAS_BUILD_ARTIFACT (A4)
   'R14',  // IMPLEMENTED_BY - TDD frontmatter (A4)
   'R21',  // IMPORTS - AST extraction (A4)
   'R22',  // CALLS - AST extraction (A4)
