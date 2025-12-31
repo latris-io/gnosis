@@ -75,6 +75,11 @@ import {
 import {
   deriveTestRelationships,
 } from '../extraction/providers/test-relationship-provider.js';
+import {
+  extractAstRelationships,
+  flattenAstRelationships,
+  type EntityInput as AstEntityInput,
+} from '../extraction/providers/ast-relationship-provider.js';
 import * as path from 'path';
 import { queryEntities, getAllEntities } from '../api/v1/entities.js';
 import { extractAndValidateMarkers } from '../api/v1/markers.js';
@@ -780,6 +785,212 @@ export async function extractAndPersistTddRelationships(
     persisted,
     synced: result.neo4jSync?.synced ?? 0,
   };
+}
+
+/**
+ * A4-specific TDD relationship extraction - only persists R14.
+ * @implements STORY-64.4
+ * 
+ * Per ENTRY.md, R08/R09/R11 are deferred post-HGR-1 because they require
+ * E06 TechnicalDesign entities which may not be present in all projects.
+ * 
+ * This function is used by the A4 pipeline orchestrator to safely extract
+ * only R14 (IMPLEMENTED_BY) relationships without failing on missing E06 entities.
+ * 
+ * Returns both the extracted relationships and any missing entity findings.
+ */
+export async function extractAndPersistTddRelationshipsR14Only(
+  projectId: string,
+  specDir?: string
+): Promise<{
+  extracted: { r14: number };
+  persisted: number;
+  synced: number;
+  skipped: { r08: number; r09: number; r11: number };
+  findings: Array<{ type: string; message: string; details: Record<string, unknown> }>;
+}> {
+  const resolvedSpecDir = specDir || path.resolve(process.cwd(), 'spec');
+  const repoRoot = process.cwd();
+  const storiesDir = path.join(resolvedSpecDir, 'track_a', 'stories');
+  const findings: Array<{ type: string; message: string; details: Record<string, unknown> }> = [];
+  
+  // Read story files
+  const fs = await import('fs/promises');
+  let files: string[];
+  try {
+    files = await fs.readdir(storiesDir);
+  } catch {
+    return {
+      extracted: { r14: 0 },
+      persisted: 0,
+      synced: 0,
+      skipped: { r08: 0, r09: 0, r11: 0 },
+      findings: [],
+    };
+  }
+  
+  const mdFiles = files.filter(f => f.endsWith('.md'));
+  let allRelationships: ExtractedRelationship[] = [];
+  let counts = { r08: 0, r09: 0, r11: 0, r14: 0 };
+  
+  for (const file of mdFiles) {
+    const filePath = path.join(storiesDir, file);
+    const frontmatter = await parseFrontmatter(filePath);
+    
+    if (frontmatter && frontmatter.id) {
+      const derived = await deriveTDDRelationships(frontmatter);
+      counts.r08 += derived.r08.length;
+      counts.r09 += derived.r09.length;
+      counts.r11 += derived.r11.length;
+      counts.r14 += derived.r14.length;
+      
+      const flat = flattenRelationships(derived);
+      allRelationships.push(...flat);
+    }
+  }
+  
+  // Apply invariants before persistence
+  const safeRelationships = applyTddRelationshipInvariants(allRelationships, repoRoot);
+  
+  // Filter to only R14 - R08/R09/R11 are deferred post-HGR-1 per ENTRY.md
+  const r14Only = safeRelationships.filter(r => r.relationship_type === 'R14');
+  const skippedR08 = safeRelationships.filter(r => r.relationship_type === 'R08').length;
+  const skippedR09 = safeRelationships.filter(r => r.relationship_type === 'R09').length;
+  const skippedR11 = safeRelationships.filter(r => r.relationship_type === 'R11').length;
+  
+  // Record skipped relationships as findings
+  if (skippedR08 + skippedR09 + skippedR11 > 0) {
+    findings.push({
+      type: 'DEFERRED_RELATIONSHIPS',
+      message: `Skipped ${skippedR08 + skippedR09 + skippedR11} relationships (R08/R09/R11) - deferred post-HGR-1`,
+      details: { r08: skippedR08, r09: skippedR09, r11: skippedR11 },
+    });
+  }
+  
+  if (r14Only.length === 0) {
+    return {
+      extracted: { r14: 0 },
+      persisted: 0,
+      synced: 0,
+      skipped: { r08: skippedR08, r09: skippedR09, r11: skippedR11 },
+      findings,
+    };
+  }
+  
+  // Persist and sync (only R14)
+  const result = await persistRelationshipsAndSync(projectId, r14Only);
+  const persisted = result.results.filter(r => r.operation !== 'NO-OP').length;
+  
+  return {
+    extracted: { r14: r14Only.length },
+    persisted,
+    synced: result.neo4jSync?.synced ?? 0,
+    skipped: { r08: skippedR08, r09: skippedR09, r11: skippedR11 },
+    findings,
+  };
+}
+
+// ============================================================================
+// AST Relationship Extraction (R21, R22, R23, R26)
+// ============================================================================
+
+/**
+ * Extract and persist AST-based structural relationships.
+ * @implements STORY-64.4
+ * 
+ * Derives from code structure:
+ * - R21: SourceFile IMPORTS SourceFile
+ * - R22: Function CALLS Function
+ * - R23: Class EXTENDS Class
+ * - R26: Module DEPENDS_ON Module
+ * 
+ * Note: R24 IMPLEMENTS_INTERFACE is out-of-scope (E14 Interface deferred)
+ */
+export async function extractAndPersistAstRelationships(projectId: string): Promise<{
+  r21: { extracted: number; persisted: number };
+  r22: { extracted: number; persisted: number };
+  r23: { extracted: number; persisted: number };
+  r26: { extracted: number; persisted: number };
+  total: { extracted: number; persisted: number; synced: number };
+}> {
+  // Start epoch for this extraction run (enables V11 ledger fields)
+  let epochStarted = false;
+  if (!getCurrentEpoch()) {
+    await startEpoch(projectId);
+    epochStarted = true;
+  }
+  
+  try {
+    // Get all entities needed for derivation
+    const dbEntities = await getAllEntities(projectId);
+    
+    // Convert to AstEntityInput format
+    const entities: AstEntityInput[] = dbEntities.map(e => ({
+      entity_type: e.entity_type,
+      instance_id: e.instance_id,
+      name: e.name,
+      source_file: e.source_file || '',
+      line_start: e.line_start || 1,
+      line_end: e.line_end || 1,
+      attributes: e.attributes || {},
+    }));
+    
+    // Create snapshot for extraction
+    const snapshot = {
+      id: `ast-rel-extraction-${Date.now()}`,
+      root_path: process.cwd(),
+      timestamp: new Date(),
+    };
+    
+    // Extract AST relationships
+    const astResult = await extractAstRelationships(snapshot, entities);
+    const flatRels = flattenAstRelationships(astResult);
+    
+    if (flatRels.length === 0) {
+      if (epochStarted) {
+        await completeEpoch();
+      }
+      return {
+        r21: { extracted: 0, persisted: 0 },
+        r22: { extracted: 0, persisted: 0 },
+        r23: { extracted: 0, persisted: 0 },
+        r26: { extracted: 0, persisted: 0 },
+        total: { extracted: 0, persisted: 0, synced: 0 },
+      };
+    }
+    
+    // Persist and sync
+    const persistResult = await relBatchUpsertAndSync(projectId, flatRels);
+    
+    // Count persisted by relationship type
+    const countPersisted = (prefix: string) =>
+      persistResult.results.filter(r =>
+        r.relationship?.instance_id?.startsWith(prefix) && r.operation !== 'NO-OP'
+      ).length;
+    
+    // Complete epoch if we started it
+    if (epochStarted) {
+      await completeEpoch();
+    }
+    
+    return {
+      r21: { extracted: astResult.r21.length, persisted: countPersisted('R21:') },
+      r22: { extracted: astResult.r22.length, persisted: countPersisted('R22:') },
+      r23: { extracted: astResult.r23.length, persisted: countPersisted('R23:') },
+      r26: { extracted: astResult.r26.length, persisted: countPersisted('R26:') },
+      total: {
+        extracted: flatRels.length,
+        persisted: persistResult.results.filter(r => r.operation !== 'NO-OP').length,
+        synced: persistResult.neo4jSync?.synced ?? 0,
+      },
+    };
+  } catch (err) {
+    // Fail epoch if we started it
+    if (epochStarted) {
+      await failEpoch(String(err));
+    }
+    throw err;
+  }
 }
 
 // ============================================================================

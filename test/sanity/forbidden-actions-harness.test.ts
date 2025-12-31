@@ -275,6 +275,8 @@ function checkGAPIViolation(filePath: string, content: string, lines: string[]):
   const isProvider = filePath.includes('/src/extraction/providers/');
   const isTest = filePath.includes('/test/');
   const isScript = filePath.includes('/scripts/');
+  // A4: Pipeline is service-layer code, DB access allowed in orchestrator/integrity/statistics
+  const isPipeline = filePath.includes('/src/pipeline/');
   
   // Check for db imports (G-API boundary for src/ files)
   // Note: Test files have separate RLS enforcement via checkRLSViolation()
@@ -285,8 +287,8 @@ function checkGAPIViolation(filePath: string, content: string, lines: string[]):
     const lineNumber = content.substring(0, match.index).split('\n').length;
     const lineContent = lines[lineNumber - 1] || '';
     
-    // ALLOWED: services and db itself
-    if (isService || isDb) continue;
+    // ALLOWED: services, db, and pipeline (service-layer per A4 spec)
+    if (isService || isDb || isPipeline) continue;
     
     // Test files are handled by checkRLSViolation() with two-level allowlist
     if (isTest) continue;

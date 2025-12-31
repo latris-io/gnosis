@@ -18,25 +18,28 @@
  */
 export const A3_BASELINE = {
   // Git SHA at which these counts were frozen
-  sha: '2a40d856594d77ee1f9b0e7d075332f124dc0907',
+  sha: '5bb937dc9cc7e281e201eb2cf09974f7843a68ab',
   
   // When the manifest was frozen
-  frozen_at: '2025-12-30',
+  frozen_at: '2025-12-31',
   
   // Project ID for which counts are valid
   project_id: '6df2f456-440d-4958-b475-d9808775ff69',
   
+  // A4 NOTE: Counts updated to include A4 pipeline modules with @implements STORY-64.4
+  // and test files with @satisfies markers. This is expected growth, not drift.
+  
   // Exact frozen counts - tests MUST assert equality
   counts: {
     // Marker extraction results
-    total_markers_extracted: 67,  // Total @implements + @satisfies + @tdd markers
+    total_markers_extracted: 129, // Total @implements + @satisfies + @tdd markers (A4 adds pipeline files)
     orphan_markers: 0,            // Markers with no valid target entity (0 after A1 refresh)
     
     // Relationship counts (from PostgreSQL)
-    R18: 40,  // IMPLEMENTS relationships
-    R19: 27,  // SATISFIES relationships
+    R18: 50,  // IMPLEMENTS relationships (A4 adds pipeline modules)
+    R19: 36,  // SATISFIES relationships (A4 adds ast-relationship-provider.ts)
     R36: 1,   // TESTED_BY relationships (from describe('STORY-XX.YY'))
-    R37: 2,   // VERIFIED_BY relationships (from it('AC-XX.YY.ZZ'))
+    R37: 6,   // VERIFIED_BY relationships (from it('AC-XX.YY.ZZ'), A4 adds pipeline tests)
   },
   
   // Semantic signal counts by type

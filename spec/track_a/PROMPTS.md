@@ -446,24 +446,47 @@ Prerequisites confirmed:
 Key requirements:
 1. Create pipeline types in src/pipeline/types.ts
 2. Implement orchestrator in src/pipeline/orchestrator.ts
-3. Implement integrity validator in src/pipeline/integrity.ts
-4. Implement incremental extractor in src/pipeline/incremental.ts
-5. Create ops entrypoint in src/ops/pipeline.ts (internal, NOT in public API)
+3. Implement integrity evaluator in src/pipeline/integrity.ts (produces findings[], not checks[])
+4. Implement incremental extractor in src/pipeline/incremental.ts (no hard deletes; track deleted_paths)
+5. Implement statistics in src/pipeline/statistics.ts
+6. Create ops entrypoint in src/ops/pipeline.ts (internal, NOT in public API)
+7. Add AST relationship extraction in src/extraction/providers/ast-relationship-provider.ts
 
-Provider execution order:
-1. SNAPSHOT → 2. FILESYSTEM → 3. BRD → 4. AST → 5. TEST → 6. GIT
-7. MARKERS → 8. BRD_REL → 9. AST_REL → 10. TEST_REL → 11. GIT_REL → 12. VALIDATE
+Provider execution order (15 stages):
+1. SNAPSHOT → 2. FILESYSTEM → 3. BRD → 4. AST → 5. MODULE → 6. TEST → 7. GIT
+8. MARKERS → 9. BRD_REL → 10. CONTAINMENT_REL → 11. TDD_REL → 12. AST_REL
+13. TEST_REL → 14. GIT_REL → 15. VALIDATE
+
+Entity/Relationship scope per stage:
+- FILESYSTEM: E11 SourceFile, E27 TestFile
+- BRD: E01 Epic, E02 Story, E03 AC, E04 Constraint
+- AST: E12 Function, E13 Class (E14 Interface is deferred)
+- MODULE: E15 Module (derived from directory structure, not AST)
+- TEST: E28 TestSuite, E29 TestCase
+- BRD_REL: R01/R02/R03 only
+- CONTAINMENT_REL: R04/R05/R06/R07/R16
+- TDD_REL: R14 only (R08/R09/R11 deferred)
+- AST_REL: R21/R22/R23/R26 only (R24 out-of-scope; E14 deferred)
 
 Constraints:
 - Must execute providers in dependency order
-- Must handle provider failures gracefully
-- Must validate graph integrity post-extraction
-- Must support incremental extraction
-- All pipeline operations must log to shadow ledger (CREATE/UPDATE only, not NO-OP)
+- Must handle provider failures gracefully (fail_fast option)
+- Must produce integrity findings with severity (not pass/fail assertions)
+- Must support incremental extraction (deleted paths surfaced as findings, not deleted from graph)
+- Pipeline is service-layer; DB access is allowed in orchestrator/integrity only
+- Providers (src/extraction/providers/**) MUST NOT import src/db/** or src/services/**
 - Reference src/schema/track-a/ for entity and relationship types (schema is authoritative)
 - Use src/extraction/types.ts for ExtractedEntity, ExtractedRelationship
 
-Mark all code with @implements STORY-64.4 and @satisfies AC-64.4.X markers.
+Ledger rules:
+- Mutations: log CREATE/UPDATE via existing shadow ledger (no NO-OP)
+- Pipeline lifecycle: log DECISION entries (PIPELINE_STARTED / PIPELINE_COMPLETED)
+- Path: shadow-ledger/{project_id}/ledger.jsonl
+
+Marker governance:
+- ALL A4 modules have @implements STORY-64.4
+- ONLY ast-relationship-provider.ts carries @satisfies AC-64.4.1, @satisfies AC-64.4.2, @satisfies AC-64.4.3
+- No other A4 module may claim @satisfies markers (infrastructure modules do not satisfy ACs directly)
 ```
 
 ### Verification Prompt
@@ -471,13 +494,17 @@ Mark all code with @implements STORY-64.4 and @satisfies AC-64.4.X markers.
 ```
 Run verification for Story A.4:
 
-1. npm run sanity
-2. npm test
+1. npm run test:sanity
+2. npm test (unit tests - includes pipeline config/stage validation)
+3. PIPELINE_INTEGRATION=1 npm test -- test/pipeline/pipeline.test.ts (integration - full pipeline)
 
-If grep "Structural Analysis" returns 0 tests, report it — do not invent tests.
-Run only tests that exist. Show output and summarize pass/fail.
+A4 tests are split:
+- Unit tests: run by default, validate config, stage ordering, API shape (~5s)
+- Integration tests: gated by PIPELINE_INTEGRATION=1, run full extraction (~8-10 min)
 
-Check story card (spec/track_a/stories/A4_STRUCTURAL_ANALYSIS.md) for any additional verification requirements.
+For A4 closeout evidence, run integration tests and record duration for AC-64.4.10.
+
+Check story card (spec/track_a/stories/A4_STRUCTURAL_ANALYSIS.md) for additional verification requirements.
 ```
 
 ---

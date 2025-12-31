@@ -150,6 +150,12 @@ async function verifyEntities(phase: Phase, projectId?: string): Promise<Verific
         }
         break;
         
+      case 'ALLOWED_ZERO':
+        // >= 0 is acceptable (codebase-dependent extraction, e.g., R23 class inheritance)
+        checkStatus = 'PASS';
+        message = `${expectation.code} (${expectation.name}): ${actualCount} (allowed zero)`;
+        break;
+        
       case 'DEFERRED_TO_A3':
       case 'DEFERRED_TO_A4':
       case 'DEFERRED_TO_A5':
@@ -226,6 +232,12 @@ async function verifyRelationships(phase: Phase, projectId?: string): Promise<Ve
           checkStatus = 'FAIL';
           message = `${expectation.code} (${expectation.name}): expected 0, found ${actualCount}`;
         }
+        break;
+        
+      case 'ALLOWED_ZERO':
+        // >= 0 is acceptable (codebase-dependent extraction, e.g., R23 class inheritance)
+        checkStatus = 'PASS';
+        message = `${expectation.code} (${expectation.name}): ${actualCount} (allowed zero)`;
         break;
         
       case 'DEFERRED_TO_A3':

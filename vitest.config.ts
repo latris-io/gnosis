@@ -5,6 +5,9 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   test: {
     include: ['test/**/*.test.ts'],
+    // Exclude integration tests from default run (they take 8-10 minutes)
+    // Run integration tests with: npm run test:pipeline:integration
+    exclude: ['**/node_modules/**', '**/*.integration.test.ts'],
     environment: 'node',
     globals: true,
     setupFiles: ['test/setup.ts'],

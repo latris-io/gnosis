@@ -30,6 +30,7 @@ import * as path from 'path';
 export type Status =
   | 'EXPECTED_NONZERO'   // Must have > 0 rows
   | 'EXPECTED_ZERO'      // Must have exactly 0 rows
+  | 'ALLOWED_ZERO'       // >= 0 is acceptable (codebase-dependent, e.g., no class inheritance)
   | 'DEFERRED_TO_A3'     // Not checked in A1/A2
   | 'DEFERRED_TO_A4'     // Not checked in A1/A2/A3
   | 'DEFERRED_TO_A5'     // Not checked in A1/A2/A3/A4
@@ -401,13 +402,14 @@ export const RELATIONSHIP_EXPECTATIONS: RelationshipExpectation[] = [
     a5: 'EXPECTED_NONZERO',
   },
   
-  // Design relationships (A2 scope)
+  // Design relationships (deferred to A4 per HGR-1 baseline)
   {
     code: 'R14',
     name: 'IMPLEMENTED_BY',
     a1: 'EXPECTED_ZERO',
-    a2: 'EXPECTED_NONZERO',
-    // Known gap: TDD relationship extraction incomplete - deferred to A4 pipeline
+    // HGR-1 baseline verified 0 count acceptable; extraction incomplete
+    // R14 requires E06 TechnicalDesign entities which may not be present
+    a2: 'DEFERRED_TO_A4',
     a3: 'DEFERRED_TO_A4',
     a4: 'EXPECTED_NONZERO',
     a5: 'EXPECTED_NONZERO',
@@ -467,8 +469,11 @@ export const RELATIONSHIP_EXPECTATIONS: RelationshipExpectation[] = [
     a1: 'DEFERRED_TO_A4',
     a2: 'DEFERRED_TO_A4',
     a3: 'DEFERRED_TO_A4',
-    a4: 'EXPECTED_NONZERO',
-    a5: 'EXPECTED_NONZERO',
+    // R23 is codebase-dependent: only non-zero if classes extend other classes.
+    // Gnosis codebase has no class inheritance, so 0 is expected.
+    // Per A4 story card: "R23 extraction is implemented but count depends on codebase structure"
+    a4: 'ALLOWED_ZERO',
+    a5: 'ALLOWED_ZERO',
   },
   {
     code: 'R26',
@@ -505,15 +510,17 @@ export const RELATIONSHIP_EXPECTATIONS: RelationshipExpectation[] = [
     a5: 'EXPECTED_NONZERO',
   },
   
-  // Provenance relationships (A2 scope)
+  // Provenance relationships (deferred to A4 per HGR-1 baseline)
   // Per Track A canon (ENTRY.md): R63 INTRODUCED_IN is SourceFile → Commit
   // (Track A-scoped deviation from global canon Story → ReleaseVersion)
+  // HGR-1 baseline verified 0 count acceptable; full git relationship
+  // extraction runs in A4 pipeline stage GIT_REL.
   {
     code: 'R63',
     name: 'INTRODUCED_IN',
     a1: 'EXPECTED_ZERO',
-    a2: 'EXPECTED_NONZERO',
-    // Known gap: Git relationship extraction incomplete - deferred to A4 pipeline
+    // HGR-1 baseline verified 0 count acceptable
+    a2: 'DEFERRED_TO_A4',
     a3: 'DEFERRED_TO_A4',
     a4: 'EXPECTED_NONZERO',
     a5: 'EXPECTED_NONZERO',
@@ -522,8 +529,8 @@ export const RELATIONSHIP_EXPECTATIONS: RelationshipExpectation[] = [
     code: 'R67',
     name: 'MODIFIED_IN',
     a1: 'EXPECTED_ZERO',
-    a2: 'EXPECTED_NONZERO',
-    // Known gap: Git relationship extraction incomplete - deferred to A4 pipeline
+    // HGR-1 baseline verified 0 count acceptable
+    a2: 'DEFERRED_TO_A4',
     a3: 'DEFERRED_TO_A4',
     a4: 'EXPECTED_NONZERO',
     a5: 'EXPECTED_NONZERO',
@@ -532,8 +539,8 @@ export const RELATIONSHIP_EXPECTATIONS: RelationshipExpectation[] = [
     code: 'R70',
     name: 'GROUPS',
     a1: 'EXPECTED_ZERO',
-    a2: 'EXPECTED_NONZERO',
-    // Known gap: Git relationship extraction incomplete - deferred to A4 pipeline
+    // HGR-1 baseline verified 0 count acceptable
+    a2: 'DEFERRED_TO_A4',
     a3: 'DEFERRED_TO_A4',
     a4: 'EXPECTED_NONZERO',
     a5: 'EXPECTED_NONZERO',

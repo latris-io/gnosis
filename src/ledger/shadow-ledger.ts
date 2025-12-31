@@ -1,8 +1,10 @@
 // src/ledger/shadow-ledger.ts
 // @implements STORY-64.1
 // @implements STORY-64.3
+// @implements STORY-64.4
 // @tdd TDD-A1-ENTITY-REGISTRY
 // @tdd TDD-A3-MARKER-EXTRACTION
+// @tdd TDD-A4-STRUCTURAL-ANALYSIS
 // LEGACY_OK: This module contains migration documentation for removed singleton
 //
 // Append-only JSONL ledger for entity CREATE/UPDATE operations
@@ -74,8 +76,14 @@ export type LedgerEntryKind = 'entity' | 'relationship' | 'decision';
 /**
  * Decision types for DECISION entries.
  * Added in A3 for marker extraction decision logging.
+ * Extended in A4 for pipeline lifecycle events.
  */
-export type DecisionType = 'ORPHAN' | 'TDD_COHERENCE_OK' | 'TDD_COHERENCE_MISMATCH';
+export type DecisionType = 
+  | 'ORPHAN' 
+  | 'TDD_COHERENCE_OK' 
+  | 'TDD_COHERENCE_MISMATCH'
+  | 'PIPELINE_STARTED'
+  | 'PIPELINE_COMPLETED';
 
 /**
  * A shadow ledger entry captures the provenance of an entity mutation.
