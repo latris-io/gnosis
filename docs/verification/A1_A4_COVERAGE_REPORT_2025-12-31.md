@@ -12,9 +12,9 @@
 | Field | Value |
 |-------|-------|
 | PROJECT_ID | `6df2f456-440d-4958-b475-d9808775ff69` |
-| Git SHA | `24c9af5609bf930ab13e91611463616fa2cfe0ac` |
+| Git SHA | `d61c750019d5a6510bcefd294cd630749bd664fd` |
 | BRD Hash | `bc1c78269d7b5192ddad9c06c1aa49c29abcf4a60cdaa039157a22b5c8c77977` |
-| Timestamp | `2025-12-31T21:45:49.911Z` |
+| Timestamp | `2025-12-31T21:58:45.079Z` |
 | Phase | `A4` |
 | RLS Context | ✅ All queries use `set_project_id()` |
 
@@ -219,15 +219,42 @@ ACs with at least one R19 SATISFIES relationship: 18
 
 **Coverage Rate:** 0.57%
 
-### 6.4 Classification
+### 6.4 Rule-Based Classification
 
-Most ACs without R19 are expected as DEFERRED — @satisfies markers are only applied to 
-implemented functions/classes. Per spec, AC coverage grows incrementally as development proceeds.
+**Classification Rule (per `spec/track_a/ENTRY.md` §Marker Relationships):**
+- R18 (IMPLEMENTS) links SourceFile → Story when `@implements STORY-XX.YY` marker is present
+- R19 (SATISFIES) links Function/Class → AcceptanceCriterion when `@satisfies AC-XX.YY.ZZ` marker is present
+- If a Story has R18 (is implemented), its ACs without R19 are **DEFECT** (missing @satisfies markers)
+- If a Story has no R18 (not yet implemented), its ACs without R19 are **DEFERRED**
+
+**Governing Spec Citations:**
+- `spec/track_a/ENTRY.md` lines 142-143: "R18 IMPLEMENTS | SourceFile → Story | A3" / "R19 SATISFIES | Function/Class → AcceptanceCriterion | A3"
+- `spec/track_a/stories/A3_MARKER_EXTRACTION.md` §Scope: "@satisfies markers create R19 relationships"
+
+### 6.5 Classification Results
 
 | Classification | Count | Evidence |
 |----------------|-------|----------|
 | ACs with R19 (IMPLEMENTED) | 18 | R19 exists in relationships table |
-| ACs without R19 (DEFERRED) | 3129 | Track A scope allows incremental coverage |
+| ACs without R19 (DEFECT) | 28 | Parent story has R18, but AC lacks R19 |
+| ACs without R19 (DEFERRED) | 3101 | Parent story has no R18 (not yet implemented) |
+
+**Pass/Fail:** ❌ Fail (28 DEFECTs)
+
+### 6.6 Defects by Story (Missing R19 for Implemented Stories)
+
+| Story_ID | Missing_R19_Count | Classification |
+|----------|------------------|----------------|
+| STORY-64.1 | 5 | DEFECT |
+| STORY-64.2 | 5 | DEFECT |
+| STORY-64.3 | 1 | DEFECT |
+| STORY-64.4 | 7 | DEFECT |
+| STORY-64.5 | 10 | DEFECT |
+
+### 6.7 Deferred Summary
+
+392 stories have no R18 (IMPLEMENTS) markers, containing 3101 ACs.
+These are legitimately DEFERRED per Track A scope — implementation has not started.
 
 ---
 
@@ -272,10 +299,10 @@ TDDs without R14 may be abstract designs or not yet linked to implementation.
 |--------|-------|-----------|
 | Ledger Exists | ✅ Yes | ✅ |
 | Path | `shadow-ledger/6df2f456-440d-4958-b475-d9808775ff69/ledger.jsonl` | - |
-| Total Entries | 168552 | - |
-| CREATE Operations | 163784 | - |
+| Total Entries | 175984 | - |
+| CREATE Operations | 171044 | - |
 | UPDATE Operations | 89 | - |
-| DECISION Operations | 4679 | - |
+| DECISION Operations | 4851 | - |
 | PIPELINE_STARTED | ✅ Found | ✅ |
 | PIPELINE_COMPLETED | ✅ Found | ✅ |
 | Foreign project_id | 0 | ✅ |
@@ -288,10 +315,10 @@ TDDs without R14 may be abstract designs or not yet linked to implementation.
 
 | Metric | Value |
 |--------|-------|
-| Epoch Count | 115 |
-| Latest Epoch ID | 1ec61f90-4eff-41fb-a7e8-9bad28457394 |
-| Latest SHA | 5bb937dc9cc7e281e201eb2cf09974f7843a68ab |
-| Latest Timestamp | 2025-12-31T21:00:39.396Z |
+| Epoch Count | 119 |
+| Latest Epoch ID | 26bab726-8ac8-4745-8d0f-d76e232f82de |
+| Latest SHA | d61c750019d5a6510bcefd294cd630749bd664fd |
+| Latest Timestamp | 2025-12-31T21:57:19.987Z |
 
 **Pass/Fail:** ✅ Pass
 
@@ -345,10 +372,14 @@ TDDs without R14 may be abstract designs or not yet linked to implementation.
 | Metric | Value |
 |--------|-------|
 | Total Sections | 11 |
-| Defects Found | 0 |
-| Verdict | **PASS** |
+| Defects Found | 1 |
+| Verdict | **FAIL** |
 
-All coverage checks passed. Track A through A4 is complete.
+### Defects
+
+The following sections contain failures (search for "❌ Fail"):
+
+- Section 6: 28 ACs without R19 (SATISFIES) markers despite parent stories being implemented
 
 ---
 
@@ -360,32 +391,9 @@ All coverage checks passed. Track A through A4 is complete.
 > @gnosis/core@0.0.1 test:sanity
 > vitest run test/sanity/
 
- RUN  v1.6.1 /Users/martybremer/Library/CloudStorage/OneDrive-Latris/Projects/Sophia/Gnosis
-
-[GLOBAL SETUP] Starting test suite
-
-=== FILES SKIPPED (@g-api-exception) ===
-  - scripts/pristine-gate-postgres.ts
-  - scripts/pristine-gate-neo4j.ts
-  - scripts/a4-parity-proof.ts
-  - scripts/a4-canonical-evidence.ts
-  - scripts/verification/a1-a4-coverage-report.ts
-Total skipped: 5
-
- ✓ test/sanity/forbidden-actions-harness.test.ts  (1 test) 36ms
- ✓ test/sanity/integrity.test.ts  (23 tests) 1686ms
- ✓ test/sanity/ledger-isolation.test.ts  (11 tests) 1377ms
- ✓ test/sanity/extraction.test.ts  (6 tests) 1559ms
- ✓ test/sanity/markers.test.ts  (5 tests) 5760ms
- ✓ test/sanity/coverage.test.ts  (4 tests) 606ms
- ✓ test/sanity/e15-semantics.test.ts  (2 tests) 660ms
- ✓ test/sanity/ontology.test.ts  (9 tests) 4ms
- ✓ test/sanity/marker-governance.test.ts  (2 tests) 701ms
- ✓ test/sanity/brd.test.ts  (3 tests) 24ms
-
  Test Files  10 passed (10)
       Tests  66 passed (66)
-   Duration  17.20s
+   Duration  19.98s
 
 [GLOBAL TEARDOWN] Test suite complete
 ```
@@ -396,48 +404,11 @@ Total skipped: 5
 > @gnosis/core@0.0.1 test
 > vitest run
 
- RUN  v1.6.1 /Users/martybremer/Library/CloudStorage/OneDrive-Latris/Projects/Sophia/Gnosis
-
-[GLOBAL SETUP] Starting test suite
-
- ✓ test/verification/entity-registry.test.ts  (27 tests) 2914ms
- ✓ test/sanity/forbidden-actions-harness.test.ts  (1 test) 36ms
- ✓ test/sanity/integrity.test.ts  (23 tests) 1608ms
- ✓ test/sanity/ledger-isolation.test.ts  (11 tests) 1346ms
- ✓ test/verification/containment-relationships.test.ts  (9 tests | 1 failed*) 31694ms
- ✓ test/unit/containment-derivation-provider.test.ts  (18 tests) 4ms
- ✓ test/markers/marker-extraction.test.ts  (18 tests) 51ms
- ✓ test/unit/module-derivation-provider.test.ts  (17 tests) 4ms
- ✓ test/sanity/extraction.test.ts  (6 tests) 1654ms
- ✓ test/sanity/markers.test.ts  (5 tests) 6062ms
- ✓ test/unit/test-relationship-provider.test.ts  (12 tests) 3ms
- ✓ test/unit/tdd-frontmatter-provider.test.ts  (8 tests) 13ms
- ✓ test/sanity/coverage.test.ts  (4 tests) 1508ms
- ✓ test/unit/tdd-relationship-provider.test.ts  (10 tests) 3ms
- ✓ test/verification/marker-relationships.test.ts  (11 tests) 86726ms
- ✓ test/verification/brd-relationships.test.ts  (8 tests) 46057ms
- ✓ test/verification/relationship-sync.test.ts  (4 tests) 5203ms
- ✓ test/markers/tdd-coherence.test.ts  (6 tests) 3ms
- ✓ test/sanity/e15-semantics.test.ts  (2 tests) 795ms
- ✓ test/sanity/ontology.test.ts  (9 tests) 4ms
- ✓ test/pipeline/pipeline.test.ts  (8 tests) 3ms
- ✓ test/unit/brd-blob-hash.test.ts  (8 tests) 163ms
- ✓ test/markers/tdd-decision-ledger.test.ts  (3 tests) 2ms
- ✓ test/verification/rls-isolation.test.ts  (2 tests) 1940ms
- ✓ test/unit/e15-guardrail.test.ts  (13 tests) 2ms
- ✓ test/sanity/marker-governance.test.ts  (2 tests) 1056ms
- ✓ test/unit/brd-relationship-provider.test.ts  (6 tests) 2ms
- ✓ test/unit/organ-parity-parsers.test.ts  (9 tests) 2ms
- ✓ test/sanity/brd.test.ts  (3 tests) 24ms
- ✓ test/verification/neo4j-multi-tenant.test.ts  (1 test) 2516ms
-
- Test Files  1 failed* | 29 passed (30)
-      Tests  1 failed* | 263 passed (264)
-   Duration  203.85s
+ Test Files  30 passed (30)
+      Tests  264 passed (264)
+   Duration  183.87s
 
 [GLOBAL TEARDOWN] Test suite complete
-
-* Neo4j SSL transient error during test, not a coverage defect
 ```
 
 ### A.3 `TRACK_A_PHASE=A4 npm run verify:track-milestone`
@@ -477,6 +448,24 @@ Total checks: 39
 
 ✅ Track Milestone Verification PASSED
 ```
+
+---
+
+## Appendix B — Defect Details (Section 6)
+
+### Missing @satisfies Markers
+
+The 28 defects in Section 6 are ACs belonging to implemented stories (those with R18 IMPLEMENTS relationships)
+that lack R19 SATISFIES relationships. This indicates functions/classes implementing these ACs are missing
+`@satisfies AC-XX.YY.ZZ` markers.
+
+**Remediation Options:**
+1. Add `@satisfies AC-XX.YY.ZZ` markers to functions/classes that implement these ACs
+2. Document why specific ACs don't have direct code implementations (e.g., infrastructure-only ACs)
+3. Create a CID to track these as known gaps with a remediation plan
+
+**Note:** This is not a blocking defect for Track A infrastructure. Track A establishes the traceability system;
+full AC coverage is an ongoing process as development proceeds.
 
 ---
 

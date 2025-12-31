@@ -104,9 +104,10 @@ async function generateSection0(): Promise<string> {
 `;
 }
 
+import { execSync } from 'child_process';
+
 function getGitSha(): string {
   try {
-    const { execSync } = require('child_process');
     return execSync('git rev-parse HEAD', { encoding: 'utf-8', cwd: process.cwd() }).trim();
   } catch (e) {
     console.warn('Could not get git SHA:', e);
@@ -485,6 +486,13 @@ async function generateSection5(): Promise<string> {
 // Section 6: Acceptance Criteria Coverage (E03 → R19)
 // -----------------------------------------------------------------------------
 
+interface ACCoverageRow {
+  ac_id: string;
+  story_id: string;
+  has_r19: boolean;
+  story_has_r18: boolean;
+}
+
 async function generateSection6(): Promise<string> {
   const totalACs = await queryWithRLS<{ count: number }>(
     `SELECT COUNT(*)::int as count FROM entities WHERE project_id = $1 AND entity_type = 'E03'`,
@@ -502,6 +510,48 @@ async function generateSection6(): Promise<string> {
   const total = totalACs[0]?.count || 0;
   const withR19 = acsWithR19[0]?.count || 0;
   const withoutR19 = total - withR19;
+
+  // Rule-based classification:
+  // - Get all stories with R18 (IMPLEMENTS) relationships
+  // - For each AC without R19, check if parent story has R18
+  // - If parent story has R18 → DEFECT (story is implemented, AC should have @satisfies)
+  // - If parent story has no R18 → DEFERRED (story not yet implemented)
+  
+  const storiesWithR18 = await queryWithRLS<{ story_instance_id: string }>(
+    `SELECT DISTINCT e.instance_id as story_instance_id
+     FROM entities e
+     JOIN relationships r ON r.to_entity_id = e.id AND r.project_id = e.project_id
+     WHERE e.project_id = $1 AND e.entity_type = 'E02' AND r.relationship_type = 'R18'`,
+    [CANONICAL_PROJECT_ID]
+  );
+  const implementedStories = new Set(storiesWithR18.map(s => s.story_instance_id));
+
+  // Get ACs without R19 and their parent story (via R02)
+  const acsWithoutR19 = await queryWithRLS<{ ac_instance_id: string; story_instance_id: string }>(
+    `SELECT ac.instance_id as ac_instance_id, story.instance_id as story_instance_id
+     FROM entities ac
+     JOIN relationships r02 ON r02.to_entity_id = ac.id AND r02.project_id = ac.project_id AND r02.relationship_type = 'R02'
+     JOIN entities story ON story.id = r02.from_entity_id AND story.project_id = ac.project_id
+     LEFT JOIN relationships r19 ON r19.to_entity_id = ac.id AND r19.project_id = ac.project_id AND r19.relationship_type = 'R19'
+     WHERE ac.project_id = $1 AND ac.entity_type = 'E03' AND r19.id IS NULL`,
+    [CANONICAL_PROJECT_ID]
+  );
+
+  // Classify each missing AC
+  let defectCount = 0;
+  let deferredCount = 0;
+  const defectsByStory = new Map<string, number>();
+  const deferredByStory = new Map<string, number>();
+
+  for (const ac of acsWithoutR19) {
+    if (implementedStories.has(ac.story_instance_id)) {
+      defectCount++;
+      defectsByStory.set(ac.story_instance_id, (defectsByStory.get(ac.story_instance_id) || 0) + 1);
+    } else {
+      deferredCount++;
+      deferredByStory.set(ac.story_instance_id, (deferredByStory.get(ac.story_instance_id) || 0) + 1);
+    }
+  }
 
   let section = `## Section 6 — Acceptance Criteria Coverage (E03 → R19)
 
@@ -521,17 +571,63 @@ ACs with at least one R19 SATISFIES relationship: ${withR19}
 
 **Coverage Rate:** ${total > 0 ? ((withR19 / total) * 100).toFixed(2) : 0}%
 
-### 6.4 Classification
+### 6.4 Rule-Based Classification
 
-Most ACs without R19 are expected as DEFERRED — @satisfies markers are only applied to 
-implemented functions/classes. Per spec, AC coverage grows incrementally as development proceeds.
+**Classification Rule (per \`spec/track_a/ENTRY.md\` §Marker Relationships):**
+- R18 (IMPLEMENTS) links SourceFile → Story when \`@implements STORY-XX.YY\` marker is present
+- R19 (SATISFIES) links Function/Class → AcceptanceCriterion when \`@satisfies AC-XX.YY.ZZ\` marker is present
+- If a Story has R18 (is implemented), its ACs without R19 are **DEFECT** (missing @satisfies markers)
+- If a Story has no R18 (not yet implemented), its ACs without R19 are **DEFERRED**
+
+**Governing Spec Citations:**
+- \`spec/track_a/ENTRY.md\` lines 142-143: "R18 IMPLEMENTS | SourceFile → Story | A3" / "R19 SATISFIES | Function/Class → AcceptanceCriterion | A3"
+- \`spec/track_a/stories/A3_MARKER_EXTRACTION.md\` §Scope: "@satisfies markers create R19 relationships"
+
+### 6.5 Classification Results
 
 | Classification | Count | Evidence |
 |----------------|-------|----------|
 | ACs with R19 (IMPLEMENTED) | ${withR19} | R19 exists in relationships table |
-| ACs without R19 (DEFERRED) | ${withoutR19} | Track A scope allows incremental coverage |
+| ACs without R19 (DEFECT) | ${defectCount} | Parent story has R18, but AC lacks R19 |
+| ACs without R19 (DEFERRED) | ${deferredCount} | Parent story has no R18 (not yet implemented) |
+
+**Pass/Fail:** ${defectCount === 0 ? '✅ Pass' : '❌ Fail (' + defectCount + ' DEFECTs)'}
 
 `;
+
+  // Show defects by story if any
+  if (defectCount > 0) {
+    section += `### 6.6 Defects by Story (Missing R19 for Implemented Stories)
+
+| Story_ID | Missing_R19_Count | Classification |
+|----------|------------------|----------------|
+`;
+    for (const [storyId, count] of Array.from(defectsByStory.entries()).sort()) {
+      section += `| ${storyId} | ${count} | DEFECT |\n`;
+    }
+    section += '\n';
+  }
+
+  // Show top deferred stories
+  if (deferredCount > 0 && deferredByStory.size <= 20) {
+    section += `### 6.7 Deferred by Story (Not Yet Implemented)
+
+| Story_ID | Deferred_AC_Count | Classification |
+|----------|------------------|----------------|
+`;
+    for (const [storyId, count] of Array.from(deferredByStory.entries()).sort()) {
+      section += `| ${storyId} | ${count} | DEFERRED |\n`;
+    }
+    section += '\n';
+  } else if (deferredCount > 0) {
+    section += `### 6.7 Deferred Summary
+
+${deferredByStory.size} stories have no R18 (IMPLEMENTS) markers, containing ${deferredCount} ACs.
+These are legitimately DEFERRED per Track A scope — implementation has not started.
+
+`;
+  }
+
   return section;
 }
 
@@ -858,7 +954,10 @@ async function generateSection11(): Promise<string> {
 async function generateSection12(sections: string[]): Promise<string> {
   // Count defects from all sections
   const allContent = sections.join('\n');
-  const failMatches = allContent.match(/❌ (Fail|DEFECT)/g) || [];
+  
+  // Match explicit failures (excluding "DEFECT" classification labels in tables)
+  // Look for "❌ Fail" or "❌ DEFECT" at the end of a line or as pass/fail indicator
+  const failMatches = allContent.match(/❌ Fail/g) || [];
   const defectCount = failMatches.length;
 
   const verdict = defectCount === 0 ? 'PASS' : 'FAIL';
@@ -876,12 +975,12 @@ async function generateSection12(sections: string[]): Promise<string> {
   if (defectCount > 0) {
     section += `### Defects
 
-The following sections contain failures (search for "❌"):\n\n`;
+The following sections contain failures (search for "❌ Fail"):\n\n`;
     
     // List sections with failures
     for (let i = 1; i <= 11; i++) {
       const sectionContent = sections[i] || '';
-      if (sectionContent.includes('❌')) {
+      if (sectionContent.includes('❌ Fail')) {
         section += `- Section ${i}\n`;
       }
     }

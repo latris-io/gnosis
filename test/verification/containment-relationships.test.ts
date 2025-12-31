@@ -9,6 +9,35 @@ import { countNeo4jNodes, countNeo4jRelationships } from '../utils/admin-test-on
 import { extractAndPersistContainmentRelationships, replaceAllRelationshipsInNeo4j, syncToNeo4j } from '../../src/ops/track-a.js';
 import 'dotenv/config';
 
+/**
+ * Retry helper for transient network/SSL errors.
+ * Retries up to maxRetries times with exponential backoff.
+ */
+async function withRetry<T>(
+  fn: () => Promise<T>,
+  maxRetries: number = 3,
+  baseDelayMs: number = 1000
+): Promise<T> {
+  let lastError: Error | undefined;
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastError = err instanceof Error ? err : new Error(String(err));
+      const isTransient = lastError.message.includes('SSL') || 
+                          lastError.message.includes('Connection') ||
+                          lastError.message.includes('ECONNRESET');
+      if (!isTransient || attempt === maxRetries) {
+        throw lastError;
+      }
+      const delay = baseDelayMs * Math.pow(2, attempt - 1);
+      console.log(`[Retry] Attempt ${attempt}/${maxRetries} failed with transient error, retrying in ${delay}ms...`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+  throw lastError;
+}
+
 // Get project ID from environment
 const PROJECT_ID = process.env.PROJECT_ID;
 
@@ -339,8 +368,11 @@ describe('CONTAINMENT RELATIONSHIPS (R04-R07)', () => {
 
     // Sync entities and replace all relationships in Neo4j to ensure parity
     // This handles stale data from previous test runs
-    await syncToNeo4j(PROJECT_ID);
-    await replaceAllRelationshipsInNeo4j(PROJECT_ID);
+    // Use retry wrapper for transient SSL/connection errors
+    await withRetry(async () => {
+      await syncToNeo4j(PROJECT_ID);
+      await replaceAllRelationshipsInNeo4j(PROJECT_ID);
+    }, 3, 2000);
 
     // Get Postgres counts
     const pgEntityCount = await rlsQuery<{ count: string }>(
@@ -356,8 +388,9 @@ describe('CONTAINMENT RELATIONSHIPS (R04-R07)', () => {
     const pgRels = parseInt(pgRelCount[0]?.count ?? '0', 10);
 
     // Get Neo4j counts via G-API compliant test helpers
-    const neo4jEntities = await countNeo4jNodes(PROJECT_ID);
-    const neo4jRels = await countNeo4jRelationships(PROJECT_ID);
+    // Use retry wrapper for transient SSL/connection errors
+    const neo4jEntities = await withRetry(() => countNeo4jNodes(PROJECT_ID), 3, 2000);
+    const neo4jRels = await withRetry(() => countNeo4jRelationships(PROJECT_ID), 3, 2000);
 
     console.log(`[Neo4j] Postgres: ${pgEntities} entities, ${pgRels} relationships`);
     console.log(`[Neo4j] Neo4j: ${neo4jEntities} entities, ${neo4jRels} relationships`);
