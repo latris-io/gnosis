@@ -93,6 +93,8 @@ async function resolveEntityId(
 
 /**
  * Upsert a relationship with content_hash change detection.
+ * @satisfies AC-64.2.2 - RelationshipMetadata schema (confidence, provenance, timestamps)
+ * @satisfies AC-64.2.3 - Confidence scoring 0.0-1.0 enforced via DB CHECK constraint
  * 
  * Per ENTRY.md Upsert Rule (Locked):
  * - ON CONFLICT (project_id, instance_id) DO UPDATE

@@ -39,6 +39,8 @@ export interface UpsertResult {
 
 /**
  * Upsert an entity with content_hash change detection.
+ * @satisfies AC-64.1.3 - Required attributes enforced via DB NOT NULL constraints
+ *                        (entity_type, instance_id, name must be non-null)
  * 
  * Per ENTRY.md Upsert Rule (Locked):
  * - ON CONFLICT (project_id, instance_id) DO UPDATE
@@ -268,6 +270,8 @@ export async function getAll(projectId: string): Promise<Entity[]> {
 
 /**
  * Count entities by type.
+ * @satisfies AC-64.1.7 - Entity count per type reported for metrics
+ * 
  * Project-scoped via RLS.
  */
 export async function countByType(
