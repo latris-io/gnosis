@@ -64,6 +64,8 @@ This story implements **STORY-64.5** (Graph API v1).
 For BRD acceptance criteria, see BRD V20.6.4 §Epic 64, Story 64.5.
 
 > **Governance Rule:** Track docs reference BRD stories but do not define or redefine AC-* identifiers. See Verification Spec Part XVII (Marker Governance).
+>
+> **AC Numbering:** See `ENTRY.md` → AC Numbering Convention. All `@satisfies` markers must reference canonical BRD AC IDs (e.g., `AC-64.5.1`). This is especially relevant for A5 as future tracks will reference Graph API semantics.
 
 ---
 
