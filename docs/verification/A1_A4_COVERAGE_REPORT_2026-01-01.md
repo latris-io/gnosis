@@ -12,9 +12,9 @@
 | Field | Value |
 |-------|-------|
 | PROJECT_ID | `6df2f456-440d-4958-b475-d9808775ff69` |
-| Git SHA | `5466eaad02026c179ae70027cd16b33bd7b542a2` |
+| Git SHA | `b1b88cee9c242a09a1e8d15ea856b5dd292f9aff` |
 | BRD Hash | `bc1c78269d7b5192ddad9c06c1aa49c29abcf4a60cdaa039157a22b5c8c77977` |
-| Timestamp | `2026-01-01T18:28:58.334Z` |
+| Timestamp | `2026-01-01T19:26:29.858Z` |
 | Phase | `A4` |
 | RLS Context | ✅ All queries use `set_project_id()` |
 
@@ -48,7 +48,7 @@ Query: `SELECT entity_type, COUNT(*) FROM entities WHERE project_id = $1 GROUP B
 | E28 | TestSuite | EXPECTED_NONZERO | >0 | 111 | ✅ Pass | IMPLEMENTED | track-a-expectations.ts:E28 |
 | E29 | TestCase | EXPECTED_NONZERO | >0 | 271 | ✅ Pass | IMPLEMENTED | track-a-expectations.ts:E29 |
 | E49 | ReleaseVersion | EXPECTED_NONZERO | >0 | 8 | ✅ Pass | IMPLEMENTED | track-a-expectations.ts:E49 |
-| E50 | Commit | EXPECTED_NONZERO | >0 | 157 | ✅ Pass | IMPLEMENTED | track-a-expectations.ts:E50 |
+| E50 | Commit | EXPECTED_NONZERO | >0 | 166 | ✅ Pass | IMPLEMENTED | track-a-expectations.ts:E50 |
 | E52 | ChangeSet | EXPECTED_NONZERO | >0 | 3 | ✅ Pass | IMPLEMENTED | track-a-expectations.ts:E52 |
 
 **Summary:** 16/16 passed
@@ -110,15 +110,15 @@ Query: `SELECT relationship_type, COUNT(*) FROM relationships WHERE project_id =
 | R14 | IMPLEMENTED_BY | EXPECTED_NONZERO | >0 | 35 | ✅ Pass | IMPLEMENTED | track-a-expectations.ts:R14 |
 | R16 | DEFINED_IN | EXPECTED_NONZERO | >0 | 220 | ✅ Pass | IMPLEMENTED | track-a-expectations.ts:R16 |
 | R18 | IMPLEMENTS | EXPECTED_NONZERO | >0 | 50 | ✅ Pass | IMPLEMENTED | track-a-expectations.ts:R18 |
-| R19 | SATISFIES | EXPECTED_NONZERO | >0 | 36 | ✅ Pass | IMPLEMENTED | track-a-expectations.ts:R19 |
+| R19 | SATISFIES | EXPECTED_NONZERO | >0 | 40 | ✅ Pass | IMPLEMENTED | track-a-expectations.ts:R19 |
 | R21 | IMPORTS | EXPECTED_NONZERO | >0 | 115 | ✅ Pass | IMPLEMENTED | track-a-expectations.ts:R21 |
 | R22 | CALLS | EXPECTED_NONZERO | >0 | 208 | ✅ Pass | IMPLEMENTED | track-a-expectations.ts:R22 |
 | R23 | EXTENDS | ALLOWED_ZERO | >=0 | 0 | ✅ Pass | ALLOWED_ZERO | track-a-expectations.ts:R23 |
 | R26 | DEPENDS_ON | EXPECTED_NONZERO | >0 | 42 | ✅ Pass | IMPLEMENTED | track-a-expectations.ts:R26 |
 | R36 | TESTED_BY | EXPECTED_NONZERO | >0 | 1 | ✅ Pass | IMPLEMENTED | track-a-expectations.ts:R36 |
 | R37 | VERIFIED_BY | EXPECTED_NONZERO | >0 | 6 | ✅ Pass | IMPLEMENTED | track-a-expectations.ts:R37 |
-| R63 | INTRODUCED_IN | EXPECTED_NONZERO | >0 | 41 | ✅ Pass | IMPLEMENTED | track-a-expectations.ts:R63 |
-| R67 | MODIFIED_IN | EXPECTED_NONZERO | >0 | 167 | ✅ Pass | IMPLEMENTED | track-a-expectations.ts:R67 |
+| R63 | INTRODUCED_IN | EXPECTED_NONZERO | >0 | 48 | ✅ Pass | IMPLEMENTED | track-a-expectations.ts:R63 |
+| R67 | MODIFIED_IN | EXPECTED_NONZERO | >0 | 178 | ✅ Pass | IMPLEMENTED | track-a-expectations.ts:R67 |
 | R70 | GROUPS | EXPECTED_NONZERO | >0 | 4 | ✅ Pass | IMPLEMENTED | track-a-expectations.ts:R70 |
 
 **Summary:** 20/20 passed
@@ -144,7 +144,7 @@ Query: `SELECT relationship_type, COUNT(*) FROM relationships WHERE project_id =
 | E28 | 111 | 0 | 0 | 0 | ✅ Pass |
 | E29 | 271 | 0 | 0 | 0 | ✅ Pass |
 | E49 | 8 | 0 | 0 | 0 | ✅ Pass |
-| E50 | 157 | 0 | 0 | 0 | ✅ Pass |
+| E50 | 166 | 0 | 0 | 0 | ✅ Pass |
 | E52 | 3 | 0 | 0 | 0 | ✅ Pass |
 
 ### 4.2 Relationship Evidence Fields
@@ -160,14 +160,14 @@ Query: `SELECT relationship_type, COUNT(*) FROM relationships WHERE project_id =
 | R14 | 35 | 0 | 0 | 0 | 0 | ✅ Pass |
 | R16 | 220 | 0 | 0 | 0 | 0 | ✅ Pass |
 | R18 | 50 | 0 | 0 | 0 | 0 | ✅ Pass |
-| R19 | 36 | 0 | 0 | 0 | 0 | ✅ Pass |
+| R19 | 40 | 0 | 0 | 0 | 0 | ✅ Pass |
 | R21 | 115 | 0 | 0 | 0 | 0 | ✅ Pass |
 | R22 | 208 | 0 | 0 | 0 | 0 | ✅ Pass |
 | R26 | 42 | 0 | 0 | 0 | 0 | ✅ Pass |
 | R36 | 1 | 0 | 0 | 0 | 0 | ✅ Pass |
 | R37 | 6 | 0 | 0 | 0 | 0 | ✅ Pass |
-| R63 | 41 | 0 | 0 | 0 | 0 | ✅ Pass |
-| R67 | 167 | 0 | 0 | 0 | 0 | ✅ Pass |
+| R63 | 48 | 0 | 0 | 0 | 0 | ✅ Pass |
+| R67 | 178 | 0 | 0 | 0 | 0 | ✅ Pass |
 | R70 | 4 | 0 | 0 | 0 | 0 | ✅ Pass |
 
 ---
@@ -209,15 +209,15 @@ Total E03 AcceptanceCriterion entities in DB: 3147
 
 ### 6.2 Observed Link
 
-ACs with at least one R19 SATISFIES relationship: 18
+ACs with at least one R19 SATISFIES relationship: 22
 
 ### 6.3 Summary
 
 | Total_ACs | ACs_with_R19 | ACs_without_R19 |
 |-----------|-------------|----------------|
-| 3147 | 18 | 3129 |
+| 3147 | 22 | 3125 |
 
-**Coverage Rate:** 0.57%
+**Coverage Rate:** 0.70%
 
 ### 6.4 Rule-Based Classification
 
@@ -236,8 +236,8 @@ ACs with at least one R19 SATISFIES relationship: 18
 
 | Classification | Count | Evidence |
 |----------------|-------|----------|
-| IMPLEMENTED (has R19) | 18 | R19 exists in relationships table |
-| GAP_PENDING_ANNOTATION (in-scope, missing marker) | 15 | In TDD scope but lacks @satisfies |
+| IMPLEMENTED (has R19) | 22 | R19 exists in relationships table |
+| GAP_PENDING_ANNOTATION (in-scope, missing marker) | 11 | In TDD scope but lacks @satisfies |
 | OUT_OF_SCOPE/DEFERRED (explicit) | 13 | Per TDD frontmatter / spec citations |
 | DEFERRED (story not implemented) | 3101 | Parent story has no R18 |
 
@@ -248,12 +248,8 @@ ACs with at least one R19 SATISFIES relationship: 18
 | AC_ID | Parent_STORY_ID | In_TDD_Scope | R19_Count | Classification | Reason |
 |-------|-----------------|--------------|-----------|----------------|--------|
 | AC-64.1.2 | STORY-64.1 | ✅ Yes | 0 | GAP_PENDING_ANNOTATION | In-scope AC without @satisfies marker |
-| AC-64.1.3 | STORY-64.1 | ✅ Yes | 0 | GAP_PENDING_ANNOTATION | In-scope AC without @satisfies marker |
 | AC-64.1.4 | STORY-64.1 | ✅ Yes | 0 | GAP_PENDING_ANNOTATION | In-scope AC without @satisfies marker |
-| AC-64.1.7 | STORY-64.1 | ✅ Yes | 0 | GAP_PENDING_ANNOTATION | In-scope AC without @satisfies marker |
 | AC-64.1.8 | STORY-64.1 | ✅ Yes | 0 | GAP_PENDING_ANNOTATION | In-scope AC without @satisfies marker |
-| AC-64.2.2 | STORY-64.2 | ✅ Yes | 0 | GAP_PENDING_ANNOTATION | In-scope AC without @satisfies marker |
-| AC-64.2.3 | STORY-64.2 | ✅ Yes | 0 | GAP_PENDING_ANNOTATION | In-scope AC without @satisfies marker |
 | AC-64.2.6 | STORY-64.2 | ✅ Yes | 0 | GAP_PENDING_ANNOTATION | In-scope AC without @satisfies marker |
 | AC-64.2.7 | STORY-64.2 | ✅ Yes | 0 | GAP_PENDING_ANNOTATION | In-scope AC without @satisfies marker |
 | AC-64.2.8 | STORY-64.2 | ✅ Yes | 0 | GAP_PENDING_ANNOTATION | In-scope AC without @satisfies marker |
@@ -267,8 +263,8 @@ ACs with at least one R19 SATISFIES relationship: 18
 
 | Story_ID | In_Scope_Gaps | Classification |
 |----------|---------------|----------------|
-| STORY-64.1 | 5 | GAP_PENDING_ANNOTATION |
-| STORY-64.2 | 5 | GAP_PENDING_ANNOTATION |
+| STORY-64.1 | 3 | GAP_PENDING_ANNOTATION |
+| STORY-64.2 | 3 | GAP_PENDING_ANNOTATION |
 | STORY-64.4 | 1 | GAP_PENDING_ANNOTATION |
 | STORY-64.5 | 4 | GAP_PENDING_ANNOTATION |
 
@@ -328,7 +324,7 @@ TDDs without R14 may be abstract designs or not yet linked to implementation.
 | MarkerRel | Total | OrphanTargets | Pass/Fail |
 |-----------|-------|--------------|-----------|
 | R18 (IMPLEMENTS) | 50 | 0 | ✅ Pass |
-| R19 (SATISFIES) | 36 | 0 | ✅ Pass |
+| R19 (SATISFIES) | 40 | 0 | ✅ Pass |
 
 ---
 
@@ -338,10 +334,10 @@ TDDs without R14 may be abstract designs or not yet linked to implementation.
 |--------|-------|-----------|
 | Ledger Exists | ✅ Yes | ✅ |
 | Path | `shadow-ledger/6df2f456-440d-4958-b475-d9808775ff69/ledger.jsonl` | - |
-| Total Entries | 175984 | - |
-| CREATE Operations | 171044 | - |
-| UPDATE Operations | 89 | - |
-| DECISION Operations | 4851 | - |
+| Total Entries | 176155 | - |
+| CREATE Operations | 171075 | - |
+| UPDATE Operations | 139 | - |
+| DECISION Operations | 4941 | - |
 | PIPELINE_STARTED | ✅ Found | ✅ |
 | PIPELINE_COMPLETED | ✅ Found | ✅ |
 | Foreign project_id | 0 | ✅ |
@@ -354,10 +350,10 @@ TDDs without R14 may be abstract designs or not yet linked to implementation.
 
 | Metric | Value |
 |--------|-------|
-| Epoch Count | 119 |
-| Latest Epoch ID | 26bab726-8ac8-4745-8d0f-d76e232f82de |
-| Latest SHA | d61c750019d5a6510bcefd294cd630749bd664fd |
-| Latest Timestamp | 2025-12-31T21:57:19.987Z |
+| Epoch Count | 121 |
+| Latest Epoch ID | d88aa22b-751c-4509-aff4-6ed45dbb2e81 |
+| Latest SHA | b1b88cee9c242a09a1e8d15ea856b5dd292f9aff |
+| Latest Timestamp | 2026-01-01T19:25:32.957Z |
 
 **Pass/Fail:** ✅ Pass
 
@@ -369,8 +365,8 @@ TDDs without R14 may be abstract designs or not yet linked to implementation.
 
 | Item | Postgres | Neo4j | Match |
 |------|----------|-------|-------|
-| Total Entities | 4487 | 4487 | ✅ |
-| Total Relationships | 5115 | 5115 | ✅ |
+| Total Entities | 4496 | 4496 | ✅ |
+| Total Relationships | 5137 | 5137 | ✅ |
 
 ### Entity Type Breakdown
 
@@ -389,7 +385,7 @@ TDDs without R14 may be abstract designs or not yet linked to implementation.
 | E28 | 111 | 111 | ✅ |
 | E29 | 271 | 271 | ✅ |
 | E49 | 8 | 8 | ✅ |
-| E50 | 157 | 157 | ✅ |
+| E50 | 166 | 166 | ✅ |
 | E52 | 3 | 3 | ✅ |
 
 ### Key Relationship Breakdown
@@ -402,7 +398,7 @@ TDDs without R14 may be abstract designs or not yet linked to implementation.
 | R26 | 42 | 42 | ✅ |
 | R14 | 35 | 35 | ✅ |
 | R18 | 50 | 50 | ✅ |
-| R19 | 36 | 36 | ✅ |
+| R19 | 40 | 40 | ✅ |
 
 ---
 
@@ -427,12 +423,12 @@ TDDs without R14 may be abstract designs or not yet linked to implementation.
 
 | Metric | Value |
 |--------|-------|
-| ACs with @satisfies markers (R19) | 31 |
-| In-scope gaps (missing markers) | 15 |
+| ACs with @satisfies markers (R19) | 35 |
+| In-scope gaps (missing markers) | 11 |
 | Out-of-scope/deferred (explicit) | 13 |
 | Deferred (stories not implemented) | ~3100 |
 
-**ANNOTATION VERDICT:** ⚠️ **15 GAPS** (see Section 6.6)
+**ANNOTATION VERDICT:** ⚠️ **11 GAPS** (see Section 6.6)
 
 **Gap Stories:** STORY-64.1, STORY-64.2, STORY-64.4, STORY-64.5
 
@@ -450,7 +446,7 @@ Out-of-scope ACs (e.g., AC-64.4.4 through AC-64.4.9) are listed in Section 6.8 w
 |------|---------|
 | Strict Mode | DISABLED |
 | System Completeness | PASS |
-| Annotation Completeness | 15 GAPS |
+| Annotation Completeness | 11 GAPS |
 | **Final Verdict** | ✅ **PASS** |
 
 Track A infrastructure is complete. Annotation gaps are advisory and do not block progression.

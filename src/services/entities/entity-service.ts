@@ -272,6 +272,9 @@ export async function getAll(projectId: string): Promise<Entity[]> {
  * Count entities by type.
  * @satisfies AC-64.1.7 - Entity count per type reported for metrics
  * 
+ * Returns counts for entity types present in DB. Types with zero entities
+ * are omitted — callers can infer zeros against ENTITY_TYPE_CODES universe.
+ * 
  * Project-scoped via RLS.
  */
 export async function countByType(
