@@ -355,4 +355,20 @@ Once all entry criteria are verified:
 
 ---
 
+## AC Numbering Convention
+
+Canonical acceptance criteria use BRD identifiers of the form `AC-<epic>.<story>.<n>` (e.g., `AC-64.5.1`). These are the **only** acceptance criteria that may be claimed as satisfied via `@satisfies` markers.
+
+Some Track A story documents may reference *implementation acceptance IDs* as internal rollout/implementation checkpoints. These IDs are not canonical BRD ACs and do not define product semantics.
+
+**Rule:** Any satisfaction or coverage reporting must map back to canonical BRD AC IDs. Implementation acceptance IDs may be used for planning notes only and must not be treated as semantic authorities.
+
+**Verification:** Before adding `@satisfies AC-X.Y.Z`, confirm the AC exists in:
+- `docs/BRD_V20_6_4_COMPLETE.md` (search for the exact AC ID)
+- The BRD Appendix D AC Index
+
+If the AC is not in the BRD, it is not a canonical AC and must not be claimed.
+
+---
+
 **END OF TRACK A ENTRY CRITERIA**

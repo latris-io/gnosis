@@ -61,7 +61,7 @@ tdd:
 - Verification Spec V20.6.6 §Part IX
 
 > **v2.0.0:** TDD Retrofit - Added TDD frontmatter for E06 TechnicalDesign extraction  
-> **v1.7.0:** Added AC Deviation Note clarifying Track A acceptance IDs vs BRD semantics  
+> **v1.7.0:** Added AC Deviation Note clarifying Track A acceptance IDs vs BRD semantics (see ENTRY.md → AC Numbering Convention)  
 > **v1.6.0:** Added AC-64.1.19 for E52 ChangeSet, ChangeSetProvider, signal count 50, AC marker fix  
 > **v1.5.0:** Multi-tenant identity fix: ON CONFLICT (project_id, instance_id)  
 > **v1.4.0:** Entity count consistency: "16 in scope, 15 extractable (E14 deferred)"  
@@ -84,6 +84,8 @@ This story implements **STORY-64.1** (Entity Registry Foundation).
 For BRD acceptance criteria, see BRD V20.6.4 §Epic 64, Story 64.1.
 
 > **Governance Rule:** Track docs reference BRD stories but do not define or redefine AC-* identifiers. See Verification Spec Part XVII (Marker Governance).
+>
+> **AC Numbering:** See `ENTRY.md` → AC Numbering Convention. All `@satisfies` markers must reference canonical BRD AC IDs (e.g., `AC-64.1.1`), not internal implementation checkpoints.
 
 ---
 
