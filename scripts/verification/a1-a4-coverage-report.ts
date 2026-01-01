@@ -516,13 +516,40 @@ const TRACK_A_IN_SCOPE_ACS: Record<string, string[]> = {
  * Semantic distinction:
  * - R19 (SATISFIES): Code satisfies ACs (implementation markers)
  * - VERIFIED_BY_TEST: Tests verify behavior/performance (test evidence)
+ * 
+ * Evidence requirements (BOTH required):
+ * 1. @satisfies marker in test file
+ * 2. Actual assertion matching the assertion_pattern
  */
-const VERIFIED_BY_TEST_ACS: Record<string, { test_file: string; evidence_type: 'performance' | 'behavior' }> = {
+const VERIFIED_BY_TEST_ACS: Record<string, {
+  test_file: string;
+  evidence_type: 'performance' | 'behavior';
+  assertion_pattern: RegExp;
+  assertion_description: string;
+}> = {
   'AC-64.4.10': {
     test_file: 'test/pipeline/pipeline.integration.test.ts',
     evidence_type: 'performance',
+    assertion_pattern: /expect\s*\(\s*result\.total_duration_ms\s*\)\s*\.toBeLessThan\s*\(/,
+    assertion_description: 'expect(result.total_duration_ms).toBeLessThan(...)',
   },
 };
+
+/**
+ * Evidence details for VERIFIED_BY_TEST ACs.
+ * Stored during evidence check for reporting.
+ */
+interface TestEvidence {
+  ac_id: string;
+  test_file: string;
+  marker_found: boolean;
+  marker_line: number | null;
+  assertion_found: boolean;
+  assertion_line: number | null;
+  assertion_snippet: string | null;
+}
+
+const testEvidenceCache: Map<string, TestEvidence> = new Map();
 
 /**
  * Deferred/out-of-scope ACs with citations.
@@ -567,28 +594,72 @@ let section6VerifiedByTest: ACGap[] = [];
 
 /**
  * Check if test evidence exists for a VERIFIED_BY_TEST AC.
- * Returns true if the test file exists and contains the expected test.
+ * 
+ * BOTH conditions must be true:
+ * 1. @satisfies marker for the AC exists in the test file
+ * 2. An assertion matching the configured pattern exists
+ * 
+ * This ensures audit-grade evidence - no false positives.
  */
 function hasTestEvidence(acId: string): boolean {
   const config = VERIFIED_BY_TEST_ACS[acId];
   if (!config) return false;
   
   const testFilePath = path.resolve(process.cwd(), config.test_file);
-  if (!fs.existsSync(testFilePath)) return false;
+  if (!fs.existsSync(testFilePath)) {
+    testEvidenceCache.set(acId, {
+      ac_id: acId,
+      test_file: config.test_file,
+      marker_found: false,
+      marker_line: null,
+      assertion_found: false,
+      assertion_line: null,
+      assertion_snippet: null,
+    });
+    return false;
+  }
   
   const content = fs.readFileSync(testFilePath, 'utf-8');
+  const lines = content.split('\n');
   
-  // Check for @satisfies marker referencing this AC
-  if (content.includes(`@satisfies ${acId}`)) return true;
-  
-  // Check for performance evidence (duration assertion)
-  if (config.evidence_type === 'performance') {
-    if (content.includes('total_duration_ms') || content.includes('time bounds')) {
-      return true;
+  // Find @satisfies marker
+  let markerFound = false;
+  let markerLine: number | null = null;
+  const markerPattern = new RegExp(`@satisfies\\s+${acId.replace(/\./g, '\\.')}`);
+  for (let i = 0; i < lines.length; i++) {
+    if (markerPattern.test(lines[i])) {
+      markerFound = true;
+      markerLine = i + 1; // 1-indexed
+      break;
     }
   }
   
-  return false;
+  // Find assertion matching the configured pattern
+  let assertionFound = false;
+  let assertionLine: number | null = null;
+  let assertionSnippet: string | null = null;
+  for (let i = 0; i < lines.length; i++) {
+    if (config.assertion_pattern.test(lines[i])) {
+      assertionFound = true;
+      assertionLine = i + 1; // 1-indexed
+      assertionSnippet = lines[i].trim();
+      break;
+    }
+  }
+  
+  // Store evidence for reporting
+  testEvidenceCache.set(acId, {
+    ac_id: acId,
+    test_file: config.test_file,
+    marker_found: markerFound,
+    marker_line: markerLine,
+    assertion_found: assertionFound,
+    assertion_line: assertionLine,
+    assertion_snippet: assertionSnippet,
+  });
+  
+  // BOTH must be true for evidence to be valid
+  return markerFound && assertionFound;
 }
 
 async function generateSection6(): Promise<string> {
@@ -808,12 +879,34 @@ ACs with at least one R19 SATISFIES relationship: ${withR19}
 These ACs are satisfied by test evidence, not R19 code markers.
 This is the correct semantic: tests verify behavior/performance, code markers verify implementation.
 
-| AC_ID | Parent_STORY_ID | Evidence_Type | Test_File |
-|-------|-----------------|---------------|-----------|
+**Evidence Requirements (BOTH must be present):**
+1. \`@satisfies AC-XX.YY.ZZ\` marker in test file
+2. Actual assertion matching the expected pattern
+
+| AC_ID | Test_File | Marker_Found | Marker_Line | Assertion_Found | Assertion_Line |
+|-------|-----------|--------------|-------------|-----------------|----------------|
 `;
     for (const v of section6VerifiedByTest.sort((a, b) => a.ac_id.localeCompare(b.ac_id))) {
+      const evidence = testEvidenceCache.get(v.ac_id);
+      if (evidence) {
+        section += `| ${v.ac_id} | \`${evidence.test_file}\` | ${evidence.marker_found ? '✅' : '❌'} | ${evidence.marker_line || 'N/A'} | ${evidence.assertion_found ? '✅' : '❌'} | ${evidence.assertion_line || 'N/A'} |\n`;
+      } else {
+        const config = VERIFIED_BY_TEST_ACS[v.ac_id];
+        section += `| ${v.ac_id} | \`${config?.test_file || 'N/A'}\` | ? | N/A | ? | N/A |\n`;
+      }
+    }
+    section += '\n';
+
+    // Show assertion snippets
+    section += `**Assertion Evidence:**\n\n`;
+    for (const v of section6VerifiedByTest.sort((a, b) => a.ac_id.localeCompare(b.ac_id))) {
+      const evidence = testEvidenceCache.get(v.ac_id);
       const config = VERIFIED_BY_TEST_ACS[v.ac_id];
-      section += `| ${v.ac_id} | ${v.story_id} | ${config?.evidence_type || 'test'} | ${config?.test_file || 'N/A'} |\n`;
+      if (evidence && evidence.assertion_snippet) {
+        section += `- **${v.ac_id}** (line ${evidence.assertion_line}): \`${evidence.assertion_snippet}\`\n`;
+      } else if (config) {
+        section += `- **${v.ac_id}**: Expected pattern: \`${config.assertion_description}\`\n`;
+      }
     }
     section += '\n';
   }
