@@ -2,8 +2,8 @@
 tdd:
   id: TDD-A5-GRAPH-API-V1
   type: TechnicalDesign
-  version: "2.0.0"
-  status: pending
+  version: "2.1.0"
+  status: complete
   addresses:
     stories:
       - STORY-64.5
@@ -17,7 +17,13 @@ tdd:
       - SCHEMA-GraphResponse
   implements:
     files:
-      - src/api/v1/entities.ts
+      - src/services/graph/provenance.ts
+      - src/services/graph/graph-service.ts
+      - src/services/graph/traversal-service.ts
+      - src/api/v1/relationships.ts
+      - src/api/v1/traversal.ts
+      - src/http/server.ts
+      - src/http/routes/graph.ts
 ---
 
 <!-- MACHINE-READABLE SCOPE - DO NOT EDIT MANUALLY -->
@@ -39,6 +45,7 @@ tdd:
 - UTG Schema V20.6.1 §API Specification
 - Verification Spec V20.6.6 §8.3 (G-API)
 
+> **v2.1.0:** A5 Implementation Complete - HTTP adapter layer added per CID-2026-01-01; implements AC-64.5.1–4 only  
 > **v2.0.0:** TDD Retrofit - Added TDD frontmatter for E06 TechnicalDesign extraction  
 > **v1.2.0:** Added scope note clarifying pipeline is not public API surface  
 > **v1.1.0:** Service-layer alignment; API delegates to services per PROMPTS.md
@@ -627,6 +634,80 @@ describe('Graph API v1', () => {
 ## Next Step
 
 → Track A EXIT.md (All stories complete)
+
+---
+
+## Implemented V1 Contract (A5 Closeout)
+
+> **Version:** 2.1.0  
+> **CID Reference:** CID-2026-01-01 (HTTP Adapter Layer Approval)
+
+### A5 Scope (AC-64.5.1 through AC-64.5.4 Only)
+
+A5 implements a **read-only** Graph API v1 with:
+- Single-hop relationship queries (AC-64.5.1)
+- Multi-hop traversal queries (AC-64.5.2)
+- Confidence filtering (AC-64.5.3)
+- Provenance filtering (AC-64.5.4)
+
+**Out of scope for A5:** CRUD operations, impact analysis, coverage queries (deferred to future tracks).
+
+### Project Scoping (Transport)
+
+| Endpoint | Method | project_id Location |
+|----------|--------|---------------------|
+| `/api/graph/:id/relationships` | GET | Query parameter: `?project_id=...` |
+| `/api/graph/traverse` | POST | Body field: `"project_id": "..."` |
+
+### V1 Response Contracts
+
+**Single-Hop Response:**
+```json
+{
+  "relationships": [
+    {
+      "id": "uuid",
+      "relationship_type": "R21",
+      "from_entity_id": "uuid",
+      "to_entity_id": "uuid",
+      "confidence": 0.95
+    }
+  ]
+}
+```
+
+**Traversal Response:**
+```json
+{
+  "nodes": [
+    { "id": "uuid", "entity_type": "E11", "instance_id": "..." }
+  ],
+  "edges": [
+    { "from_entity_id": "uuid", "to_entity_id": "uuid", "relationship_type": "R22", "confidence": 0.95 }
+  ]
+}
+```
+
+### Safety Constraints (Not BRD Requirements)
+
+| Constraint | Value | Rationale |
+|------------|-------|-----------|
+| `max_depth` | 1–10 | **Safety cap** to prevent runaway traversals. ValidationError if exceeded. |
+| Bounded BFS | TypeScript | Traversal uses application-level BFS, not Cypher variable-length paths. |
+
+### Provenance Mapping
+
+- **Source:** UTG Schema V20.6.1 Appendix B (ORGAN-DERIVED)
+- **R-code coverage:** R01–R112
+- **Gap:** R92–R103 do not exist in UTG (intentionally skipped)
+- **Dormant omissions:** R113, R114 have no provenance category in UTG — OMITTED from mapping
+
+### Validation Error Contract
+
+| Condition | HTTP Status | Response |
+|-----------|-------------|----------|
+| `ValidationError` thrown | 400 | `{ "error": "<message>" }` |
+| Other errors | 500 | Fastify default handler |
 
 ---
 

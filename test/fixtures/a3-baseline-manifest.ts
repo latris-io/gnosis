@@ -32,12 +32,12 @@ export const A3_BASELINE = {
   // Exact frozen counts - tests MUST assert equality
   counts: {
     // Marker extraction results
-    total_markers_extracted: 129, // Total @implements + @satisfies + @tdd markers (A4 adds pipeline files)
+    total_markers_extracted: 133, // Total @implements + @satisfies + @tdd markers (A4 adds pipeline files)
     orphan_markers: 0,            // Markers with no valid target entity (0 after A1 refresh)
     
     // Relationship counts (from PostgreSQL)
     R18: 50,  // IMPLEMENTS relationships (A4 adds pipeline modules)
-    R19: 36,  // SATISFIES relationships (A4 adds ast-relationship-provider.ts)
+    R19: 40,  // SATISFIES relationships (A4 adds entity-service, relationship-service, integration test markers)
     R36: 1,   // TESTED_BY relationships (from describe('STORY-XX.YY'))
     R37: 6,   // VERIFIED_BY relationships (from it('AC-XX.YY.ZZ'), A4 adds pipeline tests)
   },

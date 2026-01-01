@@ -12,9 +12,9 @@
 | Field | Value |
 |-------|-------|
 | PROJECT_ID | `6df2f456-440d-4958-b475-d9808775ff69` |
-| Git SHA | `555ae09eac953cf093a495fa43ecadbb1339cafb` |
+| Git SHA | `36921bb016636329cfbd06304757476b5566cd32` |
 | BRD Hash | `bc1c78269d7b5192ddad9c06c1aa49c29abcf4a60cdaa039157a22b5c8c77977` |
-| Timestamp | `2026-01-01T19:35:30.772Z` |
+| Timestamp | `2026-01-01T19:41:54.687Z` |
 | Phase | `A4` |
 | RLS Context | ✅ All queries use `set_project_id()` |
 
