@@ -510,6 +510,21 @@ const TRACK_A_IN_SCOPE_ACS: Record<string, string[]> = {
 };
 
 /**
+ * Performance/behavioral ACs verified by test evidence, not R19 markers.
+ * These are NOT counted as R19 gaps - they use a different verification mechanism.
+ * 
+ * Semantic distinction:
+ * - R19 (SATISFIES): Code satisfies ACs (implementation markers)
+ * - VERIFIED_BY_TEST: Tests verify behavior/performance (test evidence)
+ */
+const VERIFIED_BY_TEST_ACS: Record<string, { test_file: string; evidence_type: 'performance' | 'behavior' }> = {
+  'AC-64.4.10': {
+    test_file: 'test/pipeline/pipeline.integration.test.ts',
+    evidence_type: 'performance',
+  },
+};
+
+/**
  * Deferred/out-of-scope ACs with citations.
  */
 const DEFERRED_ACS: Record<string, string> = {
@@ -541,13 +556,40 @@ interface ACGap {
   story_id: string;
   story_has_r18: boolean;
   r19_count: number;
-  classification: 'GAP_PENDING_ANNOTATION' | 'DEFERRED' | 'OUT_OF_SCOPE';
+  classification: 'GAP_PENDING_ANNOTATION' | 'DEFERRED' | 'OUT_OF_SCOPE' | 'VERIFIED_BY_TEST';
   reason: string;
 }
 
 // Store gaps globally for Section 12 verdict
 let section6Gaps: ACGap[] = [];
 let section6Deferred: ACGap[] = [];
+let section6VerifiedByTest: ACGap[] = [];
+
+/**
+ * Check if test evidence exists for a VERIFIED_BY_TEST AC.
+ * Returns true if the test file exists and contains the expected test.
+ */
+function hasTestEvidence(acId: string): boolean {
+  const config = VERIFIED_BY_TEST_ACS[acId];
+  if (!config) return false;
+  
+  const testFilePath = path.resolve(process.cwd(), config.test_file);
+  if (!fs.existsSync(testFilePath)) return false;
+  
+  const content = fs.readFileSync(testFilePath, 'utf-8');
+  
+  // Check for @satisfies marker referencing this AC
+  if (content.includes(`@satisfies ${acId}`)) return true;
+  
+  // Check for performance evidence (duration assertion)
+  if (config.evidence_type === 'performance') {
+    if (content.includes('total_duration_ms') || content.includes('time bounds')) {
+      return true;
+    }
+  }
+  
+  return false;
+}
 
 async function generateSection6(): Promise<string> {
   const totalACs = await queryWithRLS<{ count: number }>(
@@ -590,15 +632,18 @@ async function generateSection6(): Promise<string> {
 
   // Rule-based classification:
   // 1. If AC has R19 → IMPLEMENTED (already filtered out above)
-  // 2. If AC is in DEFERRED_ACS → DEFERRED/OUT_OF_SCOPE with citation
-  // 3. If story has R18 AND AC is in TRACK_A_IN_SCOPE_ACS → GAP_PENDING_ANNOTATION
-  // 4. If story has no R18 → DEFERRED (story not yet implemented)
+  // 2. If AC is in VERIFIED_BY_TEST_ACS and has test evidence → VERIFIED_BY_TEST
+  // 3. If AC is in DEFERRED_ACS → DEFERRED/OUT_OF_SCOPE with citation
+  // 4. If story has R18 AND AC is in TRACK_A_IN_SCOPE_ACS → GAP_PENDING_ANNOTATION
+  // 5. If story has no R18 → DEFERRED (story not yet implemented)
   
   section6Gaps = [];
   section6Deferred = [];
+  section6VerifiedByTest = [];
   let gapCount = 0;
   let deferredExplicitCount = 0;
   let deferredStoryCount = 0;
+  let verifiedByTestCount = 0;
   const gapsByStory = new Map<string, ACGap[]>();
   const deferredByStory = new Map<string, ACGap[]>();
 
@@ -606,9 +651,26 @@ async function generateSection6(): Promise<string> {
     const storyHasR18 = implementedStories.has(ac.story_instance_id);
     const inScopeACs = TRACK_A_IN_SCOPE_ACS[ac.story_instance_id] || [];
     const isExplicitlyDeferred = DEFERRED_ACS[ac.ac_instance_id] !== undefined;
+    const isVerifiedByTest = VERIFIED_BY_TEST_ACS[ac.ac_instance_id] !== undefined;
     const isInScope = inScopeACs.includes(ac.ac_instance_id);
     
-    // Check explicit deferral first
+    // Check VERIFIED_BY_TEST first (performance/behavioral ACs)
+    if (isVerifiedByTest && hasTestEvidence(ac.ac_instance_id)) {
+      const testConfig = VERIFIED_BY_TEST_ACS[ac.ac_instance_id];
+      const verified: ACGap = {
+        ac_id: ac.ac_instance_id,
+        story_id: ac.story_instance_id,
+        story_has_r18: storyHasR18,
+        r19_count: 0,
+        classification: 'VERIFIED_BY_TEST',
+        reason: `${testConfig.evidence_type} test in ${testConfig.test_file}`,
+      };
+      section6VerifiedByTest.push(verified);
+      verifiedByTestCount++;
+      continue; // Not a gap
+    }
+    
+    // Check explicit deferral
     if (isExplicitlyDeferred) {
       const deferred: ACGap = {
         ac_id: ac.ac_instance_id,
@@ -687,9 +749,14 @@ ACs with at least one R19 SATISFIES relationship: ${withR19}
 
 **Classification Rules:**
 
-1. **IMPLEMENTED** — AC has R19 relationship (has \`@satisfies\` marker)
-2. **DEFERRED/OUT_OF_SCOPE** — AC is explicitly listed in \`DEFERRED_ACS\` with citation, OR not in story's TDD \`addresses.acceptance_criteria\`
-3. **GAP_PENDING_ANNOTATION** — Parent story has R18 AND AC is in TDD scope, but lacks R19
+1. **IMPLEMENTED** — AC has R19 relationship (has \`@satisfies\` marker in code)
+2. **VERIFIED_BY_TEST** — Performance/behavioral AC verified by test evidence (not R19)
+3. **DEFERRED/OUT_OF_SCOPE** — AC is explicitly listed in \`DEFERRED_ACS\` with citation
+4. **GAP_PENDING_ANNOTATION** — Parent story has R18 AND AC is in TDD scope, but lacks R19/test
+
+**Semantic Distinction:**
+- R19 (SATISFIES): Code satisfies ACs via \`@satisfies\` markers
+- VERIFIED_BY_TEST: Tests verify behavior/performance (test file evidence)
 
 **Governing Spec Citations:**
 - TDD scope per story: \`spec/track_a/stories/A{1-5}_*.md\` (addresses.acceptance_criteria)
@@ -701,7 +768,8 @@ ACs with at least one R19 SATISFIES relationship: ${withR19}
 | Classification | Count | Evidence |
 |----------------|-------|----------|
 | IMPLEMENTED (has R19) | ${withR19} | R19 exists in relationships table |
-| GAP_PENDING_ANNOTATION (in-scope, missing marker) | ${gapCount} | In TDD scope but lacks @satisfies |
+| VERIFIED_BY_TEST (performance/behavior) | ${verifiedByTestCount} | Test file with evidence |
+| GAP_PENDING_ANNOTATION (in-scope, missing marker) | ${gapCount} | In TDD scope but lacks @satisfies/test |
 | OUT_OF_SCOPE/DEFERRED (explicit) | ${deferredExplicitCount} | Per TDD frontmatter / spec citations |
 | DEFERRED (story not implemented) | ${deferredStoryCount} | Parent story has no R18 |
 
@@ -733,9 +801,26 @@ ACs with at least one R19 SATISFIES relationship: ${withR19}
     section += '\n';
   }
 
+  // Show VERIFIED_BY_TEST ACs (performance/behavioral)
+  if (section6VerifiedByTest.length > 0) {
+    section += `### 6.8 Verified-by-Test ACs (Performance/Behavioral Evidence)
+
+These ACs are satisfied by test evidence, not R19 code markers.
+This is the correct semantic: tests verify behavior/performance, code markers verify implementation.
+
+| AC_ID | Parent_STORY_ID | Evidence_Type | Test_File |
+|-------|-----------------|---------------|-----------|
+`;
+    for (const v of section6VerifiedByTest.sort((a, b) => a.ac_id.localeCompare(b.ac_id))) {
+      const config = VERIFIED_BY_TEST_ACS[v.ac_id];
+      section += `| ${v.ac_id} | ${v.story_id} | ${config?.evidence_type || 'test'} | ${config?.test_file || 'N/A'} |\n`;
+    }
+    section += '\n';
+  }
+
   // Show deferred/out-of-scope ACs
   if (section6Deferred.length > 0) {
-    section += `### 6.8 Deferred/Out-of-Scope ACs (Not Counted as Gaps)
+    section += `### 6.9 Deferred/Out-of-Scope ACs (Not Counted as Gaps)
 
 | AC_ID | Parent_STORY_ID | Classification | Citation |
 |-------|-----------------|----------------|----------|
@@ -748,7 +833,7 @@ ACs with at least one R19 SATISFIES relationship: ${withR19}
 
   // Show deferred summary (stories not implemented)
   if (deferredStoryCount > 0) {
-    section += `### 6.9 Deferred Summary (Stories Not Yet Implemented)
+    section += `### 6.10 Deferred Summary (Stories Not Yet Implemented)
 
 ${392 - implementedStories.size} stories have no R18 (IMPLEMENTS) markers, containing ${deferredStoryCount} ACs.
 These are legitimately DEFERRED per Track A scope — implementation has not started.
@@ -1132,8 +1217,9 @@ async function generateSection12(sections: string[]): Promise<string> {
 
 | Metric | Value |
 |--------|-------|
-| ACs with @satisfies markers (R19) | ${3147 - section6Gaps.length - section6Deferred.length - 3101 + section6Deferred.length} |
-| In-scope gaps (missing markers) | ${annotationGapCount} |
+| ACs with @satisfies markers (R19) | ${3147 - section6Gaps.length - section6Deferred.length - section6VerifiedByTest.length - 3101 + section6Deferred.length} |
+| ACs verified by test evidence | ${section6VerifiedByTest.length} |
+| In-scope gaps (missing markers/tests) | ${annotationGapCount} |
 | Out-of-scope/deferred (explicit) | ${section6Deferred.length} |
 | Deferred (stories not implemented) | ~3100 |
 
@@ -1141,11 +1227,17 @@ async function generateSection12(sections: string[]): Promise<string> {
 
 `;
 
+  if (section6VerifiedByTest.length > 0) {
+    section += `**Performance/Behavioral ACs:** ${section6VerifiedByTest.map(v => v.ac_id).join(', ')} (verified by test evidence, see Section 6.8)
+
+`;
+  }
+
   if (annotationGapCount > 0) {
     section += `**Gap Stories:** ${[...new Set(section6Gaps.map(g => g.story_id))].sort().join(', ')}
 
 **Note:** Only in-scope ACs per TDD frontmatter are counted as gaps.
-Out-of-scope ACs (e.g., AC-64.4.4 through AC-64.4.9) are listed in Section 6.8 with citations.
+Out-of-scope ACs (e.g., AC-64.4.4 through AC-64.4.9) are listed in Section 6.9 with citations.
 
 **Recommended Actions:**
 1. Add \`@satisfies AC-XX.YY.ZZ\` markers to functions/classes implementing these ACs

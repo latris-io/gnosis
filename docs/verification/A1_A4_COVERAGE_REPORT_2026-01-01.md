@@ -12,9 +12,9 @@
 | Field | Value |
 |-------|-------|
 | PROJECT_ID | `6df2f456-440d-4958-b475-d9808775ff69` |
-| Git SHA | `b1b88cee9c242a09a1e8d15ea856b5dd292f9aff` |
+| Git SHA | `7ae502c76e021968683797c8d6603f22111795ba` |
 | BRD Hash | `bc1c78269d7b5192ddad9c06c1aa49c29abcf4a60cdaa039157a22b5c8c77977` |
-| Timestamp | `2026-01-01T19:26:29.858Z` |
+| Timestamp | `2026-01-01T19:32:35.860Z` |
 | Phase | `A4` |
 | RLS Context | ✅ All queries use `set_project_id()` |
 
@@ -223,9 +223,14 @@ ACs with at least one R19 SATISFIES relationship: 22
 
 **Classification Rules:**
 
-1. **IMPLEMENTED** — AC has R19 relationship (has `@satisfies` marker)
-2. **DEFERRED/OUT_OF_SCOPE** — AC is explicitly listed in `DEFERRED_ACS` with citation, OR not in story's TDD `addresses.acceptance_criteria`
-3. **GAP_PENDING_ANNOTATION** — Parent story has R18 AND AC is in TDD scope, but lacks R19
+1. **IMPLEMENTED** — AC has R19 relationship (has `@satisfies` marker in code)
+2. **VERIFIED_BY_TEST** — Performance/behavioral AC verified by test evidence (not R19)
+3. **DEFERRED/OUT_OF_SCOPE** — AC is explicitly listed in `DEFERRED_ACS` with citation
+4. **GAP_PENDING_ANNOTATION** — Parent story has R18 AND AC is in TDD scope, but lacks R19/test
+
+**Semantic Distinction:**
+- R19 (SATISFIES): Code satisfies ACs via `@satisfies` markers
+- VERIFIED_BY_TEST: Tests verify behavior/performance (test file evidence)
 
 **Governing Spec Citations:**
 - TDD scope per story: `spec/track_a/stories/A{1-5}_*.md` (addresses.acceptance_criteria)
@@ -237,11 +242,12 @@ ACs with at least one R19 SATISFIES relationship: 22
 | Classification | Count | Evidence |
 |----------------|-------|----------|
 | IMPLEMENTED (has R19) | 22 | R19 exists in relationships table |
-| GAP_PENDING_ANNOTATION (in-scope, missing marker) | 11 | In TDD scope but lacks @satisfies |
+| VERIFIED_BY_TEST (performance/behavior) | 1 | Test file with evidence |
+| GAP_PENDING_ANNOTATION (in-scope, missing marker) | 10 | In TDD scope but lacks @satisfies/test |
 | OUT_OF_SCOPE/DEFERRED (explicit) | 13 | Per TDD frontmatter / spec citations |
 | DEFERRED (story not implemented) | 3101 | Parent story has no R18 |
 
-**Strict Mode:** DISABLED (gaps = advisory)
+**Strict Mode:** ENABLED (gaps = failure)
 
 ### 6.6 Gap List (In-Scope ACs Missing R19)
 
@@ -253,7 +259,6 @@ ACs with at least one R19 SATISFIES relationship: 22
 | AC-64.2.6 | STORY-64.2 | ✅ Yes | 0 | GAP_PENDING_ANNOTATION | In-scope AC without @satisfies marker |
 | AC-64.2.7 | STORY-64.2 | ✅ Yes | 0 | GAP_PENDING_ANNOTATION | In-scope AC without @satisfies marker |
 | AC-64.2.8 | STORY-64.2 | ✅ Yes | 0 | GAP_PENDING_ANNOTATION | In-scope AC without @satisfies marker |
-| AC-64.4.10 | STORY-64.4 | ✅ Yes | 0 | GAP_PENDING_ANNOTATION | In-scope AC without @satisfies marker |
 | AC-64.5.1 | STORY-64.5 | ✅ Yes | 0 | GAP_PENDING_ANNOTATION | In-scope AC without @satisfies marker |
 | AC-64.5.2 | STORY-64.5 | ✅ Yes | 0 | GAP_PENDING_ANNOTATION | In-scope AC without @satisfies marker |
 | AC-64.5.3 | STORY-64.5 | ✅ Yes | 0 | GAP_PENDING_ANNOTATION | In-scope AC without @satisfies marker |
@@ -265,10 +270,18 @@ ACs with at least one R19 SATISFIES relationship: 22
 |----------|---------------|----------------|
 | STORY-64.1 | 3 | GAP_PENDING_ANNOTATION |
 | STORY-64.2 | 3 | GAP_PENDING_ANNOTATION |
-| STORY-64.4 | 1 | GAP_PENDING_ANNOTATION |
 | STORY-64.5 | 4 | GAP_PENDING_ANNOTATION |
 
-### 6.8 Deferred/Out-of-Scope ACs (Not Counted as Gaps)
+### 6.8 Verified-by-Test ACs (Performance/Behavioral Evidence)
+
+These ACs are satisfied by test evidence, not R19 code markers.
+This is the correct semantic: tests verify behavior/performance, code markers verify implementation.
+
+| AC_ID | Parent_STORY_ID | Evidence_Type | Test_File |
+|-------|-----------------|---------------|-----------|
+| AC-64.4.10 | STORY-64.4 | performance | test/pipeline/pipeline.integration.test.ts |
+
+### 6.9 Deferred/Out-of-Scope ACs (Not Counted as Gaps)
 
 | AC_ID | Parent_STORY_ID | Classification | Citation |
 |-------|-----------------|----------------|----------|
@@ -286,7 +299,7 @@ ACs with at least one R19 SATISFIES relationship: 22
 | AC-64.5.8 | STORY-64.5 | OUT_OF_SCOPE | Not in A5 TDD scope |
 | AC-64.5.9 | STORY-64.5 | OUT_OF_SCOPE | Not in A5 TDD scope |
 
-### 6.9 Deferred Summary (Stories Not Yet Implemented)
+### 6.10 Deferred Summary (Stories Not Yet Implemented)
 
 387 stories have no R18 (IMPLEMENTS) markers, containing 3101 ACs.
 These are legitimately DEFERRED per Track A scope — implementation has not started.
@@ -424,16 +437,19 @@ TDDs without R14 may be abstract designs or not yet linked to implementation.
 | Metric | Value |
 |--------|-------|
 | ACs with @satisfies markers (R19) | 35 |
-| In-scope gaps (missing markers) | 11 |
+| ACs verified by test evidence | 1 |
+| In-scope gaps (missing markers/tests) | 10 |
 | Out-of-scope/deferred (explicit) | 13 |
 | Deferred (stories not implemented) | ~3100 |
 
-**ANNOTATION VERDICT:** ⚠️ **11 GAPS** (see Section 6.6)
+**ANNOTATION VERDICT:** ⚠️ **10 GAPS** (see Section 6.6)
 
-**Gap Stories:** STORY-64.1, STORY-64.2, STORY-64.4, STORY-64.5
+**Performance/Behavioral ACs:** AC-64.4.10 (verified by test evidence, see Section 6.8)
+
+**Gap Stories:** STORY-64.1, STORY-64.2, STORY-64.5
 
 **Note:** Only in-scope ACs per TDD frontmatter are counted as gaps.
-Out-of-scope ACs (e.g., AC-64.4.4 through AC-64.4.9) are listed in Section 6.8 with citations.
+Out-of-scope ACs (e.g., AC-64.4.4 through AC-64.4.9) are listed in Section 6.9 with citations.
 
 **Recommended Actions:**
 1. Add `@satisfies AC-XX.YY.ZZ` markers to functions/classes implementing these ACs
@@ -444,10 +460,10 @@ Out-of-scope ACs (e.g., AC-64.4.4 through AC-64.4.9) are listed in Section 6.8 w
 
 | Mode | Verdict |
 |------|---------|
-| Strict Mode | DISABLED |
+| Strict Mode | ENABLED |
 | System Completeness | PASS |
-| Annotation Completeness | 11 GAPS |
-| **Final Verdict** | ✅ **PASS** |
+| Annotation Completeness | 10 GAPS |
+| **Final Verdict** | ❌ **FAIL** |
 
-Track A infrastructure is complete. Annotation gaps are advisory and do not block progression.
+Strict mode enabled: annotation gaps block progression. Resolve gaps or disable strict mode.
 
