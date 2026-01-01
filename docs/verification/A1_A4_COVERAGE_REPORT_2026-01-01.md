@@ -12,9 +12,9 @@
 | Field | Value |
 |-------|-------|
 | PROJECT_ID | `6df2f456-440d-4958-b475-d9808775ff69` |
-| Git SHA | `d086ca0752aeabf06e6d201783accaf9d50d92da` |
+| Git SHA | `5466eaad02026c179ae70027cd16b33bd7b542a2` |
 | BRD Hash | `bc1c78269d7b5192ddad9c06c1aa49c29abcf4a60cdaa039157a22b5c8c77977` |
-| Timestamp | `2026-01-01T18:21:44.189Z` |
+| Timestamp | `2026-01-01T18:28:58.334Z` |
 | Phase | `A4` |
 | RLS Context | ✅ All queries use `set_project_id()` |
 
@@ -221,72 +221,78 @@ ACs with at least one R19 SATISFIES relationship: 18
 
 ### 6.4 Rule-Based Classification
 
-**Classification Rule (per `spec/track_a/ENTRY.md` §Marker Relationships):**
-- R18 (IMPLEMENTS) links SourceFile → Story when `@implements STORY-XX.YY` marker is present
-- R19 (SATISFIES) links Function/Class → AcceptanceCriterion when `@satisfies AC-XX.YY.ZZ` marker is present
-- If a Story has R18 (is implemented), its ACs without R19 are **GAP_PENDING_ANNOTATION**
-- If a Story has no R18 (not yet implemented), its ACs without R19 are **DEFERRED**
+**Classification Rules:**
+
+1. **IMPLEMENTED** — AC has R19 relationship (has `@satisfies` marker)
+2. **DEFERRED/OUT_OF_SCOPE** — AC is explicitly listed in `DEFERRED_ACS` with citation, OR not in story's TDD `addresses.acceptance_criteria`
+3. **GAP_PENDING_ANNOTATION** — Parent story has R18 AND AC is in TDD scope, but lacks R19
 
 **Governing Spec Citations:**
-- `spec/track_a/ENTRY.md` lines 142-143: "R18 IMPLEMENTS | SourceFile → Story | A3" / "R19 SATISFIES | Function/Class → AcceptanceCriterion | A3"
-- `spec/track_a/stories/A3_MARKER_EXTRACTION.md` §Scope: "@satisfies markers create R19 relationships"
+- TDD scope per story: `spec/track_a/stories/A{1-5}_*.md` (addresses.acceptance_criteria)
+- A4 out-of-scope: R24 requires E14 (Interface), deferred post-Track A
+- A4/A5 subset: Only specific ACs are in Track A scope
 
 ### 6.5 Classification Results
 
 | Classification | Count | Evidence |
 |----------------|-------|----------|
-| ACs with R19 (IMPLEMENTED) | 18 | R19 exists in relationships table |
-| ACs without R19 (GAP_PENDING_ANNOTATION) | 28 | Parent story has R18, but AC lacks R19 |
-| ACs without R19 (DEFERRED) | 3101 | Parent story has no R18 (not yet implemented) |
+| IMPLEMENTED (has R19) | 18 | R19 exists in relationships table |
+| GAP_PENDING_ANNOTATION (in-scope, missing marker) | 15 | In TDD scope but lacks @satisfies |
+| OUT_OF_SCOPE/DEFERRED (explicit) | 13 | Per TDD frontmatter / spec citations |
+| DEFERRED (story not implemented) | 3101 | Parent story has no R18 |
 
 **Strict Mode:** DISABLED (gaps = advisory)
 
-### 6.6 Gap List (Missing R19 for Implemented Stories)
+### 6.6 Gap List (In-Scope ACs Missing R19)
 
-| AC_ID | Parent_STORY_ID | Story_Has_R18 | R19_Count | Classification | Recommended_Action |
-|-------|-----------------|---------------|-----------|----------------|-------------------|
-| AC-64.1.2 | STORY-64.1 | ✅ Yes | 0 | GAP_PENDING_ANNOTATION | Add marker / justify / CID |
-| AC-64.1.3 | STORY-64.1 | ✅ Yes | 0 | GAP_PENDING_ANNOTATION | Add marker / justify / CID |
-| AC-64.1.4 | STORY-64.1 | ✅ Yes | 0 | GAP_PENDING_ANNOTATION | Add marker / justify / CID |
-| AC-64.1.7 | STORY-64.1 | ✅ Yes | 0 | GAP_PENDING_ANNOTATION | Add marker / justify / CID |
-| AC-64.1.8 | STORY-64.1 | ✅ Yes | 0 | GAP_PENDING_ANNOTATION | Add marker / justify / CID |
-| AC-64.2.2 | STORY-64.2 | ✅ Yes | 0 | GAP_PENDING_ANNOTATION | Add marker / justify / CID |
-| AC-64.2.3 | STORY-64.2 | ✅ Yes | 0 | GAP_PENDING_ANNOTATION | Add marker / justify / CID |
-| AC-64.2.6 | STORY-64.2 | ✅ Yes | 0 | GAP_PENDING_ANNOTATION | Add marker / justify / CID |
-| AC-64.2.7 | STORY-64.2 | ✅ Yes | 0 | GAP_PENDING_ANNOTATION | Add marker / justify / CID |
-| AC-64.2.8 | STORY-64.2 | ✅ Yes | 0 | GAP_PENDING_ANNOTATION | Add marker / justify / CID |
-| AC-64.3.10 | STORY-64.3 | ✅ Yes | 0 | GAP_PENDING_ANNOTATION | Add marker / justify / CID |
-| AC-64.4.10 | STORY-64.4 | ✅ Yes | 0 | GAP_PENDING_ANNOTATION | Add marker / justify / CID |
-| AC-64.4.4 | STORY-64.4 | ✅ Yes | 0 | GAP_PENDING_ANNOTATION | Add marker / justify / CID |
-| AC-64.4.5 | STORY-64.4 | ✅ Yes | 0 | GAP_PENDING_ANNOTATION | Add marker / justify / CID |
-| AC-64.4.6 | STORY-64.4 | ✅ Yes | 0 | GAP_PENDING_ANNOTATION | Add marker / justify / CID |
-| AC-64.4.7 | STORY-64.4 | ✅ Yes | 0 | GAP_PENDING_ANNOTATION | Add marker / justify / CID |
-| AC-64.4.8 | STORY-64.4 | ✅ Yes | 0 | GAP_PENDING_ANNOTATION | Add marker / justify / CID |
-| AC-64.4.9 | STORY-64.4 | ✅ Yes | 0 | GAP_PENDING_ANNOTATION | Add marker / justify / CID |
-| AC-64.5.1 | STORY-64.5 | ✅ Yes | 0 | GAP_PENDING_ANNOTATION | Add marker / justify / CID |
-| AC-64.5.10 | STORY-64.5 | ✅ Yes | 0 | GAP_PENDING_ANNOTATION | Add marker / justify / CID |
-| AC-64.5.2 | STORY-64.5 | ✅ Yes | 0 | GAP_PENDING_ANNOTATION | Add marker / justify / CID |
-| AC-64.5.3 | STORY-64.5 | ✅ Yes | 0 | GAP_PENDING_ANNOTATION | Add marker / justify / CID |
-| AC-64.5.4 | STORY-64.5 | ✅ Yes | 0 | GAP_PENDING_ANNOTATION | Add marker / justify / CID |
-| AC-64.5.5 | STORY-64.5 | ✅ Yes | 0 | GAP_PENDING_ANNOTATION | Add marker / justify / CID |
-| AC-64.5.6 | STORY-64.5 | ✅ Yes | 0 | GAP_PENDING_ANNOTATION | Add marker / justify / CID |
-| AC-64.5.7 | STORY-64.5 | ✅ Yes | 0 | GAP_PENDING_ANNOTATION | Add marker / justify / CID |
-| AC-64.5.8 | STORY-64.5 | ✅ Yes | 0 | GAP_PENDING_ANNOTATION | Add marker / justify / CID |
-| AC-64.5.9 | STORY-64.5 | ✅ Yes | 0 | GAP_PENDING_ANNOTATION | Add marker / justify / CID |
+| AC_ID | Parent_STORY_ID | In_TDD_Scope | R19_Count | Classification | Reason |
+|-------|-----------------|--------------|-----------|----------------|--------|
+| AC-64.1.2 | STORY-64.1 | ✅ Yes | 0 | GAP_PENDING_ANNOTATION | In-scope AC without @satisfies marker |
+| AC-64.1.3 | STORY-64.1 | ✅ Yes | 0 | GAP_PENDING_ANNOTATION | In-scope AC without @satisfies marker |
+| AC-64.1.4 | STORY-64.1 | ✅ Yes | 0 | GAP_PENDING_ANNOTATION | In-scope AC without @satisfies marker |
+| AC-64.1.7 | STORY-64.1 | ✅ Yes | 0 | GAP_PENDING_ANNOTATION | In-scope AC without @satisfies marker |
+| AC-64.1.8 | STORY-64.1 | ✅ Yes | 0 | GAP_PENDING_ANNOTATION | In-scope AC without @satisfies marker |
+| AC-64.2.2 | STORY-64.2 | ✅ Yes | 0 | GAP_PENDING_ANNOTATION | In-scope AC without @satisfies marker |
+| AC-64.2.3 | STORY-64.2 | ✅ Yes | 0 | GAP_PENDING_ANNOTATION | In-scope AC without @satisfies marker |
+| AC-64.2.6 | STORY-64.2 | ✅ Yes | 0 | GAP_PENDING_ANNOTATION | In-scope AC without @satisfies marker |
+| AC-64.2.7 | STORY-64.2 | ✅ Yes | 0 | GAP_PENDING_ANNOTATION | In-scope AC without @satisfies marker |
+| AC-64.2.8 | STORY-64.2 | ✅ Yes | 0 | GAP_PENDING_ANNOTATION | In-scope AC without @satisfies marker |
+| AC-64.4.10 | STORY-64.4 | ✅ Yes | 0 | GAP_PENDING_ANNOTATION | In-scope AC without @satisfies marker |
+| AC-64.5.1 | STORY-64.5 | ✅ Yes | 0 | GAP_PENDING_ANNOTATION | In-scope AC without @satisfies marker |
+| AC-64.5.2 | STORY-64.5 | ✅ Yes | 0 | GAP_PENDING_ANNOTATION | In-scope AC without @satisfies marker |
+| AC-64.5.3 | STORY-64.5 | ✅ Yes | 0 | GAP_PENDING_ANNOTATION | In-scope AC without @satisfies marker |
+| AC-64.5.4 | STORY-64.5 | ✅ Yes | 0 | GAP_PENDING_ANNOTATION | In-scope AC without @satisfies marker |
 
-### 6.7 Gaps by Story Summary
+### 6.7 Gaps by Story Summary (In-Scope Only)
 
-| Story_ID | Gap_Count | Classification |
-|----------|-----------|----------------|
+| Story_ID | In_Scope_Gaps | Classification |
+|----------|---------------|----------------|
 | STORY-64.1 | 5 | GAP_PENDING_ANNOTATION |
 | STORY-64.2 | 5 | GAP_PENDING_ANNOTATION |
-| STORY-64.3 | 1 | GAP_PENDING_ANNOTATION |
-| STORY-64.4 | 7 | GAP_PENDING_ANNOTATION |
-| STORY-64.5 | 10 | GAP_PENDING_ANNOTATION |
+| STORY-64.4 | 1 | GAP_PENDING_ANNOTATION |
+| STORY-64.5 | 4 | GAP_PENDING_ANNOTATION |
 
-### 6.8 Deferred Summary
+### 6.8 Deferred/Out-of-Scope ACs (Not Counted as Gaps)
 
-392 stories have no R18 (IMPLEMENTS) markers, containing 3101 ACs.
+| AC_ID | Parent_STORY_ID | Classification | Citation |
+|-------|-----------------|----------------|----------|
+| AC-64.3.10 | STORY-64.3 | OUT_OF_SCOPE | Not in A3 TDD scope |
+| AC-64.4.4 | STORY-64.4 | OUT_OF_SCOPE | Deferred: R24 requires E14 (Interface) which is out-of-scope for Track A |
+| AC-64.4.5 | STORY-64.4 | OUT_OF_SCOPE | Out of Track A subset (spec/track_a/stories/A4_STRUCTURAL_ANALYSIS.md) |
+| AC-64.4.6 | STORY-64.4 | OUT_OF_SCOPE | Out of Track A subset |
+| AC-64.4.7 | STORY-64.4 | OUT_OF_SCOPE | Out of Track A subset |
+| AC-64.4.8 | STORY-64.4 | OUT_OF_SCOPE | Out of Track A subset |
+| AC-64.4.9 | STORY-64.4 | OUT_OF_SCOPE | Out of Track A subset |
+| AC-64.5.10 | STORY-64.5 | OUT_OF_SCOPE | Not in A5 TDD scope |
+| AC-64.5.5 | STORY-64.5 | OUT_OF_SCOPE | Not in A5 TDD scope (spec/track_a/stories/A5_GRAPH_API_V1.md) |
+| AC-64.5.6 | STORY-64.5 | OUT_OF_SCOPE | Not in A5 TDD scope |
+| AC-64.5.7 | STORY-64.5 | OUT_OF_SCOPE | Not in A5 TDD scope |
+| AC-64.5.8 | STORY-64.5 | OUT_OF_SCOPE | Not in A5 TDD scope |
+| AC-64.5.9 | STORY-64.5 | OUT_OF_SCOPE | Not in A5 TDD scope |
+
+### 6.9 Deferred Summary (Stories Not Yet Implemented)
+
+387 stories have no R18 (IMPLEMENTS) markers, containing 3101 ACs.
 These are legitimately DEFERRED per Track A scope — implementation has not started.
 
 ---
@@ -421,13 +427,17 @@ TDDs without R14 may be abstract designs or not yet linked to implementation.
 
 | Metric | Value |
 |--------|-------|
-| ACs with @satisfies markers | 18 |
-| Gaps (implemented stories, missing markers) | 28 |
-| Deferred (stories not yet implemented) | 3101 |
+| ACs with @satisfies markers (R19) | 31 |
+| In-scope gaps (missing markers) | 15 |
+| Out-of-scope/deferred (explicit) | 13 |
+| Deferred (stories not implemented) | ~3100 |
 
-**ANNOTATION VERDICT:** ⚠️ **28 GAPS** (see Section 6.6)
+**ANNOTATION VERDICT:** ⚠️ **15 GAPS** (see Section 6.6)
 
-**Gap Stories:** STORY-64.1, STORY-64.2, STORY-64.3, STORY-64.4, STORY-64.5
+**Gap Stories:** STORY-64.1, STORY-64.2, STORY-64.4, STORY-64.5
+
+**Note:** Only in-scope ACs per TDD frontmatter are counted as gaps.
+Out-of-scope ACs (e.g., AC-64.4.4 through AC-64.4.9) are listed in Section 6.8 with citations.
 
 **Recommended Actions:**
 1. Add `@satisfies AC-XX.YY.ZZ` markers to functions/classes implementing these ACs
@@ -440,95 +450,8 @@ TDDs without R14 may be abstract designs or not yet linked to implementation.
 |------|---------|
 | Strict Mode | DISABLED |
 | System Completeness | PASS |
-| Annotation Completeness | 28 GAPS |
+| Annotation Completeness | 15 GAPS |
 | **Final Verdict** | ✅ **PASS** |
 
 Track A infrastructure is complete. Annotation gaps are advisory and do not block progression.
 
----
-
-## Appendix A — Verification Command Outputs (Verbatim)
-
-### A.1 `npm run test:sanity`
-
-```
-> @gnosis/core@0.0.1 test:sanity
-> vitest run test/sanity/
-
- Test Files  10 passed (10)
-      Tests  66 passed (66)
-   Duration  19.98s
-
-[GLOBAL TEARDOWN] Test suite complete
-```
-
-### A.2 `npm test`
-
-```
-> @gnosis/core@0.0.1 test
-> vitest run
-
- Test Files  30 passed (30)
-      Tests  264 passed (264)
-   Duration  183.87s
-
-[GLOBAL TEARDOWN] Test suite complete
-```
-
-### A.3 `TRACK_A_PHASE=A4 npm run verify:track-milestone`
-
-```
-> @gnosis/core@0.0.1 verify:track-milestone
-> npx tsx scripts/verification/verify-track-milestone.ts
-
-=== Track Milestone Verifier (Mode 1) ===
-Phase: A4
-Project: 6df2f456-440d-4958-b475-d9808775ff69
-
-Running drift detection...
-✓ Drift detection passed
-
-Verifying entities...
-  16/16 passed
-
-Verifying relationships...
-  20/20 passed
-
-Checking for unexpected types...
-  No unexpected types found
-
-Verifying cross-store consistency...
-  1/1 passed
-
-Checking referential integrity...
-  1/1 passed
-
-=== Summary ===
-Total checks: 39
-  Passed: 39
-  Failed: 0
-  Warned: 0
-  Skipped: 0
-
-✅ Track Milestone Verification PASSED
-```
-
----
-
-## Appendix B — Gap Details (Section 6)
-
-### GAP_PENDING_ANNOTATION Classification
-
-The 28 gaps in Section 6.6 are ACs belonging to implemented stories (those with R18 IMPLEMENTS relationships)
-that lack R19 SATISFIES relationships. These require one of:
-
-1. **Add @satisfies marker** - If there's a function/class implementing this AC
-2. **Justify** - If the AC is infrastructure-only or tested implicitly
-3. **Create CID** - Track as known gap with remediation timeline
-
-**Note:** With strict mode DISABLED, these gaps do not block Track A progression.
-To enable strict blocking: `npx tsx scripts/verification/a1-a4-coverage-report.ts --strict-ac-coverage`
-
----
-
-*End of A1-A4 Coverage Report*

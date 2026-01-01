@@ -491,17 +491,63 @@ async function generateSection5(): Promise<string> {
 // Section 6: Acceptance Criteria Coverage (E03 → R19)
 // -----------------------------------------------------------------------------
 
+/**
+ * Explicit AC scope per Track A story cards (TDD frontmatter).
+ * 
+ * Citations:
+ * - A1: spec/track_a/stories/A1_ENTITY_REGISTRY.md lines 10-18
+ * - A2: spec/track_a/stories/A2_RELATIONSHIP_REGISTRY.md lines 10-18
+ * - A3: spec/track_a/stories/A3_MARKER_EXTRACTION.md lines 12-17
+ * - A4: spec/track_a/stories/A4_STRUCTURAL_ANALYSIS.md lines 10-14
+ * - A5: spec/track_a/stories/A5_GRAPH_API_V1.md lines 10-14
+ */
+const TRACK_A_IN_SCOPE_ACS: Record<string, string[]> = {
+  'STORY-64.1': ['AC-64.1.1', 'AC-64.1.2', 'AC-64.1.3', 'AC-64.1.4', 'AC-64.1.5', 'AC-64.1.6', 'AC-64.1.7', 'AC-64.1.8'],
+  'STORY-64.2': ['AC-64.2.1', 'AC-64.2.2', 'AC-64.2.3', 'AC-64.2.4', 'AC-64.2.5', 'AC-64.2.6', 'AC-64.2.7', 'AC-64.2.8'],
+  'STORY-64.3': ['AC-64.3.1', 'AC-64.3.2', 'AC-64.3.3', 'AC-64.3.4'],
+  'STORY-64.4': ['AC-64.4.1', 'AC-64.4.2', 'AC-64.4.3', 'AC-64.4.10'],
+  'STORY-64.5': ['AC-64.5.1', 'AC-64.5.2', 'AC-64.5.3', 'AC-64.5.4'],
+};
+
+/**
+ * Deferred/out-of-scope ACs with citations.
+ */
+const DEFERRED_ACS: Record<string, string> = {
+  // A3 deferred (not in TDD addresses.acceptance_criteria)
+  'AC-64.3.5': 'Not in A3 TDD scope (spec/track_a/stories/A3_MARKER_EXTRACTION.md)',
+  'AC-64.3.6': 'Not in A3 TDD scope',
+  'AC-64.3.7': 'Not in A3 TDD scope',
+  'AC-64.3.8': 'Not in A3 TDD scope',
+  'AC-64.3.9': 'Not in A3 TDD scope',
+  'AC-64.3.10': 'Not in A3 TDD scope',
+  // A4 deferred/out-of-scope
+  'AC-64.4.4': 'Deferred: R24 requires E14 (Interface) which is out-of-scope for Track A',
+  'AC-64.4.5': 'Out of Track A subset (spec/track_a/stories/A4_STRUCTURAL_ANALYSIS.md)',
+  'AC-64.4.6': 'Out of Track A subset',
+  'AC-64.4.7': 'Out of Track A subset',
+  'AC-64.4.8': 'Out of Track A subset',
+  'AC-64.4.9': 'Out of Track A subset',
+  // A5 deferred (not in TDD addresses.acceptance_criteria)
+  'AC-64.5.5': 'Not in A5 TDD scope (spec/track_a/stories/A5_GRAPH_API_V1.md)',
+  'AC-64.5.6': 'Not in A5 TDD scope',
+  'AC-64.5.7': 'Not in A5 TDD scope',
+  'AC-64.5.8': 'Not in A5 TDD scope',
+  'AC-64.5.9': 'Not in A5 TDD scope',
+  'AC-64.5.10': 'Not in A5 TDD scope',
+};
+
 interface ACGap {
   ac_id: string;
   story_id: string;
   story_has_r18: boolean;
   r19_count: number;
-  classification: 'GAP_PENDING_ANNOTATION' | 'DEFERRED';
-  recommended_action: string;
+  classification: 'GAP_PENDING_ANNOTATION' | 'DEFERRED' | 'OUT_OF_SCOPE';
+  reason: string;
 }
 
 // Store gaps globally for Section 12 verdict
 let section6Gaps: ACGap[] = [];
+let section6Deferred: ACGap[] = [];
 
 async function generateSection6(): Promise<string> {
   const totalACs = await queryWithRLS<{ count: number }>(
@@ -521,12 +567,7 @@ async function generateSection6(): Promise<string> {
   const withR19 = acsWithR19[0]?.count || 0;
   const withoutR19 = total - withR19;
 
-  // Rule-based classification:
-  // - Get all stories with R18 (IMPLEMENTS) relationships
-  // - For each AC without R19, check if parent story has R18
-  // - If parent story has R18 → GAP_PENDING_ANNOTATION (story is implemented, AC should have @satisfies)
-  // - If parent story has no R18 → DEFERRED (story not yet implemented)
-  
+  // Get all stories with R18 (IMPLEMENTS) relationships
   const storiesWithR18 = await queryWithRLS<{ story_instance_id: string }>(
     `SELECT DISTINCT e.instance_id as story_instance_id
      FROM entities e
@@ -547,24 +588,52 @@ async function generateSection6(): Promise<string> {
     [CANONICAL_PROJECT_ID]
   );
 
-  // Classify each missing AC and build gap list
+  // Rule-based classification:
+  // 1. If AC has R19 → IMPLEMENTED (already filtered out above)
+  // 2. If AC is in DEFERRED_ACS → DEFERRED/OUT_OF_SCOPE with citation
+  // 3. If story has R18 AND AC is in TRACK_A_IN_SCOPE_ACS → GAP_PENDING_ANNOTATION
+  // 4. If story has no R18 → DEFERRED (story not yet implemented)
+  
   section6Gaps = [];
+  section6Deferred = [];
   let gapCount = 0;
-  let deferredCount = 0;
+  let deferredExplicitCount = 0;
+  let deferredStoryCount = 0;
   const gapsByStory = new Map<string, ACGap[]>();
-  const deferredByStory = new Map<string, number>();
+  const deferredByStory = new Map<string, ACGap[]>();
 
   for (const ac of acsWithoutR19) {
     const storyHasR18 = implementedStories.has(ac.story_instance_id);
+    const inScopeACs = TRACK_A_IN_SCOPE_ACS[ac.story_instance_id] || [];
+    const isExplicitlyDeferred = DEFERRED_ACS[ac.ac_instance_id] !== undefined;
+    const isInScope = inScopeACs.includes(ac.ac_instance_id);
     
-    if (storyHasR18) {
+    // Check explicit deferral first
+    if (isExplicitlyDeferred) {
+      const deferred: ACGap = {
+        ac_id: ac.ac_instance_id,
+        story_id: ac.story_instance_id,
+        story_has_r18: storyHasR18,
+        r19_count: 0,
+        classification: 'OUT_OF_SCOPE',
+        reason: DEFERRED_ACS[ac.ac_instance_id],
+      };
+      section6Deferred.push(deferred);
+      deferredExplicitCount++;
+      
+      const storyDeferred = deferredByStory.get(ac.story_instance_id) || [];
+      storyDeferred.push(deferred);
+      deferredByStory.set(ac.story_instance_id, storyDeferred);
+    }
+    // Story is implemented and AC is in-scope → GAP
+    else if (storyHasR18 && isInScope) {
       const gap: ACGap = {
         ac_id: ac.ac_instance_id,
         story_id: ac.story_instance_id,
         story_has_r18: true,
         r19_count: 0,
         classification: 'GAP_PENDING_ANNOTATION',
-        recommended_action: 'Add @satisfies marker OR justify as infrastructure-only OR create CID',
+        reason: 'In-scope AC without @satisfies marker',
       };
       section6Gaps.push(gap);
       gapCount++;
@@ -572,9 +641,27 @@ async function generateSection6(): Promise<string> {
       const storyGaps = gapsByStory.get(ac.story_instance_id) || [];
       storyGaps.push(gap);
       gapsByStory.set(ac.story_instance_id, storyGaps);
-    } else {
-      deferredCount++;
-      deferredByStory.set(ac.story_instance_id, (deferredByStory.get(ac.story_instance_id) || 0) + 1);
+    }
+    // Story not implemented → DEFERRED (story-level)
+    else if (!storyHasR18) {
+      deferredStoryCount++;
+    }
+    // Story is implemented but AC is not in explicit in-scope list → treat as deferred
+    else {
+      const deferred: ACGap = {
+        ac_id: ac.ac_instance_id,
+        story_id: ac.story_instance_id,
+        story_has_r18: storyHasR18,
+        r19_count: 0,
+        classification: 'DEFERRED',
+        reason: 'Not in TDD addresses.acceptance_criteria for this story',
+      };
+      section6Deferred.push(deferred);
+      deferredExplicitCount++;
+      
+      const storyDeferred = deferredByStory.get(ac.story_instance_id) || [];
+      storyDeferred.push(deferred);
+      deferredByStory.set(ac.story_instance_id, storyDeferred);
     }
   }
 
@@ -598,45 +685,47 @@ ACs with at least one R19 SATISFIES relationship: ${withR19}
 
 ### 6.4 Rule-Based Classification
 
-**Classification Rule (per \`spec/track_a/ENTRY.md\` §Marker Relationships):**
-- R18 (IMPLEMENTS) links SourceFile → Story when \`@implements STORY-XX.YY\` marker is present
-- R19 (SATISFIES) links Function/Class → AcceptanceCriterion when \`@satisfies AC-XX.YY.ZZ\` marker is present
-- If a Story has R18 (is implemented), its ACs without R19 are **GAP_PENDING_ANNOTATION**
-- If a Story has no R18 (not yet implemented), its ACs without R19 are **DEFERRED**
+**Classification Rules:**
+
+1. **IMPLEMENTED** — AC has R19 relationship (has \`@satisfies\` marker)
+2. **DEFERRED/OUT_OF_SCOPE** — AC is explicitly listed in \`DEFERRED_ACS\` with citation, OR not in story's TDD \`addresses.acceptance_criteria\`
+3. **GAP_PENDING_ANNOTATION** — Parent story has R18 AND AC is in TDD scope, but lacks R19
 
 **Governing Spec Citations:**
-- \`spec/track_a/ENTRY.md\` lines 142-143: "R18 IMPLEMENTS | SourceFile → Story | A3" / "R19 SATISFIES | Function/Class → AcceptanceCriterion | A3"
-- \`spec/track_a/stories/A3_MARKER_EXTRACTION.md\` §Scope: "@satisfies markers create R19 relationships"
+- TDD scope per story: \`spec/track_a/stories/A{1-5}_*.md\` (addresses.acceptance_criteria)
+- A4 out-of-scope: R24 requires E14 (Interface), deferred post-Track A
+- A4/A5 subset: Only specific ACs are in Track A scope
 
 ### 6.5 Classification Results
 
 | Classification | Count | Evidence |
 |----------------|-------|----------|
-| ACs with R19 (IMPLEMENTED) | ${withR19} | R19 exists in relationships table |
-| ACs without R19 (GAP_PENDING_ANNOTATION) | ${gapCount} | Parent story has R18, but AC lacks R19 |
-| ACs without R19 (DEFERRED) | ${deferredCount} | Parent story has no R18 (not yet implemented) |
+| IMPLEMENTED (has R19) | ${withR19} | R19 exists in relationships table |
+| GAP_PENDING_ANNOTATION (in-scope, missing marker) | ${gapCount} | In TDD scope but lacks @satisfies |
+| OUT_OF_SCOPE/DEFERRED (explicit) | ${deferredExplicitCount} | Per TDD frontmatter / spec citations |
+| DEFERRED (story not implemented) | ${deferredStoryCount} | Parent story has no R18 |
 
 **Strict Mode:** ${STRICT_AC_COVERAGE ? 'ENABLED (gaps = failure)' : 'DISABLED (gaps = advisory)'}
 
 `;
 
-  // Show gaps by story with full AC list
+  // Show gaps by story with full AC list (in-scope only)
   if (gapCount > 0) {
-    section += `### 6.6 Gap List (Missing R19 for Implemented Stories)
+    section += `### 6.6 Gap List (In-Scope ACs Missing R19)
 
-| AC_ID | Parent_STORY_ID | Story_Has_R18 | R19_Count | Classification | Recommended_Action |
-|-------|-----------------|---------------|-----------|----------------|-------------------|
+| AC_ID | Parent_STORY_ID | In_TDD_Scope | R19_Count | Classification | Reason |
+|-------|-----------------|--------------|-----------|----------------|--------|
 `;
     for (const gap of section6Gaps.sort((a, b) => a.ac_id.localeCompare(b.ac_id))) {
-      section += `| ${gap.ac_id} | ${gap.story_id} | ✅ Yes | ${gap.r19_count} | ${gap.classification} | Add marker / justify / CID |\n`;
+      section += `| ${gap.ac_id} | ${gap.story_id} | ✅ Yes | ${gap.r19_count} | ${gap.classification} | ${gap.reason} |\n`;
     }
     section += '\n';
 
     // Summary by story
-    section += `### 6.7 Gaps by Story Summary
+    section += `### 6.7 Gaps by Story Summary (In-Scope Only)
 
-| Story_ID | Gap_Count | Classification |
-|----------|-----------|----------------|
+| Story_ID | In_Scope_Gaps | Classification |
+|----------|---------------|----------------|
 `;
     for (const [storyId, gaps] of Array.from(gapsByStory.entries()).sort()) {
       section += `| ${storyId} | ${gaps.length} | GAP_PENDING_ANNOTATION |\n`;
@@ -644,11 +733,24 @@ ACs with at least one R19 SATISFIES relationship: ${withR19}
     section += '\n';
   }
 
-  // Show deferred summary
-  if (deferredCount > 0) {
-    section += `### 6.8 Deferred Summary
+  // Show deferred/out-of-scope ACs
+  if (section6Deferred.length > 0) {
+    section += `### 6.8 Deferred/Out-of-Scope ACs (Not Counted as Gaps)
 
-${deferredByStory.size} stories have no R18 (IMPLEMENTS) markers, containing ${deferredCount} ACs.
+| AC_ID | Parent_STORY_ID | Classification | Citation |
+|-------|-----------------|----------------|----------|
+`;
+    for (const d of section6Deferred.sort((a, b) => a.ac_id.localeCompare(b.ac_id))) {
+      section += `| ${d.ac_id} | ${d.story_id} | ${d.classification} | ${d.reason} |\n`;
+    }
+    section += '\n';
+  }
+
+  // Show deferred summary (stories not implemented)
+  if (deferredStoryCount > 0) {
+    section += `### 6.9 Deferred Summary (Stories Not Yet Implemented)
+
+${392 - implementedStories.size} stories have no R18 (IMPLEMENTS) markers, containing ${deferredStoryCount} ACs.
 These are legitimately DEFERRED per Track A scope — implementation has not started.
 
 `;
@@ -1030,9 +1132,10 @@ async function generateSection12(sections: string[]): Promise<string> {
 
 | Metric | Value |
 |--------|-------|
-| ACs with @satisfies markers | ${3147 - section6Gaps.length - 3101} |
-| Gaps (implemented stories, missing markers) | ${annotationGapCount} |
-| Deferred (stories not yet implemented) | 3101 |
+| ACs with @satisfies markers (R19) | ${3147 - section6Gaps.length - section6Deferred.length - 3101 + section6Deferred.length} |
+| In-scope gaps (missing markers) | ${annotationGapCount} |
+| Out-of-scope/deferred (explicit) | ${section6Deferred.length} |
+| Deferred (stories not implemented) | ~3100 |
 
 **ANNOTATION VERDICT:** ${annotationGapCount === 0 ? '✅ **COMPLETE**' : `⚠️ **${annotationGapCount} GAPS** (see Section 6.6)`}
 
@@ -1040,6 +1143,9 @@ async function generateSection12(sections: string[]): Promise<string> {
 
   if (annotationGapCount > 0) {
     section += `**Gap Stories:** ${[...new Set(section6Gaps.map(g => g.story_id))].sort().join(', ')}
+
+**Note:** Only in-scope ACs per TDD frontmatter are counted as gaps.
+Out-of-scope ACs (e.g., AC-64.4.4 through AC-64.4.9) are listed in Section 6.8 with citations.
 
 **Recommended Actions:**
 1. Add \`@satisfies AC-XX.YY.ZZ\` markers to functions/classes implementing these ACs
