@@ -1,9 +1,25 @@
 # CID-2026-01-01: A5 Graph API v1 — HTTP Adapter Layer Requirement
 
 **Date:** 2026-01-01  
-**Status:** PENDING APPROVAL  
+**Status:** ✅ APPROVED  
 **Baseline:** Track A1–A4 locked at `track-a4-green` (SHA `b1b88cee9c242a09a1e8d15ea856b5dd292f9aff`)  
 **Constraint:** No locked-surface modifications permitted
+
+---
+
+## Decision
+
+**Implement minimal HTTP adapter layer in A5 to satisfy BRD endpoints.**
+
+**Why (provable):** BRD defines HTTP endpoints; repo currently has no HTTP server; endpoints cannot exist otherwise.
+
+**Bonus benefit:** Establishes a stronger API boundary enforcement surface for future tracks.
+
+**Governance:** No Track A reopening required; no changes to locked surfaces.
+
+**Implementation constraints:**
+1. HTTP layer lives under `src/http/**` (new, unlocked surface) — separate from `src/api/v1/*` programmatic modules
+2. HTTP handlers are thin wrappers that delegate to A5 graph services — no business logic in HTTP layer
 
 ---
 
@@ -165,7 +181,14 @@ Rationale:
 
 | Role | Name | Decision | Date |
 |------|------|----------|------|
-| Governance | | PENDING | |
+| Governance | Human | **APPROVED — Option A** | 2026-01-01 |
+
+**Approved implementation approach:**
+- Add HTTP framework (Fastify recommended) as new dependency
+- Create `src/http/**` directory (new, unlocked surface)
+- HTTP handlers are thin wrappers delegating to `src/services/graph/**`
+- No business logic in HTTP layer
+- No modifications to locked Track A surfaces
 
 ---
 
