@@ -56,6 +56,13 @@ const ORGAN_PATTERNS = [
   'docs/integrations/EP-*.md',
 ];
 
+// Companion docs excluded from organ parity checks
+// These are reference/format specs, not versioned organ artifacts
+// Decision B: Exclude by governance decision (Phase-1 activation)
+const EXCLUDED_COMPANION_DOCS = [
+  'docs/BRD_FORMAT_SPECIFICATION.md', // Format spec, not a versioned organ artifact
+];
+
 // Story card patterns  
 const STORY_PATTERNS = [
   'spec/track_a/stories/*.md',
@@ -118,11 +125,16 @@ async function checkEndMarkerParity(): Promise<CheckResult[]> {
   for (const pattern of ORGAN_PATTERNS) {
     const files = await glob(join(ROOT, pattern));
     for (const file of files) {
+      const relativePath = file.replace(ROOT + '/', '');
+      
+      // Skip companion docs excluded from organ parity
+      if (EXCLUDED_COMPANION_DOCS.includes(relativePath)) {
+        continue;
+      }
+      
       const content = readFileSync(file, 'utf-8');
       const headerVersion = extractHeaderVersion(content);
       const endMarkerVersion = extractEndMarkerVersion(content);
-      
-      const relativePath = file.replace(ROOT + '/', '');
       
       if (!headerVersion) {
         results.push({

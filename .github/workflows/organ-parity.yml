@@ -6,11 +6,18 @@ on:
   push:
     branches: [main]
 
+# Phase 1 Governance (activated 2026-01-02)
+# See docs/GOVERNANCE_PHASED_PLAN.md
+
 jobs:
   parity:
     runs-on: ubuntu-latest
+    env:
+      GOVERNANCE_PHASE: "1"
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for diff comparison
       
       - uses: actions/setup-node@v4
         with:
@@ -23,7 +30,14 @@ jobs:
         run: npx tsc --noEmit
       
       - name: Verify organ document parity
-        run: GOVERNANCE_PHASE=1 npm run verify:organ-parity
+        run: npm run verify:organ-parity
+      
+      - name: Verify CID for organ doc changes
+        env:
+          GITHUB_BASE_REF: ${{ github.base_ref }}
+          GITHUB_PR_TITLE: ${{ github.event.pull_request.title }}
+          GITHUB_PR_BODY: ${{ github.event.pull_request.body }}
+        run: npx tsx scripts/verify-cid-for-organ-changes.ts
 
       - name: Verify G-API scripts boundary
         run: npm run verify:scripts-boundary
