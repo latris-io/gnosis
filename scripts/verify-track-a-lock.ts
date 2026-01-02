@@ -53,8 +53,14 @@ const LOCKED_PATTERNS = [
   
   // Governance docs — lock ENTIRE docs/verification/ folder
   // This prevents tampering with Track A evidence (CIDs, audits, closeouts, etc.)
-  // Track B should use a different folder (e.g., docs/verification/track_b/**)
+  // EXCEPT: Track B evidence goes in docs/verification/track_b/** (carved out below)
   /^docs\/verification\//,
+];
+
+// Track B carve-out: these paths are ALLOWED to change without CID
+// This enables Track B to create its own evidence artifacts
+const TRACK_B_CARVEOUT_PATTERNS = [
+  /^docs\/verification\/track_b\//,  // Track B evidence folder
 ];
 
 // CID pattern to look for (word-bounded, alphanumeric + dash/underscore only)
@@ -87,6 +93,11 @@ function getChangedFiles(): string[] {
 }
 
 function isLockedFile(filePath: string): boolean {
+  // First check if file is in a Track B carve-out (these are allowed)
+  if (TRACK_B_CARVEOUT_PATTERNS.some(pattern => pattern.test(filePath))) {
+    return false;
+  }
+  // Then check if file matches a locked pattern
   return LOCKED_PATTERNS.some(pattern => pattern.test(filePath));
 }
 

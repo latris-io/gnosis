@@ -15,8 +15,8 @@ This system IS a traceability-first verification engine. Its purpose is to:
 
 ### Rule 1: Spec Authority
 - Read the COMPLETE spec file before writing ANY code
-- Story specs are in `spec/track_a/stories/`
-- Track-level specs (ENTRY, EXIT, PROMPTS) are in `spec/track_a/`
+- Story specs are in `spec/track_a/stories/` (locked) or `spec/track_b/stories/` (current)
+- Track-level specs (ENTRY, EXIT, PROMPTS) are in `spec/track_a/` or `spec/track_b/`
 - SANITY suite is in `spec/00_pre_track_validation/`
 - The spec is the ONLY authority — do not infer, extend, or "improve"
 
@@ -112,7 +112,7 @@ Track A is **LOCKED** at baseline `track-a5-green` (SHA: `93ba7872885e1449004959
 - `scripts/verification/**`
 - `spec/track_a/**`
 - `test/fixtures/**`
-- `docs/verification/**` (entire folder locked — Track B uses different path)
+- `docs/verification/**` (locked EXCEPT `docs/verification/track_b/**` — Track B evidence goes there)
 
 **FORBIDDEN without CID + REOPEN_TRACK_A: true:**
 - Modifying any locked surface file
@@ -310,3 +310,71 @@ npx tsx scripts/run-foundation-validation.ts           # A1/A2 foundation checks
 ```
 
 All must pass for checkpoint to remain valid.
+
+---
+
+## TRACK B: ZERO DRIFT (CURRENT)
+
+### Track B Context
+
+| Field | Value |
+|-------|-------|
+| **Current Track** | B (Zero Drift) |
+| **Start Date** | 2026-01-02 |
+| **Prerequisite** | Track A complete (track-a5-green) |
+| **Gate** | HGR-2 (Oracle Transition) |
+
+### Track B Rules
+
+**1. Track A is READ-ONLY**
+- Access Track A data **only** via Graph API v1 (`src/api/v1/**`)
+- Do NOT import from Track A locked surfaces
+- Do NOT modify extraction, persistence, or sync logic
+
+**2. Track B Boundaries**
+- Place Track B code in new directories:
+  - `src/services/track_b/**` (new services)
+  - `src/api/v2/**` (Graph API v2)
+- Place Track B evidence in: `docs/verification/track_b/**`
+- Place Track B specs in: `spec/track_b/**`
+
+**3. Carve-out for Track B Evidence**
+- `docs/verification/track_b/**` is **NOT** locked
+- Track B can create closeout packets, audits, CIDs here
+- Track A evidence (`docs/verification/*.md` at root) remains locked
+
+**4. Story Specs**
+- Track B story cards: `spec/track_b/stories/B*.md`
+- Implementation prompts: `spec/track_b/PROMPTS.md`
+- Entry/Exit criteria: `spec/track_b/ENTRY.md`, `spec/track_b/EXIT.md`
+
+**5. Required Verifiers (must remain green)**
+```bash
+npm run test:sanity
+npm test
+npm run verify:organ-parity
+npm run verify:scripts-boundary
+npm run lint:markers
+TRACK_A_PHASE=A4 npm run verify:track-milestone
+```
+
+### Track B Stories
+
+| Story | Name | Duration |
+|-------|------|----------|
+| B.1 | Ground Truth Engine | ~2 days |
+| B.2 | BRD Registry | ~2 days |
+| B.3 | Drift Detection | ~2 days |
+| B.4 | Closure Check | ~1 day |
+| B.5 | Shadow Ledger Migration | ~1 day |
+| B.6 | Graph API v2 | ~1 day |
+| B.7 | Semantic Corpus Export | ~1 day |
+
+### Track B Gates (4 new)
+
+| Gate | Purpose |
+|------|---------|
+| G-HEALTH | System health metrics nominal |
+| G-REGISTRY | BRD registry complete and queryable |
+| G-DRIFT | Zero drift between ingestions |
+| G-CLOSURE | Re-ingestion produces identical graph |

@@ -1,0 +1,10 @@
+# Track B Evidence Directory
+
+This directory holds Track B verification artifacts:
+- Closeout packets
+- Audits
+- CIDs (Track B specific)
+- Gate results
+
+This path is carved out from Track A lock enforcement.
+
