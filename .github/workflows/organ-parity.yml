@@ -14,6 +14,11 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GOVERNANCE_PHASE: "1"   # Phase-1 hard-fail governance
+      PROJECT_ID: 6df2f456-440d-4958-b475-d9808775ff69
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      NEO4J_URL: ${{ secrets.NEO4J_URL }}
+      NEO4J_USER: ${{ secrets.NEO4J_USER }}
+      NEO4J_PASSWORD: ${{ secrets.NEO4J_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -73,10 +78,4 @@ jobs:
       # 5) Test suite (prevents silent regressions)
       # ------------------------------------------------------------
       - name: Run test suite
-        env:
-          PROJECT_ID: 6df2f456-440d-4958-b475-d9808775ff69
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          NEO4J_URL: ${{ secrets.NEO4J_URL }}
-          NEO4J_USER: ${{ secrets.NEO4J_USER }}
-          NEO4J_PASSWORD: ${{ secrets.NEO4J_PASSWORD }}
         run: npm test
