@@ -75,4 +75,8 @@ jobs:
       - name: Run test suite
         env:
           PROJECT_ID: 6df2f456-440d-4958-b475-d9808775ff69
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          NEO4J_URI: ${{ secrets.NEO4J_URI }}
+          NEO4J_USER: ${{ secrets.NEO4J_USER }}
+          NEO4J_PASSWORD: ${{ secrets.NEO4J_PASSWORD }}
         run: npm test
