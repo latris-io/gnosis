@@ -13,25 +13,45 @@ jobs:
   parity:
     runs-on: ubuntu-latest
     env:
-      GOVERNANCE_PHASE: "1"
+      GOVERNANCE_PHASE: "1"   # Phase-1 hard-fail governance
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Full history for diff comparison
-      
+          fetch-depth: 0  # Required for diff-based checks
+
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
-      
-      - run: npm ci
-      
-      - name: Type check (optional)
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check (non-emitting)
         run: npx tsc --noEmit
-      
+
+      # ------------------------------------------------------------
+      # 1) Track A lock enforcement (CID-gated reopen)
+      #    Blocks ANY change to Track A locked surfaces unless:
+      #    - CID exists
+      #    - CID contains REOPEN_TRACK_A: true
+      # ------------------------------------------------------------
+      - name: Enforce Track A lock (CID-gated)
+        env:
+          GITHUB_BASE_REF: ${{ github.base_ref }}
+          GITHUB_PR_TITLE: ${{ github.event.pull_request.title }}
+          GITHUB_PR_BODY: ${{ github.event.pull_request.body }}
+        run: npx tsx scripts/verify-track-a-lock.ts
+
+      # ------------------------------------------------------------
+      # 2) Organ document parity (Phase-1 hard fail)
+      # ------------------------------------------------------------
       - name: Verify organ document parity
         run: npm run verify:organ-parity
-      
+
+      # ------------------------------------------------------------
+      # 3) CID enforcement for organ document changes
+      # ------------------------------------------------------------
       - name: Verify CID for organ doc changes
         env:
           GITHUB_BASE_REF: ${{ github.base_ref }}
@@ -39,5 +59,16 @@ jobs:
           GITHUB_PR_BODY: ${{ github.event.pull_request.body }}
         run: npx tsx scripts/verify-cid-for-organ-changes.ts
 
+      # ------------------------------------------------------------
+      # 4) Scripts boundary enforcement (G-API)
+      # ------------------------------------------------------------
       - name: Verify G-API scripts boundary
         run: npm run verify:scripts-boundary
+
+      # ------------------------------------------------------------
+      # 5) Test suite (prevents silent regressions)
+      # ------------------------------------------------------------
+      - name: Run test suite
+        env:
+          PROJECT_ID: 6df2f456-440d-4958-b475-d9808775ff69
+        run: npm test
