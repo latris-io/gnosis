@@ -11,7 +11,14 @@ import { filesystemProvider } from '../src/extraction/providers/filesystem-provi
 import { astProvider } from '../src/extraction/providers/ast-provider.js';
 import { gitProvider } from '../src/extraction/providers/git-provider.js';
 import { changesetProvider } from '../src/extraction/providers/changeset-provider.js';
-import { initProject, persistEntities, closeConnections, type UpsertResult } from '../src/ops/track-a.js';
+import { 
+  initProject, 
+  persistEntities, 
+  closeConnections, 
+  extractAndPersistModules,
+  extractAndPersistContainmentRelationships,
+  type UpsertResult 
+} from '../src/ops/track-a.js';
 import { getProjectCorpus } from '../src/ledger/semantic-corpus.js';
 import type { RepoSnapshot, ExtractionProvider, ExtractedEntity } from '../src/extraction/types.js';
 import type { EntityTypeCode } from '../src/schema/track-a/entities.js';
@@ -239,6 +246,62 @@ async function main(): Promise<void> {
     total: upsertResults.length,
   });
   signalCount++;
+
+  // ============================================================================
+  // E15 Module Derivation (from E11 directory structure)
+  // ============================================================================
+  console.log('');
+  console.log('Deriving E15 Modules from E11 directory structure...');
+  
+  try {
+    const moduleResult = await extractAndPersistModules(projectId);
+    console.log(`  E15 derived: ${moduleResult.derived}`);
+    console.log(`  E15 persisted: ${moduleResult.persisted}`);
+    console.log(`  E15 synced: ${moduleResult.synced}`);
+    
+    await captureCorrectSignal('MILESTONE', 'e15-derivation-complete', {
+      derived: moduleResult.derived,
+      persisted: moduleResult.persisted,
+      synced: moduleResult.synced,
+    });
+    signalCount++;
+  } catch (error) {
+    console.error(`\x1b[31m[ERROR]\x1b[0m E15 module derivation failed: ${error}`);
+    await captureIncorrectSignal('E15_DERIVATION', 'derive-modules', `E15 derivation failed: ${error}`, {
+      error: String(error),
+    });
+    // Non-fatal: continue with R04 extraction
+  }
+
+  // ============================================================================
+  // R04-R07 Containment Relationships (derived from E11/E15)
+  // ============================================================================
+  console.log('');
+  console.log('Deriving containment relationships (R04-R07, R16)...');
+  
+  try {
+    const containmentResult = await extractAndPersistContainmentRelationships(projectId);
+    console.log(`  R04: ${containmentResult.r04.extracted} extracted, ${containmentResult.r04.persisted} persisted`);
+    console.log(`  R05: ${containmentResult.r05.extracted} extracted, ${containmentResult.r05.persisted} persisted`);
+    console.log(`  R06: ${containmentResult.r06.extracted} extracted, ${containmentResult.r06.persisted} persisted`);
+    console.log(`  R07: ${containmentResult.r07.extracted} extracted, ${containmentResult.r07.persisted} persisted`);
+    console.log(`  R16: ${containmentResult.r16.extracted} extracted, ${containmentResult.r16.persisted} persisted`);
+    
+    await captureCorrectSignal('MILESTONE', 'containment-derivation-complete', {
+      r04: containmentResult.r04,
+      r05: containmentResult.r05,
+      r06: containmentResult.r06,
+      r07: containmentResult.r07,
+      r16: containmentResult.r16,
+    });
+    signalCount++;
+  } catch (error) {
+    console.error(`\x1b[31m[ERROR]\x1b[0m Containment relationship derivation failed: ${error}`);
+    await captureIncorrectSignal('CONTAINMENT_DERIVATION', 'derive-containment', `Containment derivation failed: ${error}`, {
+      error: String(error),
+    });
+    // Non-fatal: continue to summary
+  }
 
   // Calculate final counts
   const finalCounts = countByEntityType(allEntities);
