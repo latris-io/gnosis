@@ -1,6 +1,6 @@
 ---
 tdd:
-  id: DESIGN-TRACKB-B6
+  id: TDD-TRACKB-B6
   type: TechnicalDesign
   version: "1.0.0"
   status: planned
@@ -11,7 +11,7 @@ tdd:
 **Track:** B (Zero Drift)  
 **Duration:** ~1 day  
 **Gate:** API boundary  
-**TDD ID:** `DESIGN-TRACKB-B6`
+**TDD ID:** `TDD-TRACKB-B6`
 
 ---
 
@@ -90,6 +90,14 @@ This Track B capability (Graph API v2) is defined by the Roadmap Track B scope, 
 - Place implementation in `src/api/v2/`
 - Do NOT add `@satisfies AC-B.*` markers
 - Do NOT add `@implements STORY-B.*` markers
+
+### Legacy Node Filtering (IMPORTANT)
+
+When returning Track B TDD entities (E06), v2 endpoints **MUST**:
+
+- Filter to `instance_id` starting with `TDD-TRACKB-` by default
+- **Never** return legacy `DESIGN-TRACKB-*` nodes unless explicitly requested
+- Legacy nodes exist from prior migrations; they are harmless but should not appear in normal API responses
 
 ---
 
@@ -172,5 +180,5 @@ npx tsx scripts/verify-track-a-lock.ts
 - [ ] v1 endpoints unchanged
 - [ ] Evidence artifacts produced
 - [ ] Verifiers green
-- [ ] TDD registered as E06 in graph (`DESIGN-TRACKB-B6`)
+- [ ] TDD registered as E06 in graph (`TDD-TRACKB-B6`)
 - [ ] TDD linked to implementation SourceFiles via R14

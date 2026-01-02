@@ -63,6 +63,15 @@ npm run verify:drift
 npm run verify:tdd-registry
 ```
 
+### verify:tdd-registry Requirements
+
+When implementing `verify:tdd-registry`, the verifier **MUST**:
+
+- Require presence of `TDD-TRACKB-B1` through `TDD-TRACKB-B7` (the canonical IDs)
+- Ignore any node not in the canonical allowlist
+- Optionally warn if legacy `DESIGN-TRACKB-*` nodes still exist (cleanup deferred post-HGR-2)
+- Only canonical `TDD-TRACKB-*` nodes should pass verification
+
 ---
 
 ## HGR-2 Readiness Checklist

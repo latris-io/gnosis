@@ -1,6 +1,6 @@
 ---
 tdd:
-  id: DESIGN-TRACKB-B3
+  id: TDD-TRACKB-B3
   type: TechnicalDesign
   version: "1.0.0"
   status: planned
@@ -11,7 +11,7 @@ tdd:
 **Track:** B (Zero Drift)  
 **Duration:** ~2 days  
 **Gate:** G-DRIFT  
-**TDD ID:** `DESIGN-TRACKB-B3`
+**TDD ID:** `TDD-TRACKB-B3`
 
 ---
 
@@ -165,5 +165,5 @@ npx tsx scripts/verify-track-a-lock.ts
 - [ ] G-DRIFT gate passing
 - [ ] Evidence artifacts produced
 - [ ] Verifiers green
-- [ ] TDD registered as E06 in graph (`DESIGN-TRACKB-B3`)
+- [ ] TDD registered as E06 in graph (`TDD-TRACKB-B3`)
 - [ ] TDD linked to implementation SourceFiles via R14

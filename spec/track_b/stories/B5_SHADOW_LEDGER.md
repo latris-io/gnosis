@@ -1,6 +1,6 @@
 ---
 tdd:
-  id: DESIGN-TRACKB-B5
+  id: TDD-TRACKB-B5
   type: TechnicalDesign
   version: "1.0.0"
   status: planned
@@ -11,7 +11,7 @@ tdd:
 **Track:** B (Zero Drift)  
 **Duration:** ~1 day  
 **Gate:** HGR-2 prerequisite  
-**TDD ID:** `DESIGN-TRACKB-B5`
+**TDD ID:** `TDD-TRACKB-B5`
 
 ---
 
@@ -157,6 +157,6 @@ npx tsx scripts/verify-track-a-lock.ts
 - [ ] Shadow ledger migrated to graph (100% match)
 - [ ] Evidence artifacts produced
 - [ ] Verifiers green
-- [ ] TDD registered as E06 in graph (`DESIGN-TRACKB-B5`)
+- [ ] TDD registered as E06 in graph (`TDD-TRACKB-B5`)
 - [ ] TDD linked to implementation SourceFiles via R14
 

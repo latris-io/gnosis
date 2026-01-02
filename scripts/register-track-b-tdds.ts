@@ -1,6 +1,6 @@
 #!/usr/bin/env npx tsx
 // scripts/register-track-b-tdds.ts
-// Track B TDD Registry - Registers DESIGN-TRACKB-B{n} as E06 nodes
+// Track B TDD Registry - Registers TDD-TRACKB-B{n} as E06 nodes
 // 
 // Usage: PROJECT_ID=... npx tsx scripts/register-track-b-tdds.ts
 //
@@ -9,6 +9,9 @@
 // 2. Upserts E06 TechnicalDesign nodes via ops layer
 // 3. Creates R14 IMPLEMENTED_BY edges (only when target file exists)
 // 4. Writes evidence to docs/verification/track_b/TDD_REGISTRY_VERIFICATION.md
+//
+// TDD ID format: TDD-TRACKB-B{n} (e.g., TDD-TRACKB-B1)
+// This conforms to ID_PATTERNS['E06'] = /^TDD-[\w.]+$/
 //
 // Guardrails:
 // - Uses existing ops functions (no modification to locked surfaces)
@@ -62,6 +65,8 @@ interface ParsedTDD {
 
 interface RegistryResult {
   e06Created: string[];
+  e06Updated: string[];
+  e06Noop: string[];
   r14Created: { from: string; to: string }[];
   r14Pending: { from: string; to: string; reason: string }[];
   errors: string[];
@@ -211,10 +216,20 @@ function buildE06Entity(tdd: ParsedTDD): ExtractedEntity {
   // Get relative path from workspace root
   const relPath = path.relative(process.cwd(), tdd.sourceFile);
   
+  // Generate name from TDD ID
+  // TDD-TRACKB-B1 -> "Track B B1"
+  // DESIGN-TRACKB-B1 -> "Track B B1" (legacy compatibility)
+  let name = tdd.frontmatter.id;
+  if (tdd.frontmatter.id.startsWith('TDD-TRACKB-')) {
+    name = 'Track B ' + tdd.frontmatter.id.replace('TDD-TRACKB-', '');
+  } else if (tdd.frontmatter.id.startsWith('DESIGN-TRACKB-')) {
+    name = 'Track B ' + tdd.frontmatter.id.replace('DESIGN-TRACKB-', '');
+  }
+  
   return {
     entity_type: 'E06',
     instance_id: tdd.frontmatter.id,
-    name: tdd.frontmatter.id.replace('DESIGN-TRACKB-', 'Track B '),
+    name,
     attributes: {
       version: tdd.frontmatter.version,
       status: tdd.frontmatter.status,
@@ -275,6 +290,7 @@ async function buildR14Relationships(
 
 function generateEvidenceReport(result: RegistryResult): string {
   const timestamp = new Date().toISOString();
+  const e06Total = result.e06Created.length + result.e06Updated.length;
   
   let report = `# Track B TDD Registry Verification
 
@@ -287,14 +303,17 @@ function generateEvidenceReport(result: RegistryResult): string {
 
 | Metric | Count |
 |--------|-------|
-| E06 TechnicalDesign nodes created/updated | ${result.e06Created.length} |
+| E06 TechnicalDesign nodes created | ${result.e06Created.length} |
+| E06 TechnicalDesign nodes updated | ${result.e06Updated.length} |
+| E06 TechnicalDesign nodes no-op | ${result.e06Noop.length} |
+| E06 total modified (created+updated) | ${e06Total} |
 | R14 IMPLEMENTED_BY edges created | ${result.r14Created.length} |
 | R14 edges pending (file not present) | ${result.r14Pending.length} |
 | Errors | ${result.errors.length} |
 
 ---
 
-## E06 TechnicalDesign Nodes
+## E06 TechnicalDesign Nodes Created
 
 `;
 
@@ -302,6 +321,36 @@ function generateEvidenceReport(result: RegistryResult): string {
     report += '_None created_\n';
   } else {
     for (const id of result.e06Created) {
+      report += `- \`${id}\`\n`;
+    }
+  }
+
+  report += `
+---
+
+## E06 TechnicalDesign Nodes Updated
+
+`;
+
+  if (result.e06Updated.length === 0) {
+    report += '_None updated_\n';
+  } else {
+    for (const id of result.e06Updated) {
+      report += `- \`${id}\`\n`;
+    }
+  }
+
+  report += `
+---
+
+## E06 TechnicalDesign Nodes No-Op
+
+`;
+
+  if (result.e06Noop.length === 0) {
+    report += '_None (all were created or updated)_\n';
+  } else {
+    for (const id of result.e06Noop) {
       report += `- \`${id}\`\n`;
     }
   }
@@ -355,6 +404,12 @@ function generateEvidenceReport(result: RegistryResult): string {
   report += `
 ---
 
+## Legacy Note
+
+Legacy \`DESIGN-TRACKB-*\` nodes may exist from prior runs; cleanup deferred post-HGR-2.
+
+---
+
 ## Verification Commands
 
 \`\`\`bash
@@ -382,6 +437,8 @@ async function main() {
   
   const result: RegistryResult = {
     e06Created: [],
+    e06Updated: [],
+    e06Noop: [],
     r14Created: [],
     r14Pending: [],
     errors: [],
@@ -411,10 +468,26 @@ async function main() {
   console.log('Persisting E06 entities...');
   try {
     const entityResults = await persistEntities(PROJECT_ID!, entities);
-    for (const entity of entities) {
-      result.e06Created.push(entity.instance_id);
+    
+    // Categorize results by operation type
+    for (let i = 0; i < entityResults.length; i++) {
+      const res = entityResults[i];
+      const instanceId = entities[i].instance_id;
+      
+      if (res.operation === 'CREATE') {
+        result.e06Created.push(instanceId);
+        console.log(`  + ${instanceId} (created)`);
+      } else if (res.operation === 'UPDATE') {
+        result.e06Updated.push(instanceId);
+        console.log(`  ~ ${instanceId} (updated)`);
+      } else {
+        result.e06Noop.push(instanceId);
+        console.log(`  = ${instanceId} (no-op)`);
+      }
     }
-    console.log(`  Persisted ${entityResults.length} entities`);
+    
+    const counts = `${result.e06Created.length} created, ${result.e06Updated.length} updated, ${result.e06Noop.length} no-op`;
+    console.log(`  Total: ${entityResults.length} entities (${counts})`);
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
     result.errors.push(`E06 persistence failed: ${msg}`);
@@ -475,6 +548,8 @@ async function main() {
   console.log('Summary');
   console.log('-------');
   console.log(`E06 created: ${result.e06Created.length}`);
+  console.log(`E06 updated: ${result.e06Updated.length}`);
+  console.log(`E06 no-op: ${result.e06Noop.length}`);
   console.log(`R14 created: ${result.r14Created.length}`);
   console.log(`R14 pending: ${result.r14Pending.length}`);
   console.log(`Errors: ${result.errors.length}`);

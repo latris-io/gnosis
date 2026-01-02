@@ -1,6 +1,6 @@
 ---
 tdd:
-  id: DESIGN-TRACKB-B7
+  id: TDD-TRACKB-B7
   type: TechnicalDesign
   version: "1.0.0"
   status: planned
@@ -11,7 +11,7 @@ tdd:
 **Track:** B (Zero Drift)  
 **Duration:** ~0.5 day  
 **Gate:** Corpus quality  
-**TDD ID:** `DESIGN-TRACKB-B7`
+**TDD ID:** `TDD-TRACKB-B7`
 
 ---
 
@@ -162,6 +162,6 @@ npx tsx scripts/verify-track-a-lock.ts
 - [ ] Corpus exported and validated
 - [ ] Evidence artifacts produced
 - [ ] Verifiers green
-- [ ] TDD registered as E06 in graph (`DESIGN-TRACKB-B7`)
+- [ ] TDD registered as E06 in graph (`TDD-TRACKB-B7`)
 - [ ] TDD linked to implementation SourceFiles via R14
 
