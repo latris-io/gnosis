@@ -1,0 +1,35 @@
+# Track A Locked Surfaces — Comprehensive Lock (Option B)
+# Require explicit approval for any changes to Track A implementation
+# See: docs/GOVERNANCE_PHASED_PLAN.md, docs/verification/HGR-1_1_EXTENSION_PACKET_2026-01-02.md
+
+# Core Track A (A1-A3)
+/src/schema/track-a/                 @latris-io
+/src/extraction/                     @latris-io
+/src/services/entities/              @latris-io
+/src/services/relationships/         @latris-io
+/src/services/sync/                  @latris-io
+/src/db/                             @latris-io
+/migrations/                         @latris-io
+
+# Markers (A3)
+/src/markers/                        @latris-io
+
+# Ledger (Track A infrastructure)
+/src/ledger/                         @latris-io
+
+# Pipeline (A4)
+/src/pipeline/                       @latris-io
+/src/ops/                            @latris-io
+
+# Graph API (A5)
+/src/api/v1/                         @latris-io
+/src/services/graph/                 @latris-io
+/src/http/                           @latris-io
+
+# Verification + Specs
+/scripts/verification/               @latris-io
+/spec/track_a/                       @latris-io
+/test/fixtures/                      @latris-io
+
+# Governance docs
+/docs/verification/                  @latris-io

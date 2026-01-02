@@ -96,6 +96,38 @@ At HGR-1 (end of Track A):
 
 The six organ documents are **read-only during Cursor sessions** unless explicitly instructed by human with CID reference.
 
+### Rule 9: Track A Lock Enforcement (RULE-TRACKA-LOCK-001)
+
+Track A is **LOCKED** at baseline `track-a5-green` (SHA: `93ba7872885e1449004959eb8c79870da144f983`).
+
+**Locked Surfaces (comprehensive — Option B):**
+- `src/schema/track-a/**`
+- `src/extraction/**`
+- `src/services/entities/**`, `src/services/relationships/**`, `src/services/sync/**`
+- `src/db/**`, `migrations/**`
+- `src/markers/**`
+- `src/ledger/**`
+- `src/pipeline/**`, `src/ops/**`
+- `src/api/v1/**`, `src/services/graph/**`, `src/http/**`
+- `scripts/verification/**`
+- `spec/track_a/**`
+- `test/fixtures/**`
+- `docs/verification/*LOCK_ATTESTATION*.md`, `docs/verification/*CLOSEOUT_PACKET*.md`, `docs/verification/HGR-*.md`
+
+**FORBIDDEN without CID + REOPEN_TRACK_A: true:**
+- Modifying any locked surface file
+- Adding new files to locked surface paths
+- Deleting files from locked surface paths
+
+**If asked to modify a locked surface:**
+1. **HALT** immediately
+2. **REPORT:** "This would modify Track A locked surface: [file path]"
+3. **REQUIRE:** User must provide CID reference containing `REOPEN_TRACK_A: true`
+4. **VERIFY:** CID file exists in `docs/verification/`
+5. **PROCEED:** Only with valid CID authorization
+
+**CI Enforcement:** `scripts/verify-track-a-lock.ts` blocks PRs that modify locked surfaces without valid CID.
+
 **Protected Files (Organ Docs):**
 - `docs/BRD_*.md`
 - `docs/UNIFIED_TRACEABILITY_GRAPH_SCHEMA_*.md`
@@ -208,19 +240,20 @@ When in doubt: read the spec, follow the spec, verify against the spec.
 
 ---
 
-## TRACK STATE LOCK — HGR-1 BASELINE (A1–A3 COMPLETE)
+## TRACK STATE LOCK — TRACK A COMPLETE (A1–A5)
 
 ### Checkpoint Metadata
 
 | Field | Value |
 |-------|-------|
-| **Phase** | HGR-1 BASELINE (A1–A3 COMPLETE) |
-| **Verified** | 2025-12-30T02:39:00.000Z |
-| **Git SHA** | `d6c2c9e2171eb2c3019f1b2cd2a3eba96e1e33ab` |
+| **Phase** | TRACK A COMPLETE (A1–A5) |
+| **Final Baseline Tag** | `track-a5-green` |
+| **Final Baseline SHA** | `93ba7872885e1449004959eb8c79870da144f983` |
+| **HGR-1 Original Tag** | `hgr-1-baseline` (A1–A3) |
+| **HGR-1 Original SHA** | `9e2648a6d2940d93ce042c807476c6c951196e3b` |
 | **Project ID** | `6df2f456-440d-4958-b475-d9808775ff69` |
-| **State Doc** | `docs/verification/A3_CLOSEOUT_PACKET_2025-12-29.md` |
-| **Universe Freeze** | `.si-universe.env` (tag: hgr-1-baseline) |
-| **Canonical Epoch** | `8179a4ff-c848-4538-8fc0-30726dc3ba6c` |
+| **HGR-1.1 Extension** | `docs/verification/HGR-1_1_EXTENSION_PACKET_2026-01-02.md` |
+| **Governance Phase** | Phase 1 (hard-fail organ parity + CID enforcement) |
 
 ### Locked Invariants (HGR-1 Baseline)
 
