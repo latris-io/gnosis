@@ -3,7 +3,19 @@ tdd:
   id: TDD-TRACKB-B1
   type: TechnicalDesign
   version: "1.0.0"
-  status: planned
+  status: implemented
+  implements:
+    files:
+      - src/services/track_b/ground-truth/types.ts
+      - src/services/track_b/ground-truth/file-scope.ts
+      - src/services/track_b/ground-truth/manifest.ts
+      - src/services/track_b/ground-truth/merkle.ts
+      - src/services/track_b/ground-truth/health.ts
+      - src/services/track_b/ground-truth/ledger.ts
+      - src/services/track_b/ground-truth/index.ts
+    # Note: scripts/** are excluded from E11 extraction by design.
+    # CLI entrypoints are documented under "Operational CLI" section below
+    # and are not included in implements.files (no R14 linkage possible).
 ---
 
 # Story B.1: Ground Truth Engine
@@ -24,8 +36,7 @@ Establish cryptographic proof of what files exist in the codebase, enabling dete
 ## Entry Criteria
 
 - [ ] Track B entry criteria met (`spec/track_b/ENTRY.md`)
-- [ ] Graph API v1 operational
-- [ ] E11 SourceFile entities available in graph
+- [ ] File system accessible for manifest generation
 
 ---
 
@@ -61,10 +72,12 @@ This Track B capability (Ground Truth Engine) is defined by the Roadmap Track B 
 |----|-------------|--------|
 | B.1.1 | Generate manifest with SHA256 per file | — |
 | B.1.2 | Compute Merkle root of all hashes | — |
-| B.1.3 | Health check: manifest vs disk | — |
-| B.1.4 | Health score via Graph API v2 | API |
+| B.1.3 | Health check: baseline vs disk | — |
+| B.1.4 | Health score available via CLI (`scripts/ground-truth.ts check`) | — |
 | B.1.5 | G-HEALTH gate: fail if health < 100% | Gate |
 | B.1.6 | Log manifest operations to shadow ledger | Shadow |
+
+**Note:** Health score exposed via Graph API v2 is deferred to B.6 (`GET /api/v2/health`).
 
 **Important:** Execution Obligations (B.x.y) are planning checkpoints only; verification authority resides exclusively in gate outcomes and HGR approvals.
 
@@ -119,23 +132,31 @@ interface GroundTruthManifest {
 - Build Merkle tree
 - Root = single hash representing entire codebase state
 
-### Health Check
+### Health Check (B.1 scope: baseline ↔ disk)
 
-Compare stored manifest to current disk:
-- Missing files = unhealthy
-- Extra files = unhealthy
+Compare stored baseline manifest to current disk:
+- Missing files (in baseline, not on disk) = unhealthy
+- Extra files (on disk, not in baseline) = unhealthy
 - Hash mismatch = unhealthy
+- Merkle root mismatch = unhealthy
 - All match = 100% healthy
+
+**Note:** Graph coverage validation (disk ↔ graph E11 entities) is **deferred to B.6 (Graph API v2)**. Graph API v1 does not expose an entity listing endpoint, and Track B cannot modify Track A locked surfaces (`src/http/**`). B.6 will add `/api/v2/entities` for this purpose.
 
 ---
 
 ## Dependencies
 
-| Dependency | Source |
-|------------|--------|
-| E11 SourceFile | Graph API v1 |
-| E50 Commit | Graph API v1 |
-| R67 MODIFIES | Graph API v1 |
+| Dependency | Source | Required for |
+|------------|--------|--------------|
+| File system | Node.js fs | Manifest generation |
+| Crypto | Node.js crypto | SHA256/Merkle |
+
+**Graph API v1 dependencies (read-only, not required for B.1 core health check):**
+
+| Dependency | Source | Deferred to |
+|------------|--------|-------------|
+| E11 SourceFile listing | Graph API v2 | B.6 |
 
 ---
 
@@ -148,6 +169,34 @@ npm run lint:markers
 npm test
 npx tsx scripts/verify-track-a-lock.ts
 ```
+
+---
+
+## Operational CLI
+
+**CLI Entrypoint:** `scripts/ground-truth.ts`
+
+> **Note:** This script is part of B.1 but not listed in `implements.files` because `scripts/**` are excluded from E11 extraction by design (see `src/extraction/providers/marker-provider.ts`). R14 linkage is not possible for scripts.
+
+### Commands
+
+```bash
+# Set baseline (captures current repo state)
+npx tsx scripts/ground-truth.ts set-baseline
+
+# Check health (compares baseline to current disk)
+PROJECT_ID=<uuid> npx tsx scripts/ground-truth.ts check
+
+# Full check with Graph API (when available)
+PROJECT_ID=<uuid> GRAPH_API_URL=http://localhost:3000 npx tsx scripts/ground-truth.ts check
+```
+
+### Environment Variables
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `PROJECT_ID` | Yes (for `check`) | Canonical project UUID |
+| `GRAPH_API_URL` | No | Graph API base URL (graph coverage deferred to B.6) |
 
 ---
 

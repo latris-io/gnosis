@@ -1,6 +1,6 @@
 # Track B TDD Registry Verification
 
-**Generated:** 2026-01-02T21:38:04.146Z  
+**Generated:** 2026-01-02T23:09:10.124Z  
 **Project ID:** 6df2f456-440d-4958-b475-d9808775ff69
 
 ---
@@ -13,9 +13,9 @@
 | E06 TechnicalDesign nodes updated | 0 |
 | E06 TechnicalDesign nodes no-op | 7 |
 | E06 total modified (created+updated) | 0 |
-| R14 IMPLEMENTED_BY edges created | 0 |
+| R14 IMPLEMENTED_BY edges created | 8 |
 | R14 edges pending (file not present) | 0 |
-| Errors | 0 |
+| Errors | 1 |
 
 ---
 
@@ -45,7 +45,16 @@ _None updated_
 
 ## R14 IMPLEMENTED_BY Edges
 
-_None created_
+| From (E06) | To (E11) |
+|------------|----------|
+| `TDD-TRACKB-B1` | `FILE-src/services/track_b/ground-truth/types.ts` |
+| `TDD-TRACKB-B1` | `FILE-src/services/track_b/ground-truth/file-scope.ts` |
+| `TDD-TRACKB-B1` | `FILE-src/services/track_b/ground-truth/manifest.ts` |
+| `TDD-TRACKB-B1` | `FILE-src/services/track_b/ground-truth/merkle.ts` |
+| `TDD-TRACKB-B1` | `FILE-src/services/track_b/ground-truth/health.ts` |
+| `TDD-TRACKB-B1` | `FILE-src/services/track_b/ground-truth/ledger.ts` |
+| `TDD-TRACKB-B1` | `FILE-src/services/track_b/ground-truth/index.ts` |
+| `TDD-TRACKB-B1` | `FILE-scripts/ground-truth.ts` |
 
 ---
 
@@ -55,14 +64,15 @@ _None pending_
 
 ---
 
+## Errors
+
+- R14 persistence failed: Cannot resolve to_entity_id for relationship R14:TDD-TRACKB-B1:FILE-scripts/ground-truth.ts: entity "FILE-scripts/ground-truth.ts" not found in project 6df2f456-440d-4958-b475-d9808775ff69
+
+---
+
 ## Legacy Note
 
 Legacy `DESIGN-TRACKB-*` nodes may exist from prior runs; cleanup deferred post-HGR-2.
-
-**Safety rules for future implementation:**
-- `verify:tdd-registry` must only accept `TDD-TRACKB-B1..B7` (canonical IDs)
-- Graph API v2 endpoints must filter to `TDD-TRACKB-*` by default
-- Legacy nodes should never "pass" verification or appear in normal API responses
 
 ---
 

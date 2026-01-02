@@ -33,6 +33,7 @@ Extend the Graph API with v2 endpoints that expose Track B capabilities (health,
 
 ### In Scope
 
+- **Entity listing endpoint** (enables graph coverage validation deferred from B.1)
 - Health score endpoint
 - Drift report endpoint
 - Registry query endpoint
@@ -59,12 +60,13 @@ This Track B capability (Graph API v2) is defined by the Roadmap Track B scope, 
 
 | ID | Description | Pillar |
 |----|-------------|--------|
-| B.6.1 | Health score endpoint | API |
-| B.6.2 | Drift report endpoint | API |
-| B.6.3 | Registry query endpoint | API |
-| B.6.4 | Closure status endpoint | API |
-| B.6.5 | Ledger query endpoint | API |
-| B.6.6 | Track C cannot import Track A/B internals | Boundary |
+| B.6.1 | Entity listing endpoint (for graph coverage) | API |
+| B.6.2 | Health score endpoint | API |
+| B.6.3 | Drift report endpoint | API |
+| B.6.4 | Registry query endpoint | API |
+| B.6.5 | Closure status endpoint | API |
+| B.6.6 | Ledger query endpoint | API |
+| B.6.7 | Track C cannot import Track A/B internals | Boundary |
 
 **Important:** Execution Obligations (B.x.y) are planning checkpoints only; verification authority resides exclusively in gate outcomes and HGR approvals.
 
@@ -106,9 +108,14 @@ When returning Track B TDD entities (E06), v2 endpoints **MUST**:
 ### API v2 Endpoints
 
 ```typescript
-// Health (from B.1)
+// Entity listing (enables graph coverage validation deferred from B.1)
+// This endpoint was not available in v1; Track B could not modify locked surfaces.
+GET /api/v2/entities?entity_type=E11&project_id=...
+→ { entities: Entity[], count: number }
+
+// Health (from B.1, now includes graph coverage via entity listing above)
 GET /api/v2/health
-→ { score: number, details: HealthDetail[] }
+→ { score: number, details: HealthDetail[], graph_coverage: GraphCoverage }
 
 // Drift (from B.3)
 GET /api/v2/drift/:snapshotA/:snapshotB

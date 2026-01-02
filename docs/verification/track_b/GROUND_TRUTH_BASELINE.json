@@ -1,0 +1,27 @@
+{
+  "generated_at": "2026-01-02T22:31:24.857Z",
+  "merkle_root": "6f4bd324c7ba5aa289a2731f7c3fd7f37ebd8d558f13bef784260640fc78f0e0",
+  "file_count": 159,
+  "scope": [
+    "src/**",
+    "spec/**",
+    "scripts/**",
+    "package.json",
+    "package-lock.json",
+    "tsconfig.json"
+  ],
+  "excludes": [
+    "**/node_modules/**",
+    "**/.git/**",
+    "**/dist/**",
+    "**/build/**",
+    "**/.next/**",
+    "**/coverage/**",
+    "**/.cache/**",
+    "**/tmp/**",
+    "**/docs/verification/**",
+    "**/.DS_Store",
+    "**/*.log"
+  ],
+  "scope_version": "B1-v1"
+}
