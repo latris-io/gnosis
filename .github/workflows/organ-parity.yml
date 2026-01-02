@@ -75,7 +75,14 @@ jobs:
         run: npm run verify:scripts-boundary
 
       # ------------------------------------------------------------
-      # 5) Test suite (prevents silent regressions)
+      # 5) Prepare graph state (extraction + derivations)
+      #    Ensures DB is consistent with repo state before tests
+      # ------------------------------------------------------------
+      - name: Prepare graph state (extraction + derivations)
+        run: npx tsx scripts/run-a1-extraction.ts
+
+      # ------------------------------------------------------------
+      # 6) Test suite (prevents silent regressions)
       # ------------------------------------------------------------
       - name: Run test suite
         run: npm test
