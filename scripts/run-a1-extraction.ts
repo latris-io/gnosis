@@ -2,7 +2,17 @@
 // scripts/run-a1-extraction.ts
 // @implements STORY-64.1
 // @satisfies AC-64.1.1, AC-64.1.2, AC-64.1.3, AC-64.1.4, AC-64.1.5, AC-64.1.6, AC-64.1.7, AC-64.1.8
-// A1 Entity Extraction Runner - orchestrates all A1 providers and persists to PostgreSQL
+//
+// GRAPH PREPARATION ORCHESTRATION SCRIPT
+// =======================================
+// This script prepares a fully-derived Track A graph state for verification/tests.
+// It runs entity extraction PLUS required structural derivations (E15 modules, R04-R07
+// containment relationships) to avoid partial graph states.
+//
+// This does NOT change Track A scope — it is orchestration for deterministic verification.
+// The derivations are conceptually A4 work but are included here to ensure any use of
+// this script (local, CI, staging) produces a self-consistent graph.
+//
 // NOTE: Shadow ledger writes are handled by entityService.batchUpsert() - DO NOT double-log
 
 import 'dotenv/config';
