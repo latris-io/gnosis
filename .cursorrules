@@ -112,7 +112,7 @@ Track A is **LOCKED** at baseline `track-a5-green` (SHA: `93ba7872885e1449004959
 - `scripts/verification/**`
 - `spec/track_a/**`
 - `test/fixtures/**`
-- `docs/verification/*LOCK_ATTESTATION*.md`, `docs/verification/*CLOSEOUT_PACKET*.md`, `docs/verification/HGR-*.md`
+- `docs/verification/**` (entire folder locked — Track B uses different path)
 
 **FORBIDDEN without CID + REOPEN_TRACK_A: true:**
 - Modifying any locked surface file

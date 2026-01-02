@@ -36,6 +36,10 @@ jobs:
       #    - CID exists
       #    - CID contains REOPEN_TRACK_A: true
       # ------------------------------------------------------------
+      - name: Fetch base branch (PR context)
+        if: ${{ github.base_ref != '' }}
+        run: git fetch origin ${{ github.base_ref }} --depth=1
+
       - name: Enforce Track A lock (CID-gated)
         env:
           GITHUB_BASE_REF: ${{ github.base_ref }}

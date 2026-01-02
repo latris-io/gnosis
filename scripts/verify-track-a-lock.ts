@@ -51,15 +51,14 @@ const LOCKED_PATTERNS = [
   /^spec\/track_a\//,
   /^test\/fixtures\//,
   
-  // Governance docs (lock attestations/closeout packets/HGR packets)
-  // Note: LOCK_HASH artifacts are NOT locked (they are computed outputs)
-  /^docs\/verification\/.*LOCK_ATTESTATION.*\.md$/,
-  /^docs\/verification\/.*CLOSEOUT_PACKET.*\.md$/,
-  /^docs\/verification\/HGR-.*\.md$/,
+  // Governance docs — lock ENTIRE docs/verification/ folder
+  // This prevents tampering with Track A evidence (CIDs, audits, closeouts, etc.)
+  // Track B should use a different folder (e.g., docs/verification/track_b/**)
+  /^docs\/verification\//,
 ];
 
-// CID pattern to look for
-const CID_PATTERN = /CID-\d{4}-\d{2}-\d{2}[^\s]*/g;
+// CID pattern to look for (word-bounded, alphanumeric + dash/underscore only)
+const CID_PATTERN = /\bCID-\d{4}-\d{2}-\d{2}[A-Za-z0-9_-]*\b/g;
 
 // --- Utility Functions ---
 
@@ -80,8 +79,10 @@ function getChangedFiles(): string[] {
     const output = execSync(diffCommand, { encoding: 'utf-8' });
     return output.trim().split('\n').filter(Boolean);
   } catch (error) {
-    console.warn('Could not get changed files:', error);
-    return [];
+    // FAIL CLOSED: If we can't compute the diff, we cannot verify lock compliance
+    console.error('❌ Could not compute changed files for Track A lock enforcement.');
+    console.error(String(error));
+    process.exit(1);
   }
 }
 
