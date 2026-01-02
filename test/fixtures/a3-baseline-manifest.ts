@@ -36,8 +36,8 @@ export const A3_BASELINE = {
     orphan_markers: 0,            // Markers with no valid target entity (0 after A1 refresh)
     
     // Relationship counts (from PostgreSQL)
-    R18: 50,  // IMPLEMENTS relationships (A4 adds pipeline modules)
-    R19: 40,  // SATISFIES relationships (A4 adds entity-service, relationship-service, integration test markers)
+    R18: 55,  // IMPLEMENTS relationships (A4/A5 adds pipeline, graph-service, traversal-service, http routes)
+    R19: 46,  // SATISFIES relationships (A4/A5 adds entity-service, relationship-service, integration test, A5 API markers)
     R36: 1,   // TESTED_BY relationships (from describe('STORY-XX.YY'))
     R37: 6,   // VERIFIED_BY relationships (from it('AC-XX.YY.ZZ'), A4 adds pipeline tests)
   },
