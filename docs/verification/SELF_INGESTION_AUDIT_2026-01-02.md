@@ -18,6 +18,11 @@ ground truth computed directly from source code AST analysis.
 - Relationships queried via Graph API v1 (not direct DB access)
 - Precision and recall computed per relationship type
 
+**Boundary Compliance:**
+- This script uses **zero `@g-api-exception` imports**
+- All data access via `src/api/v1/*` (entities, relationships)
+- Any repository exception-tagged files are unrelated legacy/audit scripts
+
 **Scoring Rules:**
 - Only edges where **both endpoints are present in the graph** are scored
 - Edges from entities not in graph are excluded (indicates stale graph, not extraction error)
