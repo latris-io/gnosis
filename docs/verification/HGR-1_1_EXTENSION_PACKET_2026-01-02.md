@@ -157,7 +157,7 @@ This packet provides supplemental human gate review for the Track A extension wo
 | Constraint | Justification |
 |------------|---------------|
 | Type-only imports included in R21 | Track A extractor includes `import type` statements; self-ingestion audit confirms parity |
-| External imports excluded from scoring | Imports to `node_modules` or external packages are not in the graph; classified as "Unresolved" |
+| External imports excluded from scoring | External / non-project imports (Node built-ins + external packages) are not in the graph; classified as "Unresolved" |
 | R23 EXTENDS count is 0 | No class inheritance detected in codebase; `ALLOWED_ZERO` per verifier expectations |
 | 6 scripts with `@g-api-exception` | Legacy audit/verification scripts; documented exceptions, not behavioral |
 
@@ -168,7 +168,7 @@ This packet provides supplemental human gate review for the Track A extension wo
 | Were locked extraction providers modified? | ❌ No |
 | Were locked persistence/sync services modified? | ❌ No (only JSDoc via CID) |
 | Were migrations added? | ❌ No |
-| Were verifier expectations changed? | ✅ Yes, R19 baseline refresh (CID documented) |
+| Verifier logic/expectations changed? | ❌ No; baseline manifests refreshed to reflect already-merged markers (documented via CID) |
 | Were all post-lock changes documented via CID? | ✅ Yes |
 
 ---
