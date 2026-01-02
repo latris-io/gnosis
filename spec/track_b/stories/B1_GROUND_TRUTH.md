@@ -1,35 +1,100 @@
+---
+tdd:
+  id: DESIGN-TRACKB-B1
+  type: TechnicalDesign
+  version: "1.0.0"
+  status: planned
+---
+
 # Story B.1: Ground Truth Engine
 
 **Track:** B (Zero Drift)  
 **Duration:** ~2 days  
-**Gate:** G-HEALTH
+**Gate:** G-HEALTH  
+**TDD ID:** `DESIGN-TRACKB-B1`
 
 ---
 
-## User Story
+## Purpose
 
-**As a** traceability system  
-**I want** cryptographic proof of what files exist  
-**So that** untracked or tampered files are detected
+Establish cryptographic proof of what files exist in the codebase, enabling detection of untracked or tampered files.
 
 ---
 
-## Acceptance Criteria
+## Entry Criteria
 
-| AC | Description | Pillar |
+- [ ] Track B entry criteria met (`spec/track_b/ENTRY.md`)
+- [ ] Graph API v1 operational
+- [ ] E11 SourceFile entities available in graph
+
+---
+
+## Scope
+
+### In Scope
+
+- File manifest generation with SHA256 hashes
+- Merkle root computation for codebase state
+- Health check comparing manifest to disk
+- G-HEALTH gate implementation
+- Shadow ledger logging for manifest operations
+
+### Out of Scope
+
+- Modification of Track A extraction logic
+- Changes to existing entity schemas
+- Direct database access
+
+---
+
+## Related Canonical Requirements (Optional; BRD-only)
+
+None.
+
+This Track B capability (Ground Truth Engine) is defined by the Roadmap Track B scope, not by a specific BRD requirement.
+
+---
+
+## Execution Obligations (Roadmap-defined)
+
+| ID | Description | Pillar |
 |----|-------------|--------|
-| AC-B.1.1 | Generate manifest with SHA256 per file | — |
-| AC-B.1.2 | Compute Merkle root of all hashes | — |
-| AC-B.1.3 | Health check: manifest vs disk | — |
-| AC-B.1.4 | Health score via Graph API v2 | API |
-| AC-B.1.5 | G-HEALTH gate: fail if health < 100% | Gate |
-| AC-B.1.6 | Log manifest operations to shadow ledger | Shadow |
+| B.1.1 | Generate manifest with SHA256 per file | — |
+| B.1.2 | Compute Merkle root of all hashes | — |
+| B.1.3 | Health check: manifest vs disk | — |
+| B.1.4 | Health score via Graph API v2 | API |
+| B.1.5 | G-HEALTH gate: fail if health < 100% | Gate |
+| B.1.6 | Log manifest operations to shadow ledger | Shadow |
+
+**Important:** Execution Obligations (B.x.y) are planning checkpoints only; verification authority resides exclusively in gate outcomes and HGR approvals.
+
+---
+
+## Gate(s) Involved
+
+- **G-HEALTH**: System health metrics nominal (fail if health < 100%)
+
+---
+
+## Evidence Artifacts
+
+- `docs/verification/track_b/B1_GROUND_TRUTH_EVIDENCE.md`
+
+---
+
+## Implementation Constraints
+
+- Access Track A data via Graph API v1 only
+- Do not modify Track A locked surfaces
+- Place implementation in `src/services/track_b/ground-truth/`
+- Do NOT add `@satisfies AC-B.*` markers
+- Do NOT add `@implements STORY-B.*` markers
 
 ---
 
 ## Technical Details
 
-### Manifest Generation
+### Manifest Structure
 
 ```typescript
 interface FileManifest {
@@ -74,14 +139,23 @@ Compare stored manifest to current disk:
 
 ---
 
+## Required Verifiers
+
+```bash
+npm run verify:organ-parity
+npm run verify:scripts-boundary
+npm run lint:markers
+npm test
+npx tsx scripts/verify-track-a-lock.ts
+```
+
+---
+
 ## Definition of Done
 
-- [ ] Manifest generation implemented
-- [ ] Merkle root computation working
-- [ ] Health check operational
-- [ ] Graph API v2 endpoint added
-- [ ] G-HEALTH gate implemented
-- [ ] Shadow ledger logging added
-- [ ] Tests passing
-- [ ] Markers present (@implements, @satisfies)
-
+- [ ] All Execution Obligations completed
+- [ ] G-HEALTH gate passing
+- [ ] Evidence artifacts produced
+- [ ] Verifiers green
+- [ ] TDD registered as E06 in graph (`DESIGN-TRACKB-B1`)
+- [ ] TDD linked to implementation SourceFiles via R14

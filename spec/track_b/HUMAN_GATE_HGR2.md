@@ -9,8 +9,11 @@
 ## Purpose
 
 HGR-2 is the most critical human gate in the entire roadmap. It marks the transition from:
+
 - **Before:** Gnosis validated by external shadow ledger
 - **After:** Gnosis IS the oracle; bootstrap scripts retired
+
+**This transition is IRREVERSIBLE.**
 
 ---
 
@@ -19,10 +22,13 @@ HGR-2 is the most critical human gate in the entire roadmap. It marks the transi
 Before HGR-2 review begins:
 
 - [ ] All Track B stories complete
-- [ ] All 8 gates passing
+- [ ] All Track A gates + all Track B gates passing
 - [ ] Shadow ledger vs Gnosis graph: 100% match confirmed
 - [ ] Closure check: deterministic ingestion confirmed
 - [ ] Semantic corpus quality requirements met
+- [ ] Post-implementation verifiers pass:
+  - `npm run verify:tdd-registry`
+  - `npm run verify:track-b-requirement-mapping`
 
 ---
 
@@ -31,9 +37,10 @@ Before HGR-2 review begins:
 | Material | Location | Purpose |
 |----------|----------|---------|
 | Track B Closeout Packet | `docs/verification/track_b/B_CLOSEOUT_PACKET_*.md` | Evidence summary |
-| Gate Results | `npm run verify:all-gates` | All 8 gates |
+| Gate Results | `npm run verify:all-gates` | All gates |
 | Closure Report | `npm run verify:closure` | Determinism proof |
 | Drift Report | `npm run verify:drift` | Zero drift proof |
+| TDD Registry | `docs/verification/track_b/TDD_REGISTRY_VERIFICATION.md` | E06/R14 links |
 | Semantic Corpus | `semantic-corpus/` | Training signals |
 
 ---
@@ -73,11 +80,25 @@ Upon approval:
 
 ## Rejection Criteria
 
-HGR-2 MUST be rejected if:
+HGR-2 **MUST** be rejected if:
 
-- Any of the 8 gates fail
+- Any Track A gate fails
+- Any Track B gate fails (G-HEALTH, G-REGISTRY, G-DRIFT, G-CLOSURE)
 - Shadow ledger ↔ graph mismatch detected
-- Closure check fails (non-deterministic)
+- Closure check fails (non-deterministic ingestion)
 - Semantic corpus quality below threshold
-- Any Track B AC lacks traceability markers
+- TDD registry verification fails (E06 nodes missing or unlinked)
+- Any Related Canonical Requirements lack traceability markers
 
+---
+
+## Governance Note
+
+**Track B verification is gate-based, not AC-based.**
+
+- Execution Obligations (B.x.y) are planning checkpoints only
+- Verification authority resides in gate outcomes and HGR-2 approval
+- Track B does NOT use `@satisfies AC-B.*` markers
+- Track B does NOT use `@implements STORY-B.*` markers
+
+If a Track B TDD lists Related Canonical Requirements (existing BRD IDs), those files MUST have canonical markers (`@implements STORY-*`, `@satisfies AC-*`).

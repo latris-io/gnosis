@@ -1,28 +1,94 @@
+---
+tdd:
+  id: DESIGN-TRACKB-B3
+  type: TechnicalDesign
+  version: "1.0.0"
+  status: planned
+---
+
 # Story B.3: Drift Detection
 
 **Track:** B (Zero Drift)  
 **Duration:** ~2 days  
-**Gate:** G-DRIFT
+**Gate:** G-DRIFT  
+**TDD ID:** `DESIGN-TRACKB-B3`
 
 ---
 
-## User Story
+## Purpose
 
-**As a** traceability system  
-**I want** to detect changes between builds  
-**So that** regressions are caught
+Detect changes between graph snapshots to identify regressions, unexpected mutations, or structural drift.
 
 ---
 
-## Acceptance Criteria
+## Entry Criteria
 
-| AC | Description | Pillar |
+- [ ] B.1 Ground Truth Engine complete
+- [ ] B.2 BRD Registry complete
+- [ ] Graph API v1 operational
+
+---
+
+## Scope
+
+### In Scope
+
+- Graph snapshot creation with Merkle roots
+- Diff computation (adds, deletes, mutations)
+- G-DRIFT gate implementation
+- Drift reporting via Graph API v2
+- Shadow ledger logging for drift detection
+
+### Out of Scope
+
+- Modification of Track A extraction logic
+- Changes to existing entity schemas
+- Direct database access
+
+---
+
+## Related Canonical Requirements (Optional; BRD-only)
+
+None.
+
+This Track B capability (Drift Detection) is defined by the Roadmap Track B scope, not by a specific BRD requirement.
+
+---
+
+## Execution Obligations (Roadmap-defined)
+
+| ID | Description | Pillar |
 |----|-------------|--------|
-| AC-B.3.1 | Create GraphSnapshot with Merkle root | — |
-| AC-B.3.2 | Diff snapshots: adds, deletes, mutations | — |
-| AC-B.3.3 | G-DRIFT gate: fail if unexpected changes | Gate |
-| AC-B.3.4 | Drift report via Graph API v2 | API |
-| AC-B.3.5 | Log drift detection to shadow ledger | Shadow |
+| B.3.1 | Create GraphSnapshot with Merkle root | — |
+| B.3.2 | Diff snapshots: adds, deletes, mutations | — |
+| B.3.3 | G-DRIFT gate: fail if unexpected changes | Gate |
+| B.3.4 | Drift report via Graph API v2 | API |
+| B.3.5 | Log drift detection to shadow ledger | Shadow |
+| B.3.6 | Capture semantic signals for suspicious drift | Corpus |
+
+**Important:** Execution Obligations (B.x.y) are planning checkpoints only; verification authority resides exclusively in gate outcomes and HGR approvals.
+
+---
+
+## Gate(s) Involved
+
+- **G-DRIFT**: Zero drift detected between ingestions (fail if unexpected changes)
+
+---
+
+## Evidence Artifacts
+
+- `docs/verification/track_b/B3_DRIFT_DETECTION_EVIDENCE.md`
+
+---
+
+## Implementation Constraints
+
+- Access Track A data via Graph API v1 only
+- Do not modify Track A locked surfaces
+- Place implementation in `src/services/track_b/drift-detection/`
+- Do NOT add `@satisfies AC-B.*` markers
+- Do NOT add `@implements STORY-B.*` markers
 
 ---
 
@@ -81,13 +147,23 @@ interface DriftReport {
 
 ---
 
+## Required Verifiers
+
+```bash
+npm run verify:organ-parity
+npm run verify:scripts-boundary
+npm run lint:markers
+npm test
+npx tsx scripts/verify-track-a-lock.ts
+```
+
+---
+
 ## Definition of Done
 
-- [ ] Snapshot creation implemented
-- [ ] Diff algorithm working
-- [ ] G-DRIFT gate implemented
-- [ ] Drift report endpoint added
-- [ ] Shadow ledger logging added
-- [ ] Tests passing
-- [ ] Markers present
-
+- [ ] All Execution Obligations completed
+- [ ] G-DRIFT gate passing
+- [ ] Evidence artifacts produced
+- [ ] Verifiers green
+- [ ] TDD registered as E06 in graph (`DESIGN-TRACKB-B3`)
+- [ ] TDD linked to implementation SourceFiles via R14

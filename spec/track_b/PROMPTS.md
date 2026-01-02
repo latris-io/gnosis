@@ -13,8 +13,32 @@ Before implementing any Track B story:
 2. **Track A is READ-ONLY** — access only via Graph API v1
 3. **Use `src/api/v1/*` or `src/services/graph/*`** for all graph reads
 4. **DO NOT import from Track A locked surfaces**
-5. **Place Track B code in new directories** (e.g., `src/services/track_b/*`)
+5. **Place Track B code in new directories** (e.g., `src/services/track_b/*`, `src/api/v2/*`)
 6. **Place Track B verification artifacts in `docs/verification/track_b/`**
+
+---
+
+## Marker Guidance (CRITICAL)
+
+**Track B does NOT use AC-B.* or STORY-B.* markers:**
+
+- Do NOT add `@satisfies AC-B.*` markers — these are not BRD-canonical ACs
+- Do NOT add `@implements STORY-B.*` markers — these are not BRD stories
+- Execution Obligations (B.x.y) are planning checkpoints only, NOT marker targets
+
+**When to use canonical markers:**
+
+- If a Track B TDD lists "Related Canonical Requirements" with existing BRD IDs
+- Then the implementation file MUST use `@implements STORY-*` or `@satisfies AC-*`
+- Only use markers for EXISTING BRD identifiers
+
+**Gate verification replaces AC-based verification in Track B.**
+
+---
+
+## Verification Authority
+
+Execution Obligations (B.x.y) are planning checkpoints only; verification authority resides exclusively in gate outcomes and HGR approvals.
 
 ---
 
@@ -36,7 +60,8 @@ Implement a ground truth engine that:
 Constraints:
 - Access Track A entities via Graph API v1 only
 - Create new service in src/services/track_b/ground-truth/
-- Add markers: @implements STORY-B.1, @satisfies AC-B.1.*
+- Do NOT add @satisfies AC-B.* markers
+- Do NOT add @implements STORY-B.* markers
 ```
 
 ---
@@ -56,7 +81,7 @@ Implement a BRD registry that:
 5. Logs BRD parsing to shadow ledger
 
 Constraints:
-- Reuse existing BRD parser if compatible
+- Reuse existing BRD parser if compatible (call via ops layer)
 - Query Track A BRD entities via Graph API v1
 - Add new registry service in src/services/track_b/brd-registry/
 ```
@@ -112,7 +137,7 @@ Constraints:
 ```
 You are implementing Story B.5: Shadow Ledger Migration.
 
-Read the complete story card: spec/track_b/stories/B5_SHADOW_LEDGER_MIGRATION.md
+Read the complete story card: spec/track_b/stories/B5_SHADOW_LEDGER.md
 
 Implement ledger migration that:
 1. Reads shadow ledger JSONL files
@@ -146,7 +171,7 @@ Extend Graph API with:
 Constraints:
 - Build on Graph API v1 patterns
 - Do not modify v1 endpoints
-- Add v2 endpoints in new module
+- Add v2 endpoints in src/api/v2/
 - Document all new endpoints
 ```
 
@@ -157,7 +182,7 @@ Constraints:
 ```
 You are implementing Story B.7: Semantic Corpus Export.
 
-Read the complete story card: spec/track_b/stories/B7_SEMANTIC_CORPUS_EXPORT.md
+Read the complete story card: spec/track_b/stories/B7_SEMANTIC_CORPUS.md
 
 Implement corpus export that:
 1. Reads semantic signals from corpus files
@@ -170,6 +195,22 @@ Constraints:
 - ≥100 signals required (Track A + B)
 - Export format must be documented
 - Quality threshold must be configurable
+```
+
+---
+
+## Evidence Artifact Naming
+
+Track B evidence artifacts should follow this pattern:
+
+```
+docs/verification/track_b/
+  B_CLOSEOUT_PACKET_<YYYY-MM-DD>.md
+  TDD_REGISTRY_VERIFICATION.md
+  REQUIREMENT_TDD_CODE_MAPPING.md
+  B1_GROUND_TRUTH_EVIDENCE.md
+  B2_BRD_REGISTRY_EVIDENCE.md
+  ...
 ```
 
 ---
@@ -187,7 +228,7 @@ Run the following verification:
 4. npm run verify:scripts-boundary
 5. npm run lint:markers
 6. TRACK_A_PHASE=A4 npm run verify:track-milestone
+7. npx tsx scripts/verify-track-a-lock.ts
 
 All must pass. Track A gates must remain green.
 ```
-

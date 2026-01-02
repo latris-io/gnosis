@@ -1,7 +1,8 @@
 # Track B Entry Criteria
 
 **Track:** B (Zero Drift)  
-**Prerequisite Gate:** HGR-1.1 (Track A Extension)
+**Prerequisite Gate:** HGR-1.1 (Track A Extension)  
+**Baseline Tag:** `track-a5-green`
 
 ---
 
@@ -36,6 +37,47 @@
 
 ---
 
+## Read-Only Constraint
+
+Track B is **READ-ONLY** relative to Track A:
+
+- Access Track A data **only** via Graph API v1
+- Do NOT import from Track A locked surfaces
+- Do NOT modify Track A schema, entities, relationships, or locked surfaces
+
+---
+
+## Track B Gates to Be Introduced
+
+| Gate | Purpose |
+|------|---------|
+| G-HEALTH | System health metrics nominal |
+| G-REGISTRY | BRD registry complete and queryable |
+| G-DRIFT | Zero drift between ingestions |
+| G-CLOSURE | Re-ingestion produces identical graph |
+
+---
+
+## Advisory Note: Track A Coverage Gaps
+
+Track A coverage gaps (ACs without R19 links) are **advisory** unless strict mode is enabled.
+
+- Default mode: gaps are warnings, not blockers
+- Strict mode (`--strict-ac-coverage`): gaps cause FAIL
+- See: `npx tsx scripts/verification/a1-a4-coverage-report.ts`
+
+---
+
+## STOP Conditions
+
+**STOP and escalate via CID if:**
+
+- Any Track A locked surface must be modified
+- Any gate fails and cannot be fixed without Track A changes
+- Ambiguity in spec requires BRD/UTG clarification
+
+---
+
 ## Entry Verification Commands
 
 ```bash
@@ -56,6 +98,9 @@ npm run verify:scripts-boundary
 
 # Marker governance
 npm run lint:markers
+
+# Track A lock
+npx tsx scripts/verify-track-a-lock.ts
 ```
 
 All must pass before proceeding.
@@ -70,10 +115,10 @@ I, [Name], certify that:
 1. [ ] All Track A exit criteria are met
 2. [ ] HGR-1.1 is approved
 3. [ ] All entry verification commands pass
-4. [ ] Track B can proceed
+4. [ ] Track A locked surfaces are intact
+5. [ ] Track B can proceed
 
 Signature: _____________
 Date: _____________
 Role: _____________
 ```
-

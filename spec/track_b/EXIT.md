@@ -1,7 +1,8 @@
 # Track B Exit Criteria
 
 **Track:** B (Zero Drift)  
-**Gate:** HGR-2
+**Gate:** HGR-2  
+**Exit Tag:** `track-b-green`
 
 ---
 
@@ -34,9 +35,9 @@
 ### Verification
 
 - [ ] G-API: No direct database access in Track B code
-- [ ] All 8 gates passing (4 Track A + 4 Track B)
-- [ ] All Track B ACs mapped to implementation (R19)
-- [ ] All Track B ACs mapped to tests (R37)
+- [ ] **All Track A gates + all Track B gates pass**
+- [ ] Track B TDDs registered as E06 nodes
+- [ ] Track B TDDs linked to implementation via R14
 
 ---
 
@@ -57,7 +58,49 @@ npm run verify:closure
 
 # Drift check
 npm run verify:drift
+
+# TDD registry verification
+npm run verify:tdd-registry
 ```
+
+---
+
+## HGR-2 Readiness Checklist
+
+Before requesting HGR-2 approval:
+
+- [ ] All exit criteria above are met
+- [ ] Track B closeout packet prepared (`docs/verification/track_b/B_CLOSEOUT_PACKET_*.md`)
+- [ ] Shadow ledger vs Gnosis graph: 100% match confirmed
+- [ ] Closure check: deterministic ingestion confirmed
+- [ ] Semantic corpus quality requirements met
+- [ ] Post-implementation verifiers pass:
+  - `npm run verify:tdd-registry`
+  - `npm run verify:track-b-requirement-mapping`
+
+---
+
+## Oracle Transition Acknowledgment
+
+**This transition is IRREVERSIBLE.**
+
+After HGR-2 approval:
+- Gnosis becomes the oracle
+- Bootstrap scripts are retired
+- External validation is no longer authoritative
+
+See: `spec/track_b/HUMAN_GATE_HGR2.md`
+
+---
+
+## Evidence Artifacts Required
+
+All evidence must be under `docs/verification/track_b/**`:
+
+- `B_CLOSEOUT_PACKET_<date>.md` — Summary of Track B completion
+- `TDD_REGISTRY_VERIFICATION.md` — E06 nodes and R14 links
+- `REQUIREMENT_TDD_CODE_MAPPING.md` — Traceability chain (if BRD IDs referenced)
+- Per-story evidence as needed
 
 ---
 
@@ -67,7 +110,7 @@ npm run verify:drift
 I, [Name], certify that:
 
 1. [ ] All Track B stories are complete
-2. [ ] All 8 gates are passing
+2. [ ] All Track A gates + all Track B gates pass
 3. [ ] Shadow ledger is migrated to graph
 4. [ ] Closure check succeeds
 5. [ ] Track B is ready for HGR-2
@@ -76,4 +119,3 @@ Signature: _____________
 Date: _____________
 Role: _____________
 ```
-
