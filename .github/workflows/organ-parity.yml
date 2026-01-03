@@ -86,7 +86,7 @@ jobs:
       #    Captures git SHA, environment, and graph state for B.3/B.4
       # ------------------------------------------------------------
       - name: Write extraction provenance (Track B)
-        run: npx tsx scripts/verification/write-extraction-provenance.ts
+        run: npx tsx scripts/track_b/write-extraction-provenance.ts
 
       # ------------------------------------------------------------
       # 7) Test suite (prevents silent regressions)
