@@ -86,14 +86,14 @@ async function runFullTrackAPipeline(projectId: string): Promise<void> {
 // Precheck (Validate Provenance Only)
 // ============================================================
 
-export async function runPrecheck(): Promise<{
+export async function runPrecheck(providedRunId?: string): Promise<{
   binding: RunBinding;
   provenance: ProvenanceValidationResult;
   valid: boolean;
 }> {
   console.log('\n🔍 B.4 Precheck: Validating provenance...\n');
 
-  const binding = await captureRunBinding();
+  const binding = await captureRunBinding(providedRunId);
 
   console.log(`  Run ID: ${binding.run_id}`);
   console.log(`  Git SHA: ${binding.git_sha.slice(0, 12)}...`);
@@ -120,11 +120,11 @@ export async function runPrecheck(): Promise<{
 // Full Closure Run
 // ============================================================
 
-export async function runClosure(repoRoot: string): Promise<ClosureResult> {
+export async function runClosure(repoRoot: string, providedRunId?: string): Promise<ClosureResult> {
   console.log('\n🔒 B.4 Closure Check: Starting...\n');
 
   // 1. Capture bindings (includes v2 health check)
-  const binding = await captureRunBinding();
+  const binding = await captureRunBinding(providedRunId);
   console.log(`  Run ID: ${binding.run_id}`);
   console.log(`  Git SHA: ${binding.git_sha.slice(0, 12)}...`);
   console.log(`  Working Tree Clean: ${binding.working_tree_clean ? 'Yes' : 'No (dirty)'}`);

@@ -37,8 +37,8 @@ function printUsage(): void {
 B.4 Closure Check
 
 Usage:
-  npx tsx scripts/closure.ts precheck [--confirm-repair]
-  npx tsx scripts/closure.ts run --confirm-repair
+  npx tsx scripts/closure.ts precheck [--run-id <id>]
+  npx tsx scripts/closure.ts run --confirm-repair --run-id <id>
 
 Commands:
   precheck  Validate provenance and V2 health only (no ingestion)
@@ -50,20 +50,35 @@ Required Environment:
 
 Options:
   --confirm-repair     Required for 'run' command (Tier 2 operator guard)
+  --run-id <id>        Required. Pre-generated run ID (format: B4-CLOSURE-<timestamp>)
   --help               Show this help message
 
-Examples:
-  # Validate provenance only
-  PROJECT_ID=... GRAPH_API_V2_URL=http://localhost:3001 npx tsx scripts/closure.ts precheck
+Workflow:
+  # 1. Generate run_id
+  RUN_ID="B4-CLOSURE-$(date -u +%Y-%m-%dT%H-%M-%S-000Z)"
 
-  # Full closure run
-  PROJECT_ID=... GRAPH_API_V2_URL=http://localhost:3001 npx tsx scripts/closure.ts run --confirm-repair
+  # 2. Create operator evidence from template
+  cp docs/verification/track_b/templates/B4_OPERATOR_EVIDENCE_TEMPLATE.md \\
+     "docs/verification/track_b/B4_OPERATOR_EVIDENCE_\${RUN_ID}.md"
+
+  # 3. Fill in operator evidence with current SHA
+
+  # 4. Run closure
+  PROJECT_ID=... GRAPH_API_V2_URL=... npx tsx scripts/closure.ts run --confirm-repair --run-id "\$RUN_ID"
 `);
 }
 
 // ============================================================
 // Main
 // ============================================================
+
+function parseRunId(args: string[]): string | undefined {
+  const idx = args.indexOf('--run-id');
+  if (idx !== -1 && args[idx + 1]) {
+    return args[idx + 1];
+  }
+  return undefined;
+}
 
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
@@ -75,6 +90,7 @@ async function main(): Promise<void> {
 
   const command = args[0];
   const hasConfirmRepair = args.includes('--confirm-repair');
+  const runId = parseRunId(args);
 
   // Validate environment
   if (!process.env.PROJECT_ID) {
@@ -91,7 +107,7 @@ async function main(): Promise<void> {
 
   switch (command) {
     case 'precheck': {
-      const result = await runPrecheck();
+      const result = await runPrecheck(runId);
       process.exit(result.valid ? 0 : 1);
     }
 
@@ -104,12 +120,25 @@ async function main(): Promise<void> {
         console.error('  To confirm you understand the impact, add: --confirm-repair');
         console.error('');
         console.error('  Example:');
-        console.error('    PROJECT_ID=... GRAPH_API_V2_URL=... npx tsx scripts/closure.ts run --confirm-repair');
+        console.error('    PROJECT_ID=... GRAPH_API_V2_URL=... npx tsx scripts/closure.ts run --confirm-repair --run-id <id>');
         console.error('');
         process.exit(1);
       }
 
-      const result = await runClosure(REPO_ROOT);
+      if (!runId) {
+        console.error('\n❌ ERROR: --run-id is required for closure run');
+        console.error('');
+        console.error('  Generate a run ID first:');
+        console.error('    RUN_ID="B4-CLOSURE-$(date -u +%Y-%m-%dT%H-%M-%S-000Z)"');
+        console.error('');
+        console.error('  Then create operator evidence:');
+        console.error('    cp docs/verification/track_b/templates/B4_OPERATOR_EVIDENCE_TEMPLATE.md \\');
+        console.error('       "docs/verification/track_b/B4_OPERATOR_EVIDENCE_${RUN_ID}.md"');
+        console.error('');
+        process.exit(1);
+      }
+
+      const result = await runClosure(REPO_ROOT, runId);
 
       console.log('\n' + '='.repeat(60));
       console.log(`\n  B.4 Closure Check: ${result.pass ? '✅ PASS' : '❌ FAIL'}`);

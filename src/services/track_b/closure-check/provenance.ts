@@ -59,10 +59,10 @@ export function generateRunId(): string {
 // Run Binding Capture
 // ============================================================
 
-export async function captureRunBinding(): Promise<RunBinding> {
+export async function captureRunBinding(providedRunId?: string): Promise<RunBinding> {
   const sha = execSync('git rev-parse HEAD').toString().trim();
   const status = execSync('git status --porcelain').toString().trim();
-  const runId = generateRunId();
+  const runId = providedRunId ?? generateRunId();
   const v2Url = process.env.GRAPH_API_V2_URL;
 
   if (!process.env.PROJECT_ID) {
