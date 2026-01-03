@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-01-02T22:31:24.857Z",
-  "merkle_root": "6f4bd324c7ba5aa289a2731f7c3fd7f37ebd8d558f13bef784260640fc78f0e0",
+  "generated_at": "2026-01-02T23:57:10.695Z",
+  "merkle_root": "d7b2f9e7e16a0ef80798f9bf6d1c292d9dc3f7727869defc1fd2b7c8954ed182",
   "file_count": 159,
   "scope": [
     "src/**",

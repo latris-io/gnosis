@@ -1,6 +1,6 @@
 # Track B TDD Registry Verification
 
-**Generated:** 2026-01-02T23:09:10.124Z  
+**Generated:** 2026-01-02T23:59:51.107Z  
 **Project ID:** 6df2f456-440d-4958-b475-d9808775ff69
 
 ---
@@ -10,12 +10,12 @@
 | Metric | Count |
 |--------|-------|
 | E06 TechnicalDesign nodes created | 0 |
-| E06 TechnicalDesign nodes updated | 0 |
-| E06 TechnicalDesign nodes no-op | 7 |
-| E06 total modified (created+updated) | 0 |
-| R14 IMPLEMENTED_BY edges created | 8 |
+| E06 TechnicalDesign nodes updated | 1 |
+| E06 TechnicalDesign nodes no-op | 6 |
+| E06 total modified (created+updated) | 1 |
+| R14 IMPLEMENTED_BY edges created | 7 |
 | R14 edges pending (file not present) | 0 |
-| Errors | 1 |
+| Errors | 0 |
 
 ---
 
@@ -27,13 +27,12 @@ _None created_
 
 ## E06 TechnicalDesign Nodes Updated
 
-_None updated_
+- `TDD-TRACKB-B1`
 
 ---
 
 ## E06 TechnicalDesign Nodes No-Op
 
-- `TDD-TRACKB-B1`
 - `TDD-TRACKB-B2`
 - `TDD-TRACKB-B3`
 - `TDD-TRACKB-B4`
@@ -54,19 +53,12 @@ _None updated_
 | `TDD-TRACKB-B1` | `FILE-src/services/track_b/ground-truth/health.ts` |
 | `TDD-TRACKB-B1` | `FILE-src/services/track_b/ground-truth/ledger.ts` |
 | `TDD-TRACKB-B1` | `FILE-src/services/track_b/ground-truth/index.ts` |
-| `TDD-TRACKB-B1` | `FILE-scripts/ground-truth.ts` |
 
 ---
 
 ## Pending R14 Edges (File Not Present)
 
 _None pending_
-
----
-
-## Errors
-
-- R14 persistence failed: Cannot resolve to_entity_id for relationship R14:TDD-TRACKB-B1:FILE-scripts/ground-truth.ts: entity "FILE-scripts/ground-truth.ts" not found in project 6df2f456-440d-4958-b475-d9808775ff69
 
 ---
 

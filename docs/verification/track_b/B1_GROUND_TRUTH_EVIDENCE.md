@@ -1,19 +1,7 @@
 # B.1 Ground Truth Evidence
 
-**Generated:** 2026-01-02T22:31:25.139Z  
+**Generated:** 2026-01-02T23:57:28.050Z  
 **Project ID:** 6df2f456-440d-4958-b475-d9808775ff69
-
----
-
-## Verification Summary
-
-| Verifier | Status | Notes |
-|----------|--------|-------|
-| `verify:organ-parity` | ✅ PASS | — |
-| `verify:scripts-boundary` | ✅ PASS | `ground-truth.ts` skipped via `@g-api-exception TRACK_B_OWNED` |
-| `lint:markers` | ✅ PASS | — |
-| `verify-track-a-lock` | ✅ PASS | No Track A locked surfaces modified |
-| G-HEALTH | ✅ PASS | Score: 100 (baseline ↔ disk) |
 
 ---
 
@@ -30,8 +18,8 @@
 
 | Field | Value |
 |-------|-------|
-| Expected Root | `6f4bd324c7ba5aa289a2731f7c3fd7f37ebd8d558f13bef784260640fc78f0e0` |
-| Computed Root | `6f4bd324c7ba5aa289a2731f7c3fd7f37ebd8d558f13bef784260640fc78f0e0` |
+| Expected Root | `d7b2f9e7e16a0ef80798f9bf6d1c292d9dc3f7727869defc1fd2b7c8954ed182` |
+| Computed Root | `d7b2f9e7e16a0ef80798f9bf6d1c292d9dc3f7727869defc1fd2b7c8954ed182` |
 | Match | ✅ |
 
 ---
@@ -57,34 +45,22 @@
 
 ## Graph Coverage
 
-**Status:** ⏳ DEFERRED TO B.6 (Graph API v2) — per spec update
+**Status:** ⏳ DEFERRED TO B.6 (Graph API v2)
 
-**Why deferred (governance-compliant decision):**
 
-1. **Graph API v1 routes** (Track A locked surface `src/http/**`):
-   - `GET /api/graph/:id/relationships` — requires entity ID, returns adjacent relationships
-   - `POST /api/graph/traverse` — requires start_id, returns connected subgraph
-   - **Neither can enumerate all E11 entities**
+**Why deferred:**
+- Graph API v1 does not expose an entity listing endpoint
+- Track B cannot modify Track A locked surfaces (`src/http/**`)
+- Full graph coverage validation will be added in B.6 (Graph API v2)
 
-2. **Track A lock constraint:**
-   - Adding `/api/v1/entities` would require modifying `src/http/routes/graph.ts`
-   - `src/http/**` is a locked Track A surface per `verify-track-a-lock.ts`
-   - Track B cannot modify locked surfaces without CID + `REOPEN_TRACK_A: true`
-
-3. **Spec alignment:**
-   - B.1 story card updated to clarify scope: baseline ↔ disk only
-   - B.6 story card updated to add entity listing endpoint (B.6.1)
-   - Graph coverage validation will be enforced before HGR-2 via B.6
-
-**B.1 validates (per updated spec):**
+**B.1 validates:**
 - Merkle root integrity (baseline ↔ disk)
 - File count consistency
 - Scope version compatibility
 
-**B.6 will add (per updated spec):**
-- `GET /api/v2/entities?entity_type=E11` endpoint
-- Graph coverage check integrated into `/api/v2/health`
-- Full disk ↔ graph comparison required for HGR-2
+**B.6 will add:**
+- `/api/v2/entities` endpoint for E11 listing
+- Full disk ↔ graph comparison
 
 
 ---
