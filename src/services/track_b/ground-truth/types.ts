@@ -64,8 +64,11 @@ export interface GroundTruthBaseline {
 }
 
 // Shadow ledger entry for Track B operations
+// NOTE: `timestamp` is the canonical ledger time field (ISO-8601).
+// `ts` is a legacy alias kept temporarily for backward compatibility.
 export interface GroundTruthLedgerEntry {
-  ts: string;
+  timestamp: string;  // Canonical (ISO-8601)
+  ts?: string;        // Legacy alias (deprecated)
   action: 'SET_BASELINE' | 'HEALTH_CHECK';
   merkle_root: string;
   file_count: number;

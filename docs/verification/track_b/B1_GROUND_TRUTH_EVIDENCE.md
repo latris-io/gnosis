@@ -1,6 +1,6 @@
 # B.1 Ground Truth Evidence
 
-**Generated:** 2026-01-02T23:57:28.050Z  
+**Generated:** 2026-01-03T18:00:32.254Z  
 **Project ID:** 6df2f456-440d-4958-b475-d9808775ff69
 
 ---
@@ -9,8 +9,8 @@
 
 | Metric | Value |
 |--------|-------|
-| **Score** | 100 |
-| **G-HEALTH Pass** | ✅ PASS |
+| **Score** | 0 |
+| **G-HEALTH Pass** | ❌ FAIL |
 
 ---
 
@@ -19,8 +19,8 @@
 | Field | Value |
 |-------|-------|
 | Expected Root | `d7b2f9e7e16a0ef80798f9bf6d1c292d9dc3f7727869defc1fd2b7c8954ed182` |
-| Computed Root | `d7b2f9e7e16a0ef80798f9bf6d1c292d9dc3f7727869defc1fd2b7c8954ed182` |
-| Match | ✅ |
+| Computed Root | `129050df0ea8df9b46e915cdfa8cb077c5906bce6b1dc4a53b144a77c0b38a1a` |
+| Match | ❌ |
 
 ---
 
@@ -29,7 +29,7 @@
 | Metric | Count |
 |--------|-------|
 | Expected files | 159 |
-| Actual files | 159 |
+| Actual files | 174 |
 
 ---
 
@@ -92,45 +92,9 @@
 
 ---
 
-## R14 Parity Check (PG ↔ Neo4j)
-
-**TDD:** `TDD-TRACKB-B1`
-
-| Store | R14 Count | Status |
-|-------|-----------|--------|
-| PostgreSQL | 7 | ✅ |
-| Neo4j | 7 | ✅ |
-| **Parity** | — | ✅ MATCH |
-
-**Targets (both stores):**
-- `FILE-src/services/track_b/ground-truth/file-scope.ts`
-- `FILE-src/services/track_b/ground-truth/health.ts`
-- `FILE-src/services/track_b/ground-truth/index.ts`
-- `FILE-src/services/track_b/ground-truth/ledger.ts`
-- `FILE-src/services/track_b/ground-truth/manifest.ts`
-- `FILE-src/services/track_b/ground-truth/merkle.ts`
-- `FILE-src/services/track_b/ground-truth/types.ts`
-
----
-
-## Pre-Self-Ingestion Verification
-
-| Check | Result |
-|-------|--------|
-| Determinism replay (same root across runs) | ✅ PASS |
-| Change sensitivity (single file flips root) | ✅ PASS |
-| Scope invariance (excluded files don't affect root) | ✅ PASS |
-| Failure semantics (evidence always written) | ✅ PASS |
-| R14 + E11 consistency (edges point to valid E11s) | ✅ PASS |
-| R14 PG ↔ Neo4j parity | ✅ PASS |
-
----
-
 ## Ledger
 
-Operations logged to: `shadow-ledger/<project_id>/ledger.jsonl` (per CID-2026-01-03)
-
-**Entry discriminators:** `track: "B"`, `story: "B.1"`
+Operations logged to: `shadow-ledger/6df2f456-440d-4958-b475-d9808775ff69/ledger.jsonl`
 
 ---
 

@@ -32,12 +32,15 @@ function getLedgerPath(repoRoot: string): string {
 /**
  * Log a ground truth operation to the Track B shadow ledger.
  * 
+ * NOTE: `timestamp` is the canonical ledger time field (ISO-8601).
+ * `ts` is a legacy alias kept temporarily for backward compatibility.
+ * 
  * @param repoRoot - Absolute path to repository root
  * @param entry - Ledger entry (without timestamp - will be added)
  */
 export async function logGroundTruthOperation(
   repoRoot: string,
-  entry: Omit<GroundTruthLedgerEntry, 'ts'>
+  entry: Omit<GroundTruthLedgerEntry, 'timestamp' | 'ts'>
 ): Promise<void> {
   const ledgerPath = getLedgerPath(repoRoot);
   const ledgerDir = path.dirname(ledgerPath);
@@ -45,9 +48,15 @@ export async function logGroundTruthOperation(
   // Ensure directory exists
   await fs.promises.mkdir(ledgerDir, { recursive: true });
   
+  // Canonical timestamp (ISO-8601)
+  const iso = new Date().toISOString();
+  
   // Create full entry with timestamp and Track B discriminators
+  // NOTE: Both `timestamp` (canonical) and `ts` (legacy alias) are written
+  // for backward compatibility. `ts` will be removed in a future version.
   const fullEntry: GroundTruthLedgerEntry & { track: string; story: string; project_id: string } = {
-    ts: new Date().toISOString(),
+    timestamp: iso,
+    ts: iso, // legacy alias (to be removed later)
     track: 'B',
     story: 'B.1',
     project_id: PROJECT_ID,
