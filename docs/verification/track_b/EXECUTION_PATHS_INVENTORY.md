@@ -1,0 +1,372 @@
+# Execution Paths Inventory
+
+**Generated:** 2026-01-03T05:30:00Z  
+**Purpose:** Identify all state-mutating execution entrypoints and determine canonicalization/provenance requirements  
+**Scope:** `scripts/**` directory  
+**Status:** Investigation + Reporting Only (no code changes)
+
+---
+
+## Executive Summary
+
+### Top Findings
+
+1. **71 total scripts** exist under `scripts/` (including subdirectories)
+2. **scripts/** is excluded from E11 extraction by design (`filesystem-provider.ts` only extracts `src/**/*.ts`)
+3. **23 scripts** directly import from `src/ops/**` (state-mutating capability)
+4. **1 canonical CI entrypoint** exists: `scripts/run-a1-extraction.ts` (invoked by `organ-parity.yml`)
+5. **10 scripts** have `@g-api-exception` markers (skipped by boundary checker)
+6. **Multiple competing extraction entrypoints** exist (genesis-extract, continue-extract, run-a1-extraction)
+
+### Key Risks
+
+| Risk | Description | Severity |
+|------|-------------|----------|
+| Multiple extraction paths | 3+ scripts can build graph state with different sequences | HIGH |
+| No provenance for repair scripts | `scripts/repair/**` can mutate state without mandatory artifacts | MEDIUM |
+| si-readiness scripts are legacy | Many have `@ts-nocheck` and bypass current governance | MEDIUM |
+| Hardcoded PROJECT_IDs | Some repair scripts hardcode canonical project ID | LOW |
+
+---
+
+## Part A: Graph-Based Discovery
+
+### E11 SourceFile Coverage for scripts/**
+
+**Finding:** scripts/** is **excluded by design** from E11 extraction.
+
+Evidence from `src/extraction/providers/filesystem-provider.ts:145`:
+```typescript
+const files = await glob('src/**/*.ts', { cwd: rootPath, nodir: true });
+```
+
+Only `src/**/*.ts` is extracted as E11. This is intentional — scripts are operational tooling, not canonical source artifacts.
+
+**Graph query result:** 0 E11 entities under `FILE-scripts/**`
+
+### State-Mutation Sinks in Graph
+
+The following E12 Function entities represent persistence/sync operations:
+
+| Function | File (E11) | Operation |
+|----------|------------|-----------|
+| `persistEntities` | `FILE-src/ops/track-a.ts` | Writes entities to PG |
+| `persistRelationshipsAndSync` | `FILE-src/ops/track-a.ts` | Writes rels to PG + Neo4j |
+| `syncToNeo4j` | `FILE-src/ops/track-a.ts` | Syncs entities PG → Neo4j |
+| `replaceAllRelationshipsInNeo4j` | `FILE-src/ops/track-a.ts` | Replaces rels in Neo4j |
+| `extractAndPersistModules` | `FILE-src/ops/track-a.ts` | Derives + persists E15 |
+| `extractAndPersistContainmentRelationships` | `FILE-src/ops/track-a.ts` | Derives + persists R04-R07 |
+
+**Limitation:** Graph lacks complete CALLS edges from scripts to ops layer (scripts are not E11 entities).
+
+---
+
+## Part B: Source-Code Discovery
+
+### All Scripts Under `scripts/`
+
+| # | Script | Location |
+|---|--------|----------|
+| 1 | a3-data-purity-audit.ts | scripts/ |
+| 2 | a3-evidence.ts | scripts/ |
+| 3 | a3-replay-gate.ts | scripts/ |
+| 4 | a4-canonical-evidence.ts | scripts/ |
+| 5 | a4-parity-proof.ts | scripts/ |
+| 6 | audit-counts.ts | scripts/ |
+| 7 | audit-pillars.ts | scripts/ |
+| 8 | brd-registry.ts | scripts/ |
+| 9 | calibrate-tdds.ts | scripts/ |
+| 10 | check-brd-counts.ts | scripts/ |
+| 11 | check-constraints.ts | scripts/ |
+| 12 | check-db-role.ts | scripts/ |
+| 13 | check-r18-r19-parity.ts | scripts/ |
+| 14 | check-test-entities.ts | scripts/ |
+| 15 | determinism-check.ts | scripts/ |
+| 16 | extract-test-relationships.ts | scripts/ |
+| 17 | fix-e15-extraction.ts | scripts/ |
+| 18 | ground-truth.ts | scripts/ |
+| 19 | migrate-ledger-to-project-scope.ts | scripts/ |
+| 20 | pre-phase2-check.ts | scripts/ |
+| 21 | pristine-gate-neo4j.ts | scripts/ |
+| 22 | pristine-gate-postgres.ts | scripts/ |
+| 23 | rebuild-a3-pristine.ts | scripts/ |
+| 24 | register-track-b-tdds.ts | scripts/ |
+| 25 | run-a1-extraction.ts | scripts/ |
+| 26 | run-foundation-validation.ts | scripts/ |
+| 27 | setup-project.ts | scripts/ |
+| 28 | sync-relationships-replace.ts | scripts/ |
+| 29 | sync-relationships-to-neo4j.ts | scripts/ |
+| 30 | sync-to-neo4j.ts | scripts/ |
+| 31 | test-epoch-ledger.ts | scripts/ |
+| 32 | test-r36-r37.ts | scripts/ |
+| 33 | validate-a1-exit.ts | scripts/ |
+| 34 | validate-a2-exit.ts | scripts/ |
+| 35 | verify-cid-for-organ-changes.ts | scripts/ |
+| 36 | verify-cross-store.ts | scripts/ |
+| 37 | verify-infrastructure.ts | scripts/ |
+| 38 | verify-organ-parity.ts | scripts/ |
+| 39 | verify-scripts-boundary.ts | scripts/ |
+| 40 | verify-self-ingestion.ts | scripts/ |
+| 41 | verify-track-a-entry.ts | scripts/ |
+| 42 | verify-track-a-lock.ts | scripts/ |
+| 43 | verify-track-b-b1-b2-completeness.ts | scripts/ |
+| 44-50 | repair/*.ts | scripts/repair/ |
+| 51-66 | si-readiness/*.ts | scripts/si-readiness/ |
+| 67-71 | verification/*.ts | scripts/verification/ |
+
+**Total: 71 TypeScript scripts**
+
+### Scripts Importing from `src/ops/**`
+
+```bash
+grep -rl "src/ops/" scripts/
+```
+
+| Script | Ops Functions Used |
+|--------|-------------------|
+| run-a1-extraction.ts | persistEntities, extractAndPersistModules, extractAndPersistContainmentRelationships |
+| register-track-b-tdds.ts | persistEntities, persistRelationshipsAndSync |
+| calibrate-tdds.ts | persistEntities |
+| sync-to-neo4j.ts | syncToNeo4j |
+| sync-relationships-to-neo4j.ts | replaceAllRelationshipsInNeo4j, syncToNeo4j |
+| sync-relationships-replace.ts | replaceAllRelationshipsInNeo4j, verifyNeo4jParity |
+| fix-e15-extraction.ts | extractAndPersistModules, deleteR04Relationships, deleteE15ByInstanceIds |
+| rebuild-a3-pristine.ts | extractAndPersistMarkerRelationships, extractAndPersistTestRelationships |
+| setup-project.ts | initProject |
+| a3-replay-gate.ts | (indirect via ops) |
+| si-readiness/genesis-extract.ts | persistEntities, persistRelationshipsAndSync, syncToNeo4j, replaceAllRelationshipsInNeo4j |
+| si-readiness/continue-extract.ts | persistEntities, extractAndPersist*, syncToNeo4j |
+| si-readiness/extract-relationships.ts | syncRelationshipsToNeo4j |
+| si-readiness/finish-extract.ts | syncRelationshipsToNeo4j |
+| repair/backfill-missing-brd-acs.ts | persistEntities, persistRelationships |
+| repair/sync-neo4j.ts | syncToNeo4j, replaceAllRelationshipsInNeo4j |
+
+---
+
+## Part C: Tier Classification
+
+### Tier 1 — Canonical State Constructors
+
+Scripts that **must** run to build baseline graph state for CI/closure.
+
+| Script | Purpose | Mutates | Canonical? | Provenance? |
+|--------|---------|---------|------------|-------------|
+| **run-a1-extraction.ts** | Full entity extraction + derivations | PG + Neo4j | ✅ YES (CI blessed) | ⚠️ Partial (logs to ledger, no explicit epoch) |
+| register-track-b-tdds.ts | Track B TDD E06 + R14 registration | PG + Neo4j | ✅ YES (Track B blessed) | ✅ Evidence artifact |
+| setup-project.ts | Create project record | PG | ✅ YES | ❌ None |
+
+**run-a1-extraction.ts Analysis:**
+- **Is there exactly one blessed entrypoint?** YES — This is the only script invoked by CI (organ-parity.yml line 82).
+- **Competing entrypoints:** genesis-extract.ts and continue-extract.ts exist but are marked `LEGACY_SCAN_OK` and not CI-integrated.
+- **Risk:** Low — CI discipline enforced.
+
+**register-track-b-tdds.ts Analysis:**
+- Track B-owned, creates E06 + R14 for story cards
+- Writes evidence to `docs/verification/track_b/TDD_REGISTRY_VERIFICATION.md`
+- No competing entrypoint
+
+### Tier 2 — Maintenance / Repair / Migration
+
+Scripts that perform targeted mutations but are NOT baseline constructors.
+
+| Script | Purpose | Mutates | Quarantine Status |
+|--------|---------|---------|-------------------|
+| fix-e15-extraction.ts | Remediate E15 module issues | PG + Neo4j | ⚠️ Should require CID |
+| rebuild-a3-pristine.ts | Rebuild A3 marker extraction | PG + ledger | ⚠️ Epoch-based logging |
+| sync-to-neo4j.ts | Sync entities to Neo4j | Neo4j | Manual tool |
+| sync-relationships-to-neo4j.ts | Sync rels to Neo4j | Neo4j | Manual tool |
+| sync-relationships-replace.ts | Replace-sync rels to Neo4j | Neo4j | Manual tool |
+| migrate-ledger-to-project-scope.ts | Migrate ledger structure | Filesystem | One-time migration |
+| repair/backfill-missing-brd-acs.ts | Backfill missing E03/R02 | PG | ⚠️ Hardcoded project_id |
+| repair/sync-neo4j.ts | Repair Neo4j sync | Neo4j | ⚠️ Hardcoded project_id |
+| si-readiness/genesis-extract.ts | Legacy full extraction | PG + Neo4j | LEGACY (superseded by run-a1-extraction) |
+| si-readiness/continue-extract.ts | Continue aborted extraction | PG + Neo4j | LEGACY |
+| calibrate-tdds.ts | TDD validation + E08 seeding | PG | ⚠️ Conditional writes |
+| extract-test-relationships.ts | Extract test rels | PG | Manual tool |
+| test-r36-r37.ts | Test R36/R37 rels | PG | Development tool |
+
+**Quarantine Requirements:**
+1. Scripts in `scripts/repair/` should require explicit operator intent (e.g., `--confirm-repair` flag)
+2. All Tier 2 scripts should emit evidence artifacts before/after mutation
+3. Scripts with hardcoded PROJECT_IDs should accept env var override
+
+### Tier 3 — Read-Only Diagnostics
+
+Scripts that perform NO writes — safe to run ad-hoc.
+
+| Script | Purpose |
+|--------|---------|
+| verify-organ-parity.ts | Check organ doc consistency |
+| verify-scripts-boundary.ts | Check G-API boundary compliance |
+| verify-track-a-lock.ts | Check Track A lock enforcement |
+| verify-track-a-entry.ts | Verify Track A entry criteria |
+| verify-cross-store.ts | Check PG ↔ Neo4j parity |
+| verify-self-ingestion.ts | Verify extraction correctness |
+| verify-track-b-b1-b2-completeness.ts | B.1+B.2 completeness check |
+| verify-cid-for-organ-changes.ts | Check CID for organ changes |
+| check-brd-counts.ts | Verify BRD counts |
+| check-constraints.ts | Check DB constraints |
+| check-r18-r19-parity.ts | Check R18/R19 counts |
+| audit-counts.ts | Count audit |
+| audit-pillars.ts | Pillar audit |
+| pristine-gate-postgres.ts | Postgres pristine gate |
+| pristine-gate-neo4j.ts | Neo4j pristine gate |
+| a4-parity-proof.ts | A4 parity proof |
+| verification/*.ts | All verification readers/reconcilers |
+| ground-truth.ts (check command) | Health check (read-only) |
+| brd-registry.ts (check/gate commands) | Registry check (read-only) |
+
+---
+
+## Part D: CI & Workflow Integration
+
+### Current CI Configuration
+
+**File:** `.github/workflows/organ-parity.yml`
+
+```yaml
+# Key steps (in order):
+
+# 1) Track A lock enforcement
+- name: Enforce Track A lock (CID-gated)
+  run: npx tsx scripts/verify-track-a-lock.ts
+
+# 2) Organ document parity
+- name: Verify organ document parity
+  run: npm run verify:organ-parity
+
+# 3) CID enforcement
+- name: Verify CID for organ doc changes
+  run: npx tsx scripts/verify-cid-for-organ-changes.ts
+
+# 4) Scripts boundary
+- name: Verify G-API scripts boundary
+  run: npm run verify:scripts-boundary
+
+# 5) Graph state preparation (THE CANONICAL EXTRACTION)
+- name: Prepare graph state (extraction + derivations)
+  run: npx tsx scripts/run-a1-extraction.ts
+
+# 6) Test suite
+- name: Run test suite
+  run: npm test
+```
+
+### CI Observations
+
+1. **Single canonical extraction entrypoint:** `scripts/run-a1-extraction.ts` (line 82)
+2. **Graph prepared before tests:** Extraction runs before `npm test`
+3. **No explicit provenance artifact:** CI does not capture epoch/SHA for extraction run
+4. **No closure gate:** CI does not verify snapshot matches expected state
+
+---
+
+## Part E: @g-api-exception Usage
+
+### Scripts With Exception Markers
+
+```bash
+grep -rl "@g-api-exception" scripts/
+```
+
+| Script | Exception Reason |
+|--------|------------------|
+| verify-track-b-b1-b2-completeness.ts | VERIFICATION_SCRIPT — Read-only service access for parity |
+| ground-truth.ts | TRACK_B_OWNED — Track B service consumption |
+| brd-registry.ts | TRACK_B_OWNED — Track B service consumption |
+| pristine-gate-postgres.ts | AUDIT_SCRIPT — Direct DB for verification |
+| pristine-gate-neo4j.ts | AUDIT_SCRIPT — Direct DB for verification |
+| pre-phase2-check.ts | LEGACY_VERIFICATION_SCRIPT |
+| a4-parity-proof.ts | Direct — DB access for evidence |
+| a4-canonical-evidence.ts | Direct — DB access for evidence |
+| verification/a1-a4-coverage-report.ts | Direct — DB access for coverage |
+
+**Pattern:** Exceptions are used for:
+1. Read-only verification scripts requiring service/DB access
+2. Track B-owned scripts consuming Track B services
+3. Legacy scripts awaiting governance upgrade
+
+---
+
+## Part F: Minimal Recommended Action List
+
+### Priority 1 — Canonicalization (No Code Changes Yet)
+
+| Recommendation | Rationale | Effort |
+|----------------|-----------|--------|
+| **R1:** Document `run-a1-extraction.ts` as the blessed extraction entrypoint | Prevents competing scripts from being used accidentally | Doc update |
+| **R2:** Add extraction provenance artifact to CI | Capture epoch/SHA/timestamp for every CI extraction | Small script change |
+| **R3:** Deprecate si-readiness/genesis-extract.ts and continue-extract.ts | Superseded by run-a1-extraction.ts | Add deprecation notice |
+
+### Priority 2 — Repair Script Governance
+
+| Recommendation | Rationale | Effort |
+|----------------|-----------|--------|
+| **R4:** Require `--confirm-repair` flag for repair scripts | Prevents accidental mutation | Small CLI change |
+| **R5:** Emit before/after evidence for all Tier 2 scripts | Audit trail for manual repairs | Medium |
+| **R6:** Remove hardcoded PROJECT_IDs from repair scripts | Use env vars for flexibility | Small |
+
+### Priority 3 — Future Cleanup
+
+| Recommendation | Rationale | Effort |
+|----------------|-----------|--------|
+| **R7:** Move `@ts-nocheck` scripts to strict TypeScript | Governance compliance | Medium |
+| **R8:** Consider archiving si-readiness/ once no longer needed | Reduce confusion | Doc + folder move |
+
+---
+
+## Appendix: Script Details
+
+### run-a1-extraction.ts (Tier 1 — CANONICAL)
+
+**Location:** `scripts/run-a1-extraction.ts`  
+**Lines:** 358  
+**Markers:** `@implements STORY-64.1`, `@satisfies AC-64.1.*`
+
+**Purpose:** Orchestrates full Track A entity extraction + E15 derivation + R04-R07 containment relationships.
+
+**Mutates:**
+- Entities: E01-E52 (all Track A entity types) → PostgreSQL
+- Relationships: R04-R07, R16 (containment) → PostgreSQL
+- Sync: Entities + relationships → Neo4j
+
+**Prerequisites:**
+- `PROJECT_ID` env var
+- Database connections (PG + Neo4j)
+- Repository at extraction root
+
+**Invoked by CI:** YES (organ-parity.yml line 82)
+
+---
+
+### register-track-b-tdds.ts (Tier 1 — Track B)
+
+**Location:** `scripts/register-track-b-tdds.ts`  
+**Lines:** 580  
+**Markers:** None (Track B)
+
+**Purpose:** Parses Track B story cards and registers them as E06 TechnicalDesign nodes with R14 IMPLEMENTED_BY edges.
+
+**Mutates:**
+- Entities: E06 (TDD-TRACKB-B*) → PostgreSQL
+- Relationships: R14 → PostgreSQL + Neo4j
+
+**Prerequisites:**
+- `PROJECT_ID` env var
+- Track B story cards in `spec/track_b/stories/`
+
+**Evidence:** Writes to `docs/verification/track_b/TDD_REGISTRY_VERIFICATION.md`
+
+---
+
+## Conclusion
+
+The execution paths inventory reveals a **well-structured but partially governed** system:
+
+1. **CI is canonicalized** — `run-a1-extraction.ts` is the single blessed entrypoint
+2. **Repair/maintenance scripts lack mandatory evidence** — Risk of untracked mutations
+3. **Legacy si-readiness scripts should be deprecated** — Superseded by canonical entrypoint
+4. **Exception markers are used appropriately** — Clearly document boundary exceptions
+
+**Next Step:** Review this report and decide which recommendations to implement before proceeding with B.3 Drift Detection.
+
