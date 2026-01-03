@@ -1,24 +1,69 @@
 # Operator Scripts Allowlist
 
 **Generated:** 2026-01-03  
-**Purpose:** Document approved Tier 2 state-mutating scripts and their governance requirements  
+**Updated:** 2026-01-03 (B.4 governance alignment)  
+**Purpose:** Document approved state-mutating scripts and their governance requirements  
 **Status:** Active
 
 ---
 
 ## Overview
 
-This document lists all Tier 2 scripts (repair, maintenance, migration, legacy) that are permitted for operator use. Each script requires explicit confirmation before execution to prevent accidental state mutation.
+This document lists all approved state-mutating scripts permitted for operator use. Scripts are organized by tier:
+
+- **Tier 1:** Canonical entrypoints (CI-blessed, required for baseline construction)
+- **Tier 2:** Repair, maintenance, migration, verification scripts (require explicit confirmation)
+- **Tier 3:** Read-only diagnostics (no governance controls required)
 
 **Key Principles:**
-1. All Tier 2 scripts require `--confirm-repair` flag
-2. All Tier 2 scripts require `PROJECT_ID` env var (or `--project-id` flag)
+1. All Tier 1 and Tier 2 scripts require `PROJECT_ID` env var (or `--project-id` flag)
+2. All Tier 2 scripts require `--confirm-repair` flag
 3. All Tier 2 scripts emit evidence artifacts to `docs/verification/track_b/operator_runs/`
 4. Scripts NOT listed here are NOT approved for operator use
 
 ---
 
-## Approved Tier 2 Scripts
+## Tier 1 — Canonical Entrypoints
+
+These scripts are **required** to build baseline graph state. They are CI-blessed and used by B.4 Closure Check.
+
+### `scripts/run-a1-extraction.ts` — Canonical Track A Ingestion
+
+| Property | Value |
+|----------|-------|
+| **Purpose** | Full Track A entity extraction + E15 derivation + R04-R07 containment relationships |
+| **Tier** | 1 (Canonical) |
+| **Confirm Flag** | ❌ Not required (CI-blessed) |
+| **Required Env** | `PROJECT_ID` |
+| **Mutates** | PostgreSQL (entities, relationships), Neo4j (sync) |
+| **Invoked By** | CI (`organ-parity.yml`), B.4 Closure Check |
+| **Provenance** | `docs/verification/track_b/EXTRACTION_PROVENANCE.md` |
+
+**Notes:**
+- This is the **single canonical ingestion entrypoint** for Track A
+- All deprecated si-readiness scripts (genesis-extract, continue-extract, etc.) are superseded by this script
+- B.4 Closure Check invokes this script twice to prove determinism
+
+---
+
+### `scripts/register-track-b-tdds.ts` — Track B TDD Registration
+
+| Property | Value |
+|----------|-------|
+| **Purpose** | Parse Track B story cards and register as E06 + R14 |
+| **Tier** | 1 (Track B) |
+| **Confirm Flag** | ❌ Not required |
+| **Required Env** | `PROJECT_ID` |
+| **Mutates** | PostgreSQL (E06, R14), Neo4j (sync) |
+| **Evidence** | `docs/verification/track_b/TDD_REGISTRY_VERIFICATION.md` |
+
+**Notes:**
+- Must run after `run-a1-extraction.ts` for complete graph
+- B.4 Closure Check invokes this as part of full pipeline
+
+---
+
+## Tier 2 — Approved Operator Scripts
 
 ### Repair Scripts (`scripts/repair/`)
 
@@ -61,6 +106,36 @@ This document lists all Tier 2 scripts (repair, maintenance, migration, legacy) 
 | Script | Purpose | Confirm Flag | Evidence |
 |--------|---------|--------------|----------|
 | `migrate-ledger-to-project-scope.ts` | Migrate flat ledger to per-project structure | ❌ Not required (filesystem-only) | ✅ Written |
+
+---
+
+### Closure / Verification Scripts (`scripts/`)
+
+| Script | Purpose | Confirm Flag | Evidence |
+|--------|---------|--------------|----------|
+| `closure.ts` | Track B Closure Check (B.4) — proves deterministic ingestion | ✅ Required | ✅ Written |
+
+#### `scripts/closure.ts` — B.4 Closure Check
+
+| Property | Value |
+|----------|-------|
+| **Purpose** | Prove deterministic ingestion by running Track A pipeline twice and comparing whole-graph snapshots |
+| **Tier** | 2 |
+| **Confirm Flag** | `--confirm-repair` (REQUIRED) |
+| **Required Env** | `PROJECT_ID`, `GRAPH_API_V2_URL` |
+| **Evidence (Operator)** | `docs/verification/track_b/operator_runs/closure__<TIMESTAMP>__<SHORT_SHA>.md` |
+| **Evidence (Gate)** | `docs/verification/track_b/B4_CLOSURE_CHECK_EVIDENCE.md` |
+
+**Notes:**
+- Runs canonical Track A ingestion (`run-a1-extraction.ts` + `register-track-b-tdds.ts`) twice
+- Compares whole-graph snapshots via B.3 infrastructure (v2 enumeration)
+- Fails loudly on:
+  - Missing or mismatched provenance artifacts
+  - SHA drift between ingestion phases
+  - Non-determinism (any drift items detected)
+- Both operator evidence and gate evidence are required and serve different purposes:
+  - **Operator evidence:** Records environment, bindings, attestations
+  - **Gate evidence:** Records snapshot comparison, Merkle roots, G-CLOSURE result
 
 ---
 

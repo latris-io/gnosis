@@ -1,7 +1,7 @@
 # Execution Paths Inventory
 
 **Generated:** 2026-01-03T05:30:00Z  
-**Updated:** 2026-01-03T06:30:00Z (Governance hardening implemented)  
+**Updated:** 2026-01-03 (B.4 governance alignment)  
 **Purpose:** Identify all state-mutating execution entrypoints and determine canonicalization/provenance requirements  
 **Scope:** `scripts/**` directory  
 **Status:** Governance Controls Implemented
@@ -12,7 +12,7 @@
 
 ### Top Findings
 
-1. **71 total scripts** exist under `scripts/` (including subdirectories)
+1. **72 total scripts** exist under `scripts/` (including subdirectories)
 2. **scripts/** is excluded from E11 extraction by design (`filesystem-provider.ts` only extracts `src/**/*.ts`)
 3. **23 scripts** directly import from `src/ops/**` (state-mutating capability)
 4. **1 canonical CI entrypoint** exists: `scripts/run-a1-extraction.ts` (invoked by `organ-parity.yml`)
@@ -88,6 +88,7 @@ The following E12 Function entities represent persistence/sync operations:
 | 8 | brd-registry.ts | scripts/ |
 | 9 | calibrate-tdds.ts | scripts/ |
 | 10 | check-brd-counts.ts | scripts/ |
+| 10a | closure.ts | scripts/ |
 | 11 | check-constraints.ts | scripts/ |
 | 12 | check-db-role.ts | scripts/ |
 | 13 | check-r18-r19-parity.ts | scripts/ |
@@ -125,7 +126,7 @@ The following E12 Function entities represent persistence/sync operations:
 | 51-66 | si-readiness/*.ts | scripts/si-readiness/ |
 | 67-71 | verification/*.ts | scripts/verification/ |
 
-**Total: 71 TypeScript scripts**
+**Total: 72 TypeScript scripts** (including `closure.ts` for B.4)
 
 ### Scripts Importing from `src/ops/**`
 
@@ -191,6 +192,15 @@ Scripts that perform targeted mutations but are NOT baseline constructors.
 | repair/backfill-missing-brd-acs.ts | Backfill missing E03/R02 | PG | ✅ Required | ✅ Written | ✅ Env/flag |
 | repair/sync-neo4j.ts | Repair Neo4j sync | Neo4j | ✅ Required | ✅ Written | ✅ Env/flag |
 | calibrate-tdds.ts | TDD validation + E08 seeding | PG | ✅ Required (if SEED_E08=true) | ✅ Written | ✅ Env/flag |
+| **closure.ts** | B.4 Closure Check — deterministic ingestion | PG + Neo4j | ✅ Required | ✅ Written | ✅ Env + `GRAPH_API_V2_URL` |
+
+**closure.ts Details:**
+- **Purpose:** Prove deterministic ingestion by running full Track A pipeline twice and comparing whole-graph snapshots
+- **Required Env:** `PROJECT_ID`, `GRAPH_API_V2_URL`
+- **Operator Evidence:** `docs/verification/track_b/operator_runs/closure__<TIMESTAMP>__<SHORT_SHA>.md`
+- **Gate Evidence:** `docs/verification/track_b/B4_CLOSURE_CHECK_EVIDENCE.md`
+- **Pipeline:** Invokes `run-a1-extraction.ts` + `register-track-b-tdds.ts` (canonical Track A ingestion)
+- **Comparison:** Uses B.3 infrastructure (v2 enumeration) for whole-graph snapshots
 
 #### Legacy Scripts (DEPRECATED)
 
