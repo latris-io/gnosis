@@ -4,6 +4,36 @@
 
 ---
 
+## Git State (Provenance Anchor)
+
+| Field | Value |
+|-------|-------|
+| **Commit SHA** | `7e52c9105020044bb0880f940345e00e013d61bb` |
+| **Branch** | `main` |
+| **Working Tree** | Clean (no uncommitted changes) |
+
+```bash
+$ git rev-parse HEAD
+7e52c9105020044bb0880f940345e00e013d61bb
+
+$ git status --porcelain
+# (empty - clean working tree)
+```
+
+---
+
+## Environment Fingerprint
+
+| Component | Version |
+|-----------|---------|
+| Node.js | v20.18.0 |
+| npm | 10.8.2 |
+| GOVERNANCE_PHASE | 1 |
+| Database | Remote (prod via DATABASE_URL) |
+| Neo4j | Remote (prod via NEO4J_URL) |
+
+---
+
 ## Extraction Command
 
 ```bash
@@ -16,7 +46,8 @@ PROJECT_ID=6df2f456-440d-4958-b475-d9808775ff69 npx tsx scripts/run-a1-extractio
 
 **Timestamp:** 2026-01-03T00:06:19.402Z  
 **Project ID:** 6df2f456-440d-4958-b475-d9808775ff69  
-**Repo Root:** `/Users/martybremer/Library/CloudStorage/OneDrive-Latris/Projects/Sophia/Gnosis`
+**Repo Root:** `/Users/martybremer/Library/CloudStorage/OneDrive-Latris/Projects/Sophia/Gnosis`  
+**Script SHA:** Covered by repo commit SHA above
 
 ---
 
@@ -65,7 +96,7 @@ PROJECT_ID=6df2f456-440d-4958-b475-d9808775ff69 npx tsx scripts/run-a1-extractio
 
 ---
 
-## Entity Breakdown
+## Entity Breakdown (Extraction-Produced)
 
 | Entity Type | Count |
 |-------------|-------|
@@ -83,6 +114,37 @@ PROJECT_ID=6df2f456-440d-4958-b475-d9808775ff69 npx tsx scripts/run-a1-extractio
 | E49 ReleaseVersion | 10 |
 | E50 Commit | 199 |
 | E52 Changeset | 3 |
+
+---
+
+## E06 Distinction: Extraction vs Registry
+
+**Important for B.4 closure:** E06 entities come from two sources.
+
+### Extraction-Produced E06 (filesystem-provider)
+
+| Count | Source |
+|-------|--------|
+| 3 | `filesystem-provider` (from `spec/track_a/stories/*.md` TDD frontmatter) |
+
+### Registry-Produced E06 (TDD registry scripts)
+
+| Count | Source |
+|-------|--------|
+| 5 | Track A TDDs (TDD-A1 through TDD-A5) |
+| 7 | Track B TDDs (TDD-TRACKB-B1 through B7) |
+| 4 | Other TDDs (BRD_FORMAT_SPECIFICATION, LEDGER_COVERAGE_SPEC, UVS versions) |
+| 7 | Legacy nodes (DESIGN-TRACKB-* — to be cleaned post-HGR-2) |
+
+### Total E06 in Graph
+
+| Metric | Count |
+|--------|-------|
+| **E06 total** | 23 |
+| Canonical (TDD-*) | 16 |
+| Legacy (DESIGN-*) | 7 |
+
+**Note:** Legacy `DESIGN-TRACKB-*` nodes exist from prior runs. Future verifiers will ignore these; cleanup deferred post-HGR-2.
 
 ---
 
@@ -109,14 +171,42 @@ The CI workflow (`.github/workflows/organ-parity.yml`) runs this extraction comm
 
 ---
 
+## Baseline Definition (Critical for B.4)
+
+**What "baseline" includes:**
+
+| Step | Included | Command |
+|------|----------|---------|
+| 1. Entity extraction | ✅ | `run-a1-extraction.ts` (providers) |
+| 2. E15 module derivation | ✅ | `run-a1-extraction.ts` (post-persist) |
+| 3. Containment derivation (R04-R07, R16) | ✅ | `run-a1-extraction.ts` (post-persist) |
+| 4. Track A TDD registry | ✅ | Included via `tdd-frontmatter-provider` |
+| 5. Track B TDD registry | ✅ | `register-track-b-tdds.ts` (separate run) |
+| 6. Neo4j sync | ✅ | Automatic after each step |
+
+**Baseline state for B.4 closure comparison:**
+
+```
+Extraction + Derivations + TDD Registries = Full Baseline
+```
+
+---
+
 ## Closure Relevance (B.4)
 
 This provenance artifact establishes:
 
-1. **What was run:** Exact command and script version
+1. **What was run:** Exact command and script version (covered by repo SHA)
 2. **When:** Timestamp of extraction
 3. **What was produced:** Entity counts by type, relationship derivations
 4. **Idempotency evidence:** High NO-OP count (4491) indicates stable graph state
+5. **E06 source distinction:** Extraction-produced vs registry-produced
+6. **Baseline definition:** Full graph state includes all steps above
 
-For B.4 closure verification, compare this baseline against re-extraction output to confirm zero drift.
+**For B.4 closure verification:**
+
+1. Run extraction + derivations + registries on clean state
+2. Compare entity/relationship counts against this baseline
+3. Compare Merkle roots (from B.1 ground truth)
+4. Confirm zero drift = closure PASS
 
