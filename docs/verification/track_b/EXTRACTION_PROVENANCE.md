@@ -8,13 +8,13 @@
 
 | Field | Value |
 |-------|-------|
-| **Commit SHA** | `7e52c9105020044bb0880f940345e00e013d61bb` |
+| **Commit SHA** | `f083b01ec7b05e1f1e948309c0749ac6938940b0` |
 | **Branch** | `main` |
 | **Working Tree** | Clean (no uncommitted changes) |
 
 ```bash
 $ git rev-parse HEAD
-7e52c9105020044bb0880f940345e00e013d61bb
+f083b01ec7b05e1f1e948309c0749ac6938940b0
 
 $ git status --porcelain
 # (empty - clean working tree)
@@ -58,7 +58,7 @@ PROJECT_ID=6df2f456-440d-4958-b475-d9808775ff69 npx tsx scripts/register-track-b
 
 ## Last Extraction Run
 
-**Timestamp:** 2026-01-03T00:06:19.402Z  
+**Timestamp:** 2026-01-03T21:15:00.000Z  
 **Project ID:** 6df2f456-440d-4958-b475-d9808775ff69  
 **Repo Root:** `/Users/martybremer/Library/CloudStorage/OneDrive-Latris/Projects/Sophia/Gnosis`  
 **Script SHA:** Covered by repo commit SHA above
@@ -81,10 +81,10 @@ PROJECT_ID=6df2f456-440d-4958-b475-d9808775ff69 npx tsx scripts/register-track-b
 
 | Metric | Count |
 |--------|-------|
-| Total extracted | 4592 |
+| Total extracted | 4740 |
 | Created | 0 |
-| Updated | 101 |
-| No-Op | 4491 |
+| Updated | 132 |
+| No-Op | 4608 |
 
 ---
 
@@ -119,14 +119,14 @@ PROJECT_ID=6df2f456-440d-4958-b475-d9808775ff69 npx tsx scripts/register-track-b
 | E03 AcceptanceCriterion | 3147 |
 | E06 TechnicalDesign | 3 |
 | E08 DataSchema | 4 |
-| E11 SourceFile | 62 |
-| E12 Function | 231 |
-| E13 Class | 16 |
+| E11 SourceFile | 93 |
+| E12 Function | 320 |
+| E13 Class | 18 |
 | E27 TestFile | 34 |
 | E28 TestSuite | 123 |
 | E29 TestCase | 298 |
 | E49 ReleaseVersion | 10 |
-| E50 Commit | 199 |
+| E50 Commit | 225 |
 | E52 Changeset | 3 |
 
 ---
