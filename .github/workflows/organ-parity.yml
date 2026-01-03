@@ -83,6 +83,18 @@ jobs:
         run: npm run verify:track-b-db-boundary
 
       # ------------------------------------------------------------
+      # 4c) Track B B.4 closure lock enforcement (CID-gated)
+      #     After B.4 PASS, closure surfaces are locked
+      #     Changes require CID authorization
+      # ------------------------------------------------------------
+      - name: Verify Track B B.4 closure lock
+        env:
+          GITHUB_BASE_REF: ${{ github.base_ref }}
+          GITHUB_PR_TITLE: ${{ github.event.pull_request.title }}
+          GITHUB_PR_BODY: ${{ github.event.pull_request.body }}
+        run: npm run verify:track-b-b4-lock
+
+      # ------------------------------------------------------------
       # 5) Prepare graph state (extraction + derivations)
       #    Ensures DB is consistent with repo state before tests
       # ------------------------------------------------------------

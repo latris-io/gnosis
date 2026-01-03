@@ -56,6 +56,20 @@ export function generateRunId(): string {
 }
 
 // ============================================================
+// Dirty Tree Exception Constants
+// ============================================================
+
+// Paths allowed to be dirty without failing the run
+const ALLOWED_DIRTY_PATTERNS = [
+  /^docs\/verification\//,
+  /^shadow-ledger\//,
+];
+
+function isDirtyFileAllowed(file: string): boolean {
+  return ALLOWED_DIRTY_PATTERNS.some(pattern => pattern.test(file));
+}
+
+// ============================================================
 // Run Binding Capture
 // ============================================================
 
@@ -81,15 +95,67 @@ export async function captureRunBinding(providedRunId?: string): Promise<RunBind
     branch = 'detached';
   }
 
+  // Parse dirty files from git status
+  const dirtyFiles = status === '' 
+    ? [] 
+    : status.split('\n').map(line => line.slice(3).trim()).filter(Boolean);
+  
+  // Check if all dirty files are in allowed paths
+  const dirtyTreeException = dirtyFiles.length > 0 && 
+    dirtyFiles.every(file => isDirtyFileAllowed(file));
+
   return {
     run_id: runId,
     project_id: process.env.PROJECT_ID,
     git_sha: sha,
     git_branch: branch,
     working_tree_clean: status === '',
+    dirty_files: dirtyFiles.length > 0 ? dirtyFiles : undefined,
+    dirty_tree_exception: dirtyTreeException || undefined,
     graph_api_v2_url: v2Url,
     v2_health: v2Health,
     started_at: new Date().toISOString(),
+  };
+}
+
+// ============================================================
+// Dirty Tree Validation
+// ============================================================
+
+export interface DirtyTreeValidation {
+  allowed: boolean;
+  dirty_files: string[];
+  forbidden_files: string[];
+  message: string;
+}
+
+export function validateDirtyTree(binding: RunBinding): DirtyTreeValidation {
+  if (binding.working_tree_clean) {
+    return {
+      allowed: true,
+      dirty_files: [],
+      forbidden_files: [],
+      message: 'Working tree is clean',
+    };
+  }
+
+  const dirtyFiles = binding.dirty_files || [];
+  const forbiddenFiles = dirtyFiles.filter(file => !isDirtyFileAllowed(file));
+
+  if (forbiddenFiles.length === 0) {
+    return {
+      allowed: true,
+      dirty_files: dirtyFiles,
+      forbidden_files: [],
+      message: `Dirty tree allowed (${dirtyFiles.length} file(s) in docs/verification/ or shadow-ledger/)`,
+    };
+  }
+
+  return {
+    allowed: false,
+    dirty_files: dirtyFiles,
+    forbidden_files: forbiddenFiles,
+    message: 'Working tree has modifications outside allowed paths',
   };
 }
 
@@ -215,5 +281,36 @@ export function validateProvenance(
 
 export function getOperatorEvidencePath(runId: string): string {
   return `docs/verification/track_b/B4_OPERATOR_EVIDENCE_${runId}.md`;
+}
+
+// ============================================================
+// Operator Evidence Auto-Update (Preflight Status)
+// ============================================================
+
+export function updateOperatorEvidencePreflightStatus(runId: string): boolean {
+  const operatorPath = getOperatorEvidencePath(runId);
+  
+  if (!fs.existsSync(operatorPath)) {
+    return false;
+  }
+
+  try {
+    let content = fs.readFileSync(operatorPath, 'utf-8');
+
+    // Update preflight checkbox from [ ] to [x]
+    // Pattern: | Pre-B4 preflight passed | `npx tsx scripts/preb4-preflight.ts` | [ ] |
+    const preflightPattern = 
+      /(\|\s*Pre-B4 preflight passed\s*\|[^|]*\|\s*)\[\s*\]/g;
+    
+    if (preflightPattern.test(content)) {
+      content = content.replace(preflightPattern, '$1[x]');
+      fs.writeFileSync(operatorPath, content, 'utf-8');
+      return true;
+    }
+
+    return false; // Already checked or pattern not found
+  } catch {
+    return false;
+  }
 }
 

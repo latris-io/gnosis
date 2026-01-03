@@ -25,6 +25,8 @@ export interface RunBinding {
   git_sha: string; // Full 40 chars
   git_branch: string;
   working_tree_clean: boolean;
+  dirty_files?: string[]; // Files modified in working tree (if dirty)
+  dirty_tree_exception?: boolean; // True if dirty files are allowed (all in docs/verification/** or shadow-ledger/**)
   graph_api_v2_url: string;
   v2_health: HealthCheckResult;
   started_at: string; // ISO-8601

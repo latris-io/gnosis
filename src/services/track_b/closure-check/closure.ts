@@ -20,6 +20,9 @@ import {
   captureRunBinding,
   validateProvenance,
   validateShaUnchanged,
+  validateDirtyTree,
+  updateOperatorEvidencePreflightStatus,
+  checkV2Health,
 } from './provenance.js';
 import { logClosureOperation } from './ledger.js';
 import { evaluateGClosure, computeExplicitComparison } from './gate.js';
@@ -130,8 +133,60 @@ export async function runClosure(repoRoot: string, providedRunId?: string): Prom
   console.log(`  Working Tree Clean: ${binding.working_tree_clean ? 'Yes' : 'No (dirty)'}`);
   console.log(`  V2 Health: ${binding.v2_health.status}`);
 
-  if (!binding.working_tree_clean) {
-    console.log('  ⚠️  Warning: Working tree is dirty. Results will be recorded in evidence.');
+  // 1b. Validate dirty tree (fail fast if files outside allowed paths)
+  const dirtyTreeResult = validateDirtyTree(binding);
+  if (!dirtyTreeResult.allowed) {
+    console.log('\n❌ FAIL FAST: Working tree has modifications outside allowed paths.');
+    console.log('');
+    console.log('  Allowed paths: docs/verification/**, shadow-ledger/**');
+    console.log('');
+    console.log('  Forbidden files:');
+    for (const file of dirtyTreeResult.forbidden_files) {
+      console.log(`    - ${file}`);
+    }
+    console.log('');
+    console.log('  Commit or stash changes and retry.');
+    console.log('');
+
+    return {
+      status: 'PRECONDITION_FAILED',
+      pass: false,
+      run_id: binding.run_id,
+      evidence_path: LATEST_EVIDENCE_PATH,
+      run_evidence_path: getRunEvidencePath(binding.run_id),
+    };
+  }
+
+  if (binding.dirty_tree_exception) {
+    console.log('  ⚠️  Dirty tree exception: All modified files are in docs/verification/** or shadow-ledger/**');
+    console.log('     These files will be recorded in evidence.');
+    if (binding.dirty_files) {
+      for (const file of binding.dirty_files) {
+        console.log(`       - ${file}`);
+      }
+    }
+  }
+  console.log('');
+
+  // 1c. Lightweight preflight check (V2 health) + auto-update operator evidence
+  console.log('🔍 Running lightweight preflight check...');
+  const preflightHealth = await checkV2Health(binding.graph_api_v2_url);
+  if (preflightHealth.status !== 'ok') {
+    console.log(`\n❌ Preflight FAILED: V2 API unreachable at ${binding.graph_api_v2_url}`);
+    return {
+      status: 'PRECONDITION_FAILED',
+      pass: false,
+      run_id: binding.run_id,
+      evidence_path: LATEST_EVIDENCE_PATH,
+      run_evidence_path: getRunEvidencePath(binding.run_id),
+    };
+  }
+  console.log('  ✅ V2 API healthy');
+
+  // Auto-update operator evidence to mark preflight as passed
+  const preflightUpdated = updateOperatorEvidencePreflightStatus(binding.run_id);
+  if (preflightUpdated) {
+    console.log('  ✅ Operator evidence updated: preflight marked as passed');
   }
   console.log('');
 

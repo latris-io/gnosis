@@ -398,13 +398,43 @@ If a track doc appears to conflict with an organ doc:
 
 ---
 
+## 11. Track B Locked Surfaces (Post-B.4)
+
+### B.4 Closure Lock
+
+After B.4 Closure Check PASS (G-CLOSURE proven), the following surfaces are **locked**:
+
+| Surface | Path | Purpose |
+|---------|------|---------|
+| Closure services | `src/services/track_b/closure-check/**` | Closure orchestration |
+| Closure CLI | `scripts/closure.ts` | Tier-2 operator entrypoint |
+
+**Enforcement:**
+- Changes to locked B.4 surfaces require CID authorization
+- CID must be in `docs/cid/` and referenced in commit message
+- CI enforces via `npm run verify:track-b-b4-lock`
+
+**Rationale:**
+- B.4 proves deterministic ingestion; the proof machinery must not drift
+- Subprocess execution is allowed ONLY in `scripts/closure.ts`, not in services
+- Any modification could invalidate the G-CLOSURE PASS baseline
+
+**To Modify Locked B.4 Surfaces:**
+1. Create CID in `docs/cid/CID-YYYY-MM-DD-description.md`
+2. Reference CID in commit message
+3. Both the CID file and the locked surface must be modified in the same changeset
+4. Run `npm run verify:track-b-b4-lock` to confirm authorization
+
+---
+
 ## Version History
 
 | Version | Date | Changes | CID |
 |---------|------|---------|-----|
 | 1.0.0 | 2025-12-19 | Initial governance plan | - |
+| 1.0.1 | 2026-01-03 | Added Track B B.4 closure lock | - |
 
 ---
 
-**END OF GOVERNANCE_PHASED_PLAN V1.0.0**
+**END OF GOVERNANCE_PHASED_PLAN V1.0.1**
 

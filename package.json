@@ -29,7 +29,8 @@
     "verify:expectation-drift": "npx tsx scripts/verification/expectations/drift-detector.ts",
     "verify:cross-store": "npx tsx scripts/verification/reconcilers/cross-store-reconciler.ts",
     "verify:scripts-boundary": "npx tsx scripts/verify-scripts-boundary.ts",
-    "verify:track-b-db-boundary": "npx tsx scripts/verify-track-b-db-boundary.ts"
+    "verify:track-b-db-boundary": "npx tsx scripts/verify-track-b-db-boundary.ts",
+    "verify:track-b-b4-lock": "npx tsx scripts/verify-track-b-b4-lock.ts"
   },
   "dependencies": {
     "dotenv": "^16.4.1",
