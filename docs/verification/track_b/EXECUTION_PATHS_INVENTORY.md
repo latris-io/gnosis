@@ -335,7 +335,268 @@ grep -rl "@g-api-exception" scripts/
 
 ---
 
-## Appendix: Script Details
+## Appendix A: Governance Hardening Changes (2026-01-03)
+
+This section documents the exact changes made to each file during the Tier 2 governance hardening.
+
+### New Files Created
+
+#### `scripts/_lib/operator-guard.ts` (231 lines)
+
+**Purpose:** Shared utilities for operator confirmation and evidence generation.
+
+**Functions Provided:**
+- `parseArgs(argv)` — Lightweight CLI arg parser (no external deps)
+- `requireConfirmRepair(scriptName)` — Exits if `--confirm-repair` flag missing
+- `resolveProjectId()` — Resolves `PROJECT_ID` from env or `--project-id` flag
+- `getGitSha()` / `getGitShortSha()` — Git commit SHA utilities
+- `getNodeVersion()` — Node.js version
+- `getEnvironmentFingerprint()` — Environment metadata object
+- `createEvidence(scriptName, projectId)` — Initialize evidence artifact
+- `formatEvidenceMarkdown(evidence)` — Render evidence as markdown
+- `writeEvidenceMarkdown(evidence)` — Write to `operator_runs/` directory
+
+**Types Exported:**
+- `EvidenceArtifact` — Full evidence structure
+- `StateSnapshot` — Before/after state counts
+
+---
+
+#### `scripts/_lib/state-snapshot.ts` (96 lines)
+
+**Purpose:** Capture entity/relationship counts from PostgreSQL and Neo4j.
+
+**Functions Provided:**
+- `captureStateSnapshot(projectId)` — Returns PG + Neo4j counts
+- `capturePostgresCounts(projectId)` — Query entities/relationships count from PG
+- `captureNeo4jCounts(projectId)` — Query entities/relationships count from Neo4j
+- `formatSnapshot(snapshot)` — Human-readable snapshot string
+
+**Behavior:**
+- Sets RLS context via `set_config('app.current_project_id', $1, false)`
+- Handles connection errors gracefully (records error, doesn't crash)
+
+---
+
+#### `docs/verification/track_b/OPERATOR_SCRIPTS_ALLOWLIST.md`
+
+**Purpose:** Authoritative list of approved Tier 2 scripts and their governance requirements.
+
+**Sections:**
+- Overview of key principles
+- Tables for repair, sync, maintenance, migration, and legacy scripts
+- Usage examples with correct/incorrect invocations
+- Evidence artifact format specification
+
+---
+
+#### `docs/verification/track_b/operator_runs/.gitkeep`
+
+**Purpose:** Placeholder to ensure evidence output directory is tracked in git.
+
+---
+
+### Modified Files
+
+#### `scripts/repair/sync-neo4j.ts`
+
+**Changes:**
+1. Added JSDoc header with Tier 2 classification
+2. Added `requireConfirmRepair()` guard at script start
+3. Added `resolveProjectId()` instead of hardcoded ID
+4. Added `createEvidence()` + `captureStateSnapshot()` calls for before/after
+5. Added `writeEvidenceMarkdown()` in finally block
+6. Wrapped main logic in try/catch to capture errors in evidence
+
+**Before:** 29 lines, hardcoded `projectId = '6df2f456-...'`  
+**After:** 74 lines, parameterized with evidence
+
+---
+
+#### `scripts/repair/backfill-missing-brd-acs.ts`
+
+**Changes:**
+1. Added JSDoc header with Tier 2 classification
+2. Added `requireConfirmRepair()` guard
+3. Replaced hardcoded `projectId` with `resolveProjectId()`
+4. Added evidence artifact generation with before/after snapshots
+5. Updated ledger path to use project-scoped path: `shadow-ledger/${projectId}/ledger.jsonl`
+6. Added graceful handling for missing detection report
+7. Added `closeConnections()` in finally block
+
+**Before:** 297 lines, hardcoded project ID  
+**After:** 307 lines, parameterized with evidence
+
+---
+
+#### `scripts/sync-to-neo4j.ts`
+
+**Changes:**
+1. Updated JSDoc header with Tier 2 classification
+2. Added `requireConfirmRepair()` guard
+3. Added `resolveProjectId()` for project ID resolution
+4. Added evidence artifact with before/after state snapshots
+5. Removed `PROJECT_SLUG` support (simplified to PROJECT_ID only)
+
+**Before:** 69 lines  
+**After:** 72 lines
+
+---
+
+#### `scripts/sync-relationships-to-neo4j.ts`
+
+**Changes:**
+1. Added JSDoc header with Tier 2 classification
+2. Added `requireConfirmRepair()` guard
+3. Added evidence artifact generation
+4. Added before/after state snapshots
+
+**Before:** 36 lines  
+**After:** 72 lines
+
+---
+
+#### `scripts/sync-relationships-replace.ts`
+
+**Changes:**
+1. Added JSDoc header with Tier 2 classification  
+2. Added `requireConfirmRepair()` guard
+3. Added evidence artifact with before/after snapshots
+4. Removed implicit PROJECT_SLUG fallback (explicit PROJECT_ID required)
+
+**Before:** 89 lines  
+**After:** 121 lines
+
+---
+
+#### `scripts/fix-e15-extraction.ts`
+
+**Changes:**
+1. Updated JSDoc header with Tier 2 classification
+2. Added `requireConfirmRepair()` guard
+3. Added `resolveProjectId()` call (was already using env var but now enforced)
+4. Added evidence artifact with before/after snapshots
+5. Removed `queryEntities` import (not used)
+
+**Before:** 163 lines  
+**After:** 174 lines
+
+---
+
+#### `scripts/rebuild-a3-pristine.ts`
+
+**Changes:**
+1. Updated JSDoc header with Tier 2 classification
+2. Added `requireConfirmRepair()` guard
+3. Added `resolveProjectId()` call
+4. Added evidence artifact generation
+5. Refactored `validateLedgerPristine()` and `validateCorpusPristine()` to accept `projectId` parameter
+6. Removed unused `getCurrentEpoch` import
+
+**Before:** 401 lines  
+**After:** 366 lines (reduced due to function refactoring)
+
+---
+
+#### `scripts/calibrate-tdds.ts`
+
+**Changes:**
+1. Updated JSDoc header with Tier 2 classification
+2. Added conditional `requireConfirmRepair()` — only required if `SEED_E08=true`
+3. Replaced manual PROJECT_ID check with `resolveProjectId()`
+4. Added evidence artifact generation (only when `SEED_E08=true`)
+5. Added before/after state snapshots when in seeding mode
+
+**Before:** 474 lines  
+**After:** 498 lines
+
+---
+
+#### `scripts/migrate-ledger-to-project-scope.ts`
+
+**Changes:**
+1. Updated JSDoc header with Tier 2 classification (filesystem-only)
+2. Added `resolveProjectId()` call instead of hardcoded CANONICAL_PROJECT_ID
+3. Added evidence artifact generation (no `--confirm-repair` required for filesystem-only)
+4. Refactored `migrateLedger()` and `migrateCorpus()` to accept `projectId` and `evidence` parameters
+
+**Before:** 213 lines  
+**After:** 218 lines
+
+---
+
+#### `scripts/si-readiness/genesis-extract.ts`
+
+**Changes:**
+1. Updated JSDoc header marking as DEPRECATED (superseded by `run-a1-extraction.ts`)
+2. Added `requireConfirmRepair()` guard
+3. Added note that PROJECT_ID is resolved from `.si-universe.env` or env var
+
+**Before:** No operator guard  
+**After:** Requires `--confirm-repair` flag
+
+---
+
+#### `scripts/si-readiness/continue-extract.ts`
+
+**Changes:**
+1. Updated JSDoc header marking as DEPRECATED
+2. Added `requireConfirmRepair()` guard
+
+---
+
+#### `scripts/si-readiness/extract-relationships.ts`
+
+**Changes:**
+1. Updated JSDoc header marking as DEPRECATED
+2. Added `requireConfirmRepair()` guard
+
+---
+
+#### `scripts/si-readiness/extract-remaining.ts`
+
+**Changes:**
+1. Updated JSDoc header marking as DEPRECATED
+2. Added `requireConfirmRepair()` guard
+3. Replaced hardcoded `projectId` with `resolveProjectId()`
+
+---
+
+#### `scripts/si-readiness/finish-extract.ts`
+
+**Changes:**
+1. Updated JSDoc header marking as DEPRECATED
+2. Added `requireConfirmRepair()` guard
+3. Replaced hardcoded `projectId` with `resolveProjectId()`
+
+---
+
+### Verification Results
+
+All verifiers pass after changes:
+
+```
+✅ npm run verify:scripts-boundary — PASS (9 files skipped with @g-api-exception)
+✅ npm run lint:markers — PASS (no structural violations)
+✅ npx tsx scripts/verify-track-a-lock.ts — PASS (no locked surfaces changed)
+✅ npm run test:sanity (with PROJECT_ID) — 66/66 tests pass
+```
+
+**Dry-Run Test Results:**
+
+```bash
+# Without --confirm-repair: FAILS FAST
+$ PROJECT_ID=6df2f456-... npx tsx scripts/repair/sync-neo4j.ts
+→ "OPERATOR CONFIRMATION REQUIRED" (exit 1)
+
+# Without PROJECT_ID: FAILS FAST  
+$ npx tsx scripts/repair/sync-neo4j.ts --confirm-repair
+→ "PROJECT_ID REQUIRED" (exit 1)
+```
+
+---
+
+## Appendix B: Key Script Details
 
 ### run-a1-extraction.ts (Tier 1 — CANONICAL)
 
