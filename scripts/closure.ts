@@ -1,9 +1,9 @@
 #!/usr/bin/env npx tsx
-// @g-api-exception TRACK_B_TIER2_OPERATOR
 /**
  * B.4 Closure Check CLI
  * Tier-2 state-mutating operator script (allowlisted).
  * Writes evidence to docs/verification/track_b/** and operator_runs/**.
+ * @g-api-exception TRACK_B_OWNED - Track B CLI may import from src/services/track_b/**
  */
 
 import * as path from 'path';
