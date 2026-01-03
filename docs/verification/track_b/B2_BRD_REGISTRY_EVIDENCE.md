@@ -1,6 +1,6 @@
 # B.2 BRD Registry Evidence
 
-**Generated:** 2026-01-03T02:19:46.806Z  
+**Generated:** 2026-01-03T03:00:39.354Z  
 **Gate:** G-REGISTRY  
 **Scope:** Local Registry Integrity  
 **Result:** PASS
@@ -14,6 +14,8 @@
 | Path | docs/BRD_V20_6_4_COMPLETE.md |
 | Version | V20.6.4 |
 | Content Hash | sha256:f419ddf0ce5879b39b72c0e9ec9441ed7c03db1b4df2446b70061b91f2893d49 |
+
+**Normalization policy:** strict (byte-for-byte), no whitespace trimming
 
 ---
 

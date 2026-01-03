@@ -246,6 +246,8 @@ async function writeEvidence(
 | Version | ${EXPECTED_BRD_VERSION} |
 | Content Hash | ${contentHash} |
 
+**Normalization policy:** strict (byte-for-byte), no whitespace trimming
+
 ---
 
 ## Counts (Informational)
