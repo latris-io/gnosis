@@ -22,6 +22,8 @@ No direct database access. No imports from Track A locked surfaces.
 | Baseline | baseline-1 | 4711 | 5412 | a4f2fce5bf8c... | ed4e2192173f... |
 | Current | current-check | 4711 | 5412 | a4f2fce5bf8c... | ed4e2192173f... |
 
+**Pagination:** Snapshots acquired via full pagination to completion (`has_more=false` loop) for all 16 entity types and all relationships.
+
 ## Diff Summary
 
 | Category | Added | Deleted | Mutated |
@@ -40,6 +42,12 @@ No direct database access. No imports from Track A locked surfaces.
 ## Ledger Entries
 
 Logged to: `shadow-ledger/6df2f456-440d-4958-b475-d9808775ff69/ledger.jsonl`
+
+| Field | Value |
+|-------|-------|
+| GRAPH_API_V2_URL | `http://localhost:3001` |
+| PROJECT_ID | `6df2f456-440d-4958-b475-d9808775ff69` |
+| Allowlist | Default (empty) |
 
 - SNAPSHOT_CREATED: SNAPSHOT-current-check-051a7d5-2026-01-03T19-17-55-253Z
 - DIFF_COMPUTED: SNAPSHOT-baseline-1-051a7d5-2026-01-03T19-16-30-891Z → SNAPSHOT-current-check-051a7d5-2026-01-03T19-17-55-253Z
