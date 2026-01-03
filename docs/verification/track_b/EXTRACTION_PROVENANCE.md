@@ -24,13 +24,16 @@ $ git status --porcelain
 
 ## Environment Fingerprint
 
-| Component | Version |
-|-----------|---------|
+| Component | Version / Target |
+|-----------|------------------|
 | Node.js | v20.18.0 |
 | npm | 10.8.2 |
 | GOVERNANCE_PHASE | 1 |
-| Database | Remote (prod via DATABASE_URL) |
-| Neo4j | Remote (prod via NEO4J_URL) |
+| Database | Remote PostgreSQL (prod cluster via DATABASE_URL) |
+| Neo4j | Remote AuraDB (prod instance via NEO4J_URL) |
+| Project ID | `6df2f456-440d-4958-b475-d9808775ff69` |
+
+**Note:** Database URLs are secrets; only cluster/instance type is recorded here for provenance.
 
 ---
 
@@ -38,6 +41,17 @@ $ git status --porcelain
 
 ```bash
 PROJECT_ID=6df2f456-440d-4958-b475-d9808775ff69 npx tsx scripts/run-a1-extraction.ts
+```
+
+**This command covers steps 1–4 of the baseline definition:**
+1. Entity extraction (providers)
+2. E15 module derivation
+3. Containment derivation (R04-R07, R16)
+4. Track A TDD registry (via `tdd-frontmatter-provider`)
+
+**Step 5 (Track B TDD registry) is executed separately:**
+```bash
+PROJECT_ID=6df2f456-440d-4958-b475-d9808775ff69 npx tsx scripts/register-track-b-tdds.ts
 ```
 
 ---
@@ -129,22 +143,22 @@ PROJECT_ID=6df2f456-440d-4958-b475-d9808775ff69 npx tsx scripts/run-a1-extractio
 
 ### Registry-Produced E06 (TDD registry scripts)
 
-| Count | Source |
-|-------|--------|
-| 5 | Track A TDDs (TDD-A1 through TDD-A5) |
-| 7 | Track B TDDs (TDD-TRACKB-B1 through B7) |
-| 4 | Other TDDs (BRD_FORMAT_SPECIFICATION, LEDGER_COVERAGE_SPEC, UVS versions) |
-| 7 | Legacy nodes (DESIGN-TRACKB-* — to be cleaned post-HGR-2) |
+| Count | Source | IDs |
+|-------|--------|-----|
+| 5 | Track A TDDs | `TDD-A1-ENTITY-REGISTRY`, `TDD-A2-RELATIONSHIP-REGISTRY`, `TDD-A3-MARKER-EXTRACTION`, `TDD-A4-STRUCTURAL-ANALYSIS`, `TDD-A5-GRAPH-API-V1` |
+| 7 | Track B TDDs | `TDD-TRACKB-B1` through `TDD-TRACKB-B7` |
+| 4 | Other TDDs | `TDD-BRD_FORMAT_SPECIFICATION`, `TDD-LEDGER_COVERAGE_SPEC`, `TDD-UNIFIED_VERIFICATION_SPECIFICATION_V20_6_5`, `TDD-UNIFIED_VERIFICATION_SPECIFICATION_V20_6_6` |
+| 7 | Legacy nodes | `DESIGN-TRACKB-B1` through `DESIGN-TRACKB-B7` (to be cleaned post-HGR-2) |
 
 ### Total E06 in Graph
 
-| Metric | Count |
-|--------|-------|
-| **E06 total** | 23 |
-| Canonical (TDD-*) | 16 |
-| Legacy (DESIGN-*) | 7 |
+| Metric | Count | Definition |
+|--------|-------|------------|
+| **E06 total** | 23 | All E06 entities in project |
+| Canonical | 16 | `instance_id` matches `^TDD-` |
+| Legacy | 7 | `instance_id` matches `^DESIGN-` |
 
-**Note:** Legacy `DESIGN-TRACKB-*` nodes exist from prior runs. Future verifiers will ignore these; cleanup deferred post-HGR-2.
+**Note:** "Canonical" means `instance_id` starts with `TDD-`. Legacy `DESIGN-TRACKB-*` nodes exist from prior runs; future verifiers will ignore these. Cleanup deferred post-HGR-2.
 
 ---
 
