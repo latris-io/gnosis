@@ -51,10 +51,10 @@ const REPORT_DATE = process.env.REPORT_DATE || new Date().toISOString().split('T
 const ARTIFACTS = {
   BASELINE: 'docs/verification/track_b/GROUND_TRUTH_BASELINE.json',
   B1_EVIDENCE: 'docs/verification/track_b/B1_GROUND_TRUTH_EVIDENCE.md',
-  B1_LEDGER: 'docs/verification/track_b/ground-truth-ledger.jsonl',
+  // Canonical ledger per CID-2026-01-03 (was: docs/verification/track_b/ground-truth-ledger.jsonl)
+  CANONICAL_LEDGER: `shadow-ledger/${PROJECT_ID}/ledger.jsonl`,
   BRD_REGISTRY: 'data/track_b/BRD_REGISTRY.json',
   B2_EVIDENCE: 'docs/verification/track_b/B2_BRD_REGISTRY_EVIDENCE.md',
-  B2_LEDGER: 'docs/verification/track_b/brd-registry-ledger.jsonl',
   EXTRACTION_PROVENANCE: 'docs/verification/track_b/EXTRACTION_PROVENANCE.md',
 };
 
@@ -507,34 +507,38 @@ function checkExtractionProvenance(): CheckResult {
 }
 
 function checkLedgerTails(): { b1Entries: string[]; b2Entries: string[]; valid: boolean; issues: string[] } {
-  const b1Lines = readLastLines(ARTIFACTS.B1_LEDGER, 5);
-  const b2Lines = readLastLines(ARTIFACTS.B2_LEDGER, 5);
+  // Read from canonical ledger and filter by story
+  const allLines = readLastLines(ARTIFACTS.CANONICAL_LEDGER, 100);
   const issues: string[] = [];
 
-  // Validate JSON and required fields
-  for (const line of b1Lines) {
+  // Filter to B.1 and B.2 entries
+  const b1Lines: string[] = [];
+  const b2Lines: string[] = [];
+  
+  for (const line of allLines) {
     try {
       const entry = JSON.parse(line);
-      if (!entry.ts && !entry.timestamp) issues.push('B1 ledger: missing ts/timestamp');
-      if (!entry.action) issues.push('B1 ledger: missing action');
+      if (entry.track === 'B' && entry.story === 'B.1') {
+        b1Lines.push(line);
+        if (!entry.ts && !entry.timestamp) issues.push('B1 ledger: missing ts/timestamp');
+        if (!entry.action) issues.push('B1 ledger: missing action');
+      } else if (entry.track === 'B' && entry.story === 'B.2') {
+        b2Lines.push(line);
+        if (!entry.ts && !entry.timestamp) issues.push('B2 ledger: missing ts/timestamp');
+        if (!entry.action) issues.push('B2 ledger: missing action');
+      }
     } catch {
-      issues.push(`B1 ledger: invalid JSON line`);
+      // Ignore parse errors for non-Track-B entries
     }
   }
 
-  for (const line of b2Lines) {
-    try {
-      const entry = JSON.parse(line);
-      if (!entry.ts && !entry.timestamp) issues.push('B2 ledger: missing ts/timestamp');
-      if (!entry.action) issues.push('B2 ledger: missing action');
-    } catch {
-      issues.push(`B2 ledger: invalid JSON line`);
-    }
-  }
+  // Take last 5 of each
+  const b1Last5 = b1Lines.slice(-5);
+  const b2Last5 = b2Lines.slice(-5);
 
   return {
-    b1Entries: b1Lines,
-    b2Entries: b2Lines,
+    b1Entries: b1Last5,
+    b2Entries: b2Last5,
     valid: issues.length === 0,
     issues,
   };

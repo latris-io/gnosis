@@ -128,7 +128,9 @@
 
 ## Ledger
 
-Operations logged to: `docs/verification/track_b/ground-truth-ledger.jsonl`
+Operations logged to: `shadow-ledger/<project_id>/ledger.jsonl` (per CID-2026-01-03)
+
+**Entry discriminators:** `track: "B"`, `story: "B.1"`
 
 ---
 

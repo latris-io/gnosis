@@ -4,10 +4,10 @@
  * Track B: Story B.1 - Ground Truth Engine
  * TDD ID: TDD-TRACKB-B1
  * 
- * Since src/ledger/shadow-ledger.ts is a locked Track A surface,
- * Track B uses its own simple JSONL logger for ground truth operations.
+ * Per CID-2026-01-03, Track B writes to the canonical ledger stream:
+ *   shadow-ledger/<project_id>/ledger.jsonl
  * 
- * File path: docs/verification/track_b/ground-truth-ledger.jsonl
+ * Entries are distinguished by `track: "B"` and `story: "B.1"` fields.
  * Format: Append-only JSONL
  */
 
@@ -15,15 +15,18 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { GroundTruthLedgerEntry } from './types.js';
 
-// Track B ledger file location
-const LEDGER_DIR = 'docs/verification/track_b';
-const LEDGER_FILE = 'ground-truth-ledger.jsonl';
+// Canonical ledger location (per CID-2026-01-03)
+const LEDGER_DIR = 'shadow-ledger';
+const LEDGER_FILE = 'ledger.jsonl';
+
+// Project ID from environment (required for project-scoped ledger)
+const PROJECT_ID = process.env.PROJECT_ID || '6df2f456-440d-4958-b475-d9808775ff69';
 
 /**
- * Get the full path to the ledger file.
+ * Get the full path to the canonical ledger file.
  */
 function getLedgerPath(repoRoot: string): string {
-  return path.join(repoRoot, LEDGER_DIR, LEDGER_FILE);
+  return path.join(repoRoot, LEDGER_DIR, PROJECT_ID, LEDGER_FILE);
 }
 
 /**
@@ -42,9 +45,12 @@ export async function logGroundTruthOperation(
   // Ensure directory exists
   await fs.promises.mkdir(ledgerDir, { recursive: true });
   
-  // Create full entry with timestamp
-  const fullEntry: GroundTruthLedgerEntry = {
+  // Create full entry with timestamp and Track B discriminators
+  const fullEntry: GroundTruthLedgerEntry & { track: string; story: string; project_id: string } = {
     ts: new Date().toISOString(),
+    track: 'B',
+    story: 'B.1',
+    project_id: PROJECT_ID,
     ...entry,
   };
   
@@ -76,9 +82,9 @@ export async function readLedgerEntries(repoRoot: string): Promise<GroundTruthLe
 }
 
 /**
- * Get the path to the ledger file (for documentation/evidence).
+ * Get the path to the canonical ledger file (for documentation/evidence).
  */
 export function getLedgerFilePath(): string {
-  return `${LEDGER_DIR}/${LEDGER_FILE}`;
+  return `${LEDGER_DIR}/${PROJECT_ID}/${LEDGER_FILE}`;
 }
 

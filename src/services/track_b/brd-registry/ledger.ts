@@ -1,50 +1,70 @@
 // src/services/track_b/brd-registry/ledger.ts
 // Track B-owned shadow ledger for BRD registry operations
-// NOT the locked Track A ledger at src/ledger/shadow-ledger.ts
+// Per CID-2026-01-03, writes to canonical stream: shadow-ledger/<project_id>/ledger.jsonl
+// Entries distinguished by track: "B", story: "B.2"
 
 import * as fs from 'fs';
 import * as path from 'path';
 import type { BrdRegistryLedgerEntry } from './types.js';
-import { LEDGER_PATH } from './config.js';
+import { getLedgerPath } from './config.js';
+
+// Project ID from environment (required for project-scoped ledger)
+const PROJECT_ID = process.env.PROJECT_ID || '6df2f456-440d-4958-b475-d9808775ff69';
 
 /**
  * Ensure ledger directory exists.
  */
 function ensureLedgerDir(): void {
-  const dir = path.dirname(LEDGER_PATH);
+  const ledgerPath = getLedgerPath(PROJECT_ID);
+  const dir = path.dirname(ledgerPath);
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
 }
 
 /**
- * Append an entry to the BRD registry ledger.
+ * Append an entry to the canonical ledger with Track B discriminators.
  * 
  * @param entry - Ledger entry to append
  */
 export function appendLedgerEntry(entry: BrdRegistryLedgerEntry): void {
   ensureLedgerDir();
   
-  const line = JSON.stringify(entry) + '\n';
-  fs.appendFileSync(LEDGER_PATH, line, 'utf-8');
+  // Add Track B discriminators per CID-2026-01-03
+  const fullEntry = {
+    track: 'B',
+    story: 'B.2',
+    project_id: PROJECT_ID,
+    ...entry,
+  };
+  
+  const line = JSON.stringify(fullEntry) + '\n';
+  const ledgerPath = getLedgerPath(PROJECT_ID);
+  fs.appendFileSync(ledgerPath, line, 'utf-8');
 }
 
 /**
- * Read all entries from the BRD registry ledger.
+ * Read B.2 entries from the canonical ledger.
  * 
- * @returns Array of ledger entries
+ * @returns Array of ledger entries (B.2 only)
  */
 export function readLedger(): BrdRegistryLedgerEntry[] {
-  if (!fs.existsSync(LEDGER_PATH)) {
+  const ledgerPath = getLedgerPath(PROJECT_ID);
+  if (!fs.existsSync(ledgerPath)) {
     return [];
   }
   
-  const content = fs.readFileSync(LEDGER_PATH, 'utf-8');
+  const content = fs.readFileSync(ledgerPath, 'utf-8');
   const lines = content.trim().split('\n').filter(line => line.trim());
   
   return lines.map((line, index) => {
     try {
-      return JSON.parse(line) as BrdRegistryLedgerEntry;
+      const entry = JSON.parse(line) as Record<string, unknown>;
+      // Filter to B.2 entries only
+      if (entry.track === 'B' && entry.story === 'B.2') {
+        return entry as unknown as BrdRegistryLedgerEntry;
+      }
+      return null;
     } catch {
       console.warn(`Failed to parse ledger line ${index + 1}: ${line}`);
       return null;

@@ -11,8 +11,18 @@ export const BRD_PATH = 'docs/BRD_V20_6_4_COMPLETE.md';
 /** Registry state file path */
 export const REGISTRY_PATH = 'data/track_b/BRD_REGISTRY.json';
 
-/** Ledger file path */
-export const LEDGER_PATH = 'docs/verification/track_b/brd-registry-ledger.jsonl';
+/** 
+ * Canonical ledger path (per CID-2026-01-03)
+ * Track B writes to shadow-ledger/<project_id>/ledger.jsonl
+ * with `track: "B"` and `story: "B.2"` discriminators.
+ */
+export const LEDGER_DIR = 'shadow-ledger';
+export const LEDGER_FILE = 'ledger.jsonl';
+
+/** Get project-scoped ledger path */
+export function getLedgerPath(projectId: string): string {
+  return `${LEDGER_DIR}/${projectId}/${LEDGER_FILE}`;
+}
 
 /** Evidence file path */
 export const EVIDENCE_PATH = 'docs/verification/track_b/B2_BRD_REGISTRY_EVIDENCE.md';
