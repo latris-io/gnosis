@@ -1,20 +1,9 @@
 #!/usr/bin/env npx tsx
+// @g-api-exception TRACK_B_TIER2_OPERATOR
 /**
  * B.4 Closure Check CLI
- *
- * Tier: 2 (Operator script)
- * Confirm Flag: --confirm-repair (REQUIRED)
- * Required Env: PROJECT_ID, GRAPH_API_V2_URL
- *
- * Commands:
- *   precheck  - Validate provenance and health only
- *   run       - Full closure run (two ingestions + comparison)
- *
- * Evidence:
- *   Operator: docs/verification/track_b/operator_runs/closure__<TIMESTAMP>__<SHORT_SHA>.md
- *   Gate: docs/verification/track_b/B4_CLOSURE_CHECK_EVIDENCE.md
- *
- * @g-api-exception TRACK_B_OWNED - Track B CLI may import from src/services/track_b/**
+ * Tier-2 state-mutating operator script (allowlisted).
+ * Writes evidence to docs/verification/track_b/** and operator_runs/**.
  */
 
 import * as path from 'path';
