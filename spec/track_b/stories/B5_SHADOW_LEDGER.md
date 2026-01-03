@@ -104,6 +104,12 @@ This Track B capability (Shadow Ledger Migration) is defined by the Roadmap Trac
 
 ### Ledger Entry → Graph Entity
 
+**Timestamp Resolution (REQUIRED):**  
+Historical entries may use `ts` (B.1 legacy) or `timestamp` (canonical).  
+```typescript
+const time = entry.timestamp ?? entry.ts ?? null;
+```
+
 ```typescript
 interface LedgerEntry {
   timestamp: string;
