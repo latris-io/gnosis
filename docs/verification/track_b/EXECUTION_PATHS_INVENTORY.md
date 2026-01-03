@@ -194,15 +194,15 @@ Scripts that perform targeted mutations but are NOT baseline constructors.
 
 #### Legacy Scripts (DEPRECATED)
 
-| Script | Purpose | Confirm Flag | Status |
-|--------|---------|--------------|--------|
-| si-readiness/genesis-extract.ts | Legacy full extraction | ✅ Required | ⚠️ DEPRECATED |
-| si-readiness/continue-extract.ts | Continue aborted extraction | ✅ Required | ⚠️ DEPRECATED |
-| si-readiness/extract-relationships.ts | Extract relationships | ✅ Required | ⚠️ DEPRECATED |
-| si-readiness/extract-remaining.ts | Extract remaining rels | ✅ Required | ⚠️ DEPRECATED |
-| si-readiness/finish-extract.ts | Finish extraction | ✅ Required | ⚠️ DEPRECATED |
+| Script | Purpose | Confirm Flag | Evidence | Status |
+|--------|---------|--------------|----------|--------|
+| si-readiness/genesis-extract.ts | Legacy full extraction | ✅ Required | ✅ Written | ⚠️ DEPRECATED |
+| si-readiness/continue-extract.ts | Continue aborted extraction | ✅ Required | ✅ Written | ⚠️ DEPRECATED |
+| si-readiness/extract-relationships.ts | Extract relationships | ✅ Required | ✅ Written | ⚠️ DEPRECATED |
+| si-readiness/extract-remaining.ts | Extract remaining rels | ✅ Required | ✅ Written | ⚠️ DEPRECATED |
+| si-readiness/finish-extract.ts | Finish extraction | ✅ Required | ✅ Written | ⚠️ DEPRECATED |
 
-**Note:** Legacy scripts do NOT emit evidence artifacts. Use `scripts/run-a1-extraction.ts` instead.
+**Note:** While these legacy scripts now emit evidence artifacts to `operator_runs/`, they are superseded by `scripts/run-a1-extraction.ts` which should be preferred for all new extractions.
 
 **Governance Controls Implemented:**
 1. ✅ All scripts require `--confirm-repair` flag (except filesystem-only migrations)
@@ -530,10 +530,12 @@ This section documents the exact changes made to each file during the Tier 2 gov
 **Changes:**
 1. Updated JSDoc header marking as DEPRECATED (superseded by `run-a1-extraction.ts`)
 2. Added `requireConfirmRepair()` guard
-3. Added note that PROJECT_ID is resolved from `.si-universe.env` or env var
+3. Added full evidence artifact generation with before/after state snapshots
+4. Added explicit PROJECT_ID validation (required via env or `.si-universe.env`)
+5. Evidence written to `operator_runs/` even on failure
 
-**Before:** No operator guard  
-**After:** Requires `--confirm-repair` flag
+**Before:** No operator guard, no evidence  
+**After:** Requires `--confirm-repair` flag, writes evidence artifact
 
 ---
 
@@ -542,6 +544,12 @@ This section documents the exact changes made to each file during the Tier 2 gov
 **Changes:**
 1. Updated JSDoc header marking as DEPRECATED
 2. Added `requireConfirmRepair()` guard
+3. Added full evidence artifact generation with before/after state snapshots
+4. Added graceful error handling for ledger/corpus file reads
+5. Evidence written to `operator_runs/` even on failure
+
+**Before:** No operator guard, no evidence  
+**After:** Requires `--confirm-repair` flag, writes evidence artifact
 
 ---
 
@@ -550,6 +558,11 @@ This section documents the exact changes made to each file during the Tier 2 gov
 **Changes:**
 1. Updated JSDoc header marking as DEPRECATED
 2. Added `requireConfirmRepair()` guard
+3. Added full evidence artifact generation with before/after state snapshots
+4. Evidence written to `operator_runs/` even on failure
+
+**Before:** No operator guard, no evidence  
+**After:** Requires `--confirm-repair` flag, writes evidence artifact
 
 ---
 
@@ -558,7 +571,12 @@ This section documents the exact changes made to each file during the Tier 2 gov
 **Changes:**
 1. Updated JSDoc header marking as DEPRECATED
 2. Added `requireConfirmRepair()` guard
-3. Replaced hardcoded `projectId` with `resolveProjectId()`
+3. Added full evidence artifact generation with before/after state snapshots
+4. Added `PARTIAL` status support for scripts with non-fatal errors
+5. Evidence written to `operator_runs/` even on failure
+
+**Before:** No operator guard, no evidence  
+**After:** Requires `--confirm-repair` flag, writes evidence artifact
 
 ---
 
@@ -567,7 +585,12 @@ This section documents the exact changes made to each file during the Tier 2 gov
 **Changes:**
 1. Updated JSDoc header marking as DEPRECATED
 2. Added `requireConfirmRepair()` guard
-3. Replaced hardcoded `projectId` with `resolveProjectId()`
+3. Added full evidence artifact generation with before/after state snapshots
+4. Added graceful error handling for ledger/corpus file reads
+5. Evidence written to `operator_runs/` even on failure
+
+**Before:** No operator guard, no evidence  
+**After:** Requires `--confirm-repair` flag, writes evidence artifact
 
 ---
 

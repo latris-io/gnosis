@@ -70,13 +70,13 @@ These scripts are **superseded by `scripts/run-a1-extraction.ts`** and should on
 
 | Script | Purpose | Confirm Flag | Evidence | Status |
 |--------|---------|--------------|----------|--------|
-| `genesis-extract.ts` | Full Track A extraction | ✅ Required | ❌ Not written | DEPRECATED |
-| `continue-extract.ts` | Continue aborted extraction | ✅ Required | ❌ Not written | DEPRECATED |
-| `extract-relationships.ts` | Extract relationships only | ✅ Required | ❌ Not written | DEPRECATED |
-| `extract-remaining.ts` | Extract remaining relationships | ✅ Required | ❌ Not written | DEPRECATED |
-| `finish-extract.ts` | Finish extraction | ✅ Required | ❌ Not written | DEPRECATED |
+| `genesis-extract.ts` | Full Track A extraction | ✅ Required | ✅ Written | DEPRECATED |
+| `continue-extract.ts` | Continue aborted extraction | ✅ Required | ✅ Written | DEPRECATED |
+| `extract-relationships.ts` | Extract relationships only | ✅ Required | ✅ Written | DEPRECATED |
+| `extract-remaining.ts` | Extract remaining relationships | ✅ Required | ✅ Written | DEPRECATED |
+| `finish-extract.ts` | Finish extraction | ✅ Required | ✅ Written | DEPRECATED |
 
-**Recommendation:** Do NOT use these scripts. Use `scripts/run-a1-extraction.ts` instead.
+**Recommendation:** Do NOT use these scripts. Use `scripts/run-a1-extraction.ts` instead. While deprecated scripts now emit evidence artifacts for auditability, they are riskier due to legacy code paths and should be avoided.
 
 ---
 

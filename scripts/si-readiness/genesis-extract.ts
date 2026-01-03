@@ -15,14 +15,20 @@
 import 'dotenv/config';
 import pg from 'pg';
 import neo4j from 'neo4j-driver';
-import { requireConfirmRepair, resolveProjectId } from '../_lib/operator-guard.js';
+import { 
+  requireConfirmRepair, 
+  createEvidence, 
+  writeEvidenceMarkdown,
+  type EvidenceArtifact 
+} from '../_lib/operator-guard.js';
+import { captureStateSnapshot, formatSnapshot } from '../_lib/state-snapshot.js';
+import * as fs from 'fs';
 
 const SCRIPT_NAME = 'scripts/si-readiness/genesis-extract.ts';
 
 // === OPERATOR GUARD ===
 requireConfirmRepair(SCRIPT_NAME);
 // PROJECT_ID resolved below from .si-universe.env or env var
-import * as fs from 'fs';
 import * as path from 'path';
 
 // Import extraction providers
@@ -64,6 +70,7 @@ async function main() {
 
   console.log('╔════════════════════════════════════════════════════════════════╗');
   console.log('║         GENESIS EXTRACTION (100% LEDGER COVERAGE)              ║');
+  console.log('║         ⚠️  DEPRECATED - Use run-a1-extraction.ts instead      ║');
   console.log('╚════════════════════════════════════════════════════════════════╝\n');
 
   // Load universe state
@@ -71,8 +78,27 @@ async function main() {
   const projectId = universeEnv.match(/PROJECT_ID=(.+)/)?.[1] || process.env.PROJECT_ID;
   const canonicalSha = universeEnv.match(/CANONICAL_SHA=(.+)/)?.[1];
   
+  if (!projectId) {
+    console.error('ERROR: PROJECT_ID required (from .si-universe.env or environment)');
+    process.exit(1);
+  }
+
+  // Initialize evidence artifact
+  const evidence: EvidenceArtifact = createEvidence(SCRIPT_NAME, projectId);
+  evidence.operations?.push('DEPRECATED: This script is superseded by run-a1-extraction.ts');
+  
   console.log(`Project ID: ${projectId}`);
   console.log(`Canonical SHA: ${canonicalSha}`);
+  console.log('');
+  
+  // Capture BEFORE state
+  console.log('[SNAPSHOT] Capturing before state...');
+  try {
+    evidence.beforeCounts = await captureStateSnapshot(projectId);
+    console.log(`  ${formatSnapshot(evidence.beforeCounts)}`);
+  } catch (err) {
+    console.log('  Warning: Could not capture before snapshot');
+  }
   console.log('');
 
   const pool = new Pool({
@@ -312,12 +338,40 @@ async function main() {
   }, null, 2));
   console.log(`\nResults written to: ${resultPath}`);
 
+  // Capture AFTER state and write evidence
+  console.log('\n[SNAPSHOT] Capturing after state...');
+  try {
+    evidence.afterCounts = await captureStateSnapshot(projectId);
+    console.log(`  ${formatSnapshot(evidence.afterCounts)}`);
+  } catch (err) {
+    console.log('  Warning: Could not capture after snapshot');
+  }
+  
+  // Record operations
+  for (const r of results) {
+    evidence.operations?.push(`${r.phase}: entities=${r.entities ?? 0}, rels=${r.relationships ?? 0}, persisted=${r.persisted ?? 0}`);
+  }
+  
+  evidence.status = 'SUCCESS';
+  writeEvidenceMarkdown(evidence);
+
   await pool.end();
   await driver.close();
 }
 
-main().catch(err => {
+main().catch(async err => {
   console.error('Error:', err);
+  // Attempt to write failure evidence
+  try {
+    const universeEnv = fs.readFileSync('.si-universe.env', 'utf-8');
+    const projectId = universeEnv.match(/PROJECT_ID=(.+)/)?.[1] || process.env.PROJECT_ID || 'unknown';
+    const evidence: EvidenceArtifact = createEvidence(SCRIPT_NAME, projectId);
+    evidence.status = 'FAILED';
+    evidence.errors?.push(String(err));
+    writeEvidenceMarkdown(evidence);
+  } catch {
+    // Can't write evidence, just exit
+  }
   process.exit(1);
 });
 

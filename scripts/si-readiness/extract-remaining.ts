@@ -10,7 +10,14 @@
 import 'dotenv/config';
 import * as fs from 'fs';
 import pg from 'pg';
-import { requireConfirmRepair, resolveProjectId } from '../_lib/operator-guard.js';
+import { 
+  requireConfirmRepair, 
+  resolveProjectId, 
+  createEvidence, 
+  writeEvidenceMarkdown,
+  type EvidenceArtifact 
+} from '../_lib/operator-guard.js';
+import { captureStateSnapshot, formatSnapshot } from '../_lib/state-snapshot.js';
 
 import {
   extractAndPersistContainmentRelationships,
@@ -25,83 +32,132 @@ requireConfirmRepair(SCRIPT_NAME);
 const { Pool } = pg;
 
 async function main() {
+  console.log('╔════════════════════════════════════════════════════════════════╗');
+  console.log('║              EXTRACT REMAINING                                 ║');
+  console.log('║              ⚠️  DEPRECATED - Use run-a1-extraction.ts          ║');
+  console.log('╚════════════════════════════════════════════════════════════════╝\n');
+  
   const projectId = resolveProjectId();
+  
+  // Initialize evidence artifact
+  const evidence: EvidenceArtifact = createEvidence(SCRIPT_NAME, projectId);
+  evidence.operations?.push('DEPRECATED: This script is superseded by run-a1-extraction.ts');
+  
+  // Capture BEFORE state
+  console.log('[SNAPSHOT] Capturing before state...');
+  try {
+    evidence.beforeCounts = await captureStateSnapshot(projectId);
+    console.log(`  ${formatSnapshot(evidence.beforeCounts)}`);
+  } catch (err) {
+    console.log('  Warning: Could not capture before snapshot');
+  }
+  console.log('');
+  
   const pool = new Pool({ 
     connectionString: process.env.DATABASE_URL, 
     ssl: process.env.DATABASE_URL?.includes('localhost') ? false : { rejectUnauthorized: false } 
   });
   
-  console.log('Extracting remaining relationships...\n');
-  
-  // Containment (R04, R05, R06, R07, R16)
-  console.log('Containment (R04, R05, R06, R07, R16)...');
   try {
-    const contain = await extractAndPersistContainmentRelationships(projectId);
-    console.log('  R04:', contain.r04.persisted);
-    console.log('  R05:', contain.r05.persisted);
-    console.log('  R06:', contain.r06.persisted);
-    console.log('  R07:', contain.r07.persisted);
-    console.log('  R16:', contain.r16.persisted);
-  } catch (e: any) {
-    console.log('  Error:', e.message);
+    console.log('Extracting remaining relationships...\n');
+    
+    // Containment (R04, R05, R06, R07, R16)
+    console.log('Containment (R04, R05, R06, R07, R16)...');
+    try {
+      const contain = await extractAndPersistContainmentRelationships(projectId);
+      console.log('  R04:', contain.r04.persisted);
+      console.log('  R05:', contain.r05.persisted);
+      console.log('  R06:', contain.r06.persisted);
+      console.log('  R07:', contain.r07.persisted);
+      console.log('  R16:', contain.r16.persisted);
+      evidence.operations?.push(`Containment: R04=${contain.r04.persisted}, R05=${contain.r05.persisted}, R06=${contain.r06.persisted}, R07=${contain.r07.persisted}, R16=${contain.r16.persisted}`);
+    } catch (e: any) {
+      console.log('  Error:', e.message);
+      evidence.errors?.push(`Containment error: ${e.message}`);
+    }
+    
+    // TDD (R08, R09, R11, R14)
+    console.log('\nTDD (R08, R09, R11, R14)...');
+    try {
+      const tdd = await extractAndPersistTddRelationships(projectId);
+      console.log('  Persisted:', tdd.persisted);
+      evidence.operations?.push(`TDD rels persisted=${tdd.persisted}`);
+    } catch (e: any) {
+      console.log('  Error:', e.message);
+      evidence.errors?.push(`TDD error: ${e.message}`);
+    }
+    
+    // Git (R63, R67, R70)
+    console.log('\nGit (R63, R67, R70)...');
+    try {
+      const git = await extractAndPersistGitRelationships(projectId);
+      console.log('  R63:', git.r63.persisted);
+      console.log('  R67:', git.r67.persisted);
+      console.log('  R70:', git.r70.persisted);
+      evidence.operations?.push(`Git rels: R63=${git.r63.persisted}, R67=${git.r67.persisted}, R70=${git.r70.persisted}`);
+    } catch (e: any) {
+      console.log('  Error:', e.message);
+      evidence.errors?.push(`Git error: ${e.message}`);
+    }
+    
+    // Neo4j rebuild
+    console.log('\nNeo4j rebuild...');
+    try {
+      const neo = await replaceAllRelationshipsInNeo4j(projectId);
+      console.log('  Synced:', neo.synced);
+      evidence.operations?.push(`Neo4j rebuild synced=${neo.synced}`);
+    } catch (e: any) {
+      console.log('  Error:', e.message);
+      evidence.errors?.push(`Neo4j error: ${e.message}`);
+    }
+    
+    // Summary
+    const e = await pool.query('SELECT COUNT(*)::int AS c FROM entities');
+    const r = await pool.query('SELECT relationship_type, COUNT(*)::int AS c FROM relationships GROUP BY relationship_type ORDER BY relationship_type');
+    let ledger = 0;
+    try {
+      ledger = fs.readFileSync('shadow-ledger/ledger.jsonl', 'utf-8').split('\n').filter(l => l.trim()).length;
+    } catch {}
+    
+    console.log('\n═══════════════════════════════════════════════════════════════');
+    console.log('FINAL STATE');
+    console.log('═══════════════════════════════════════════════════════════════\n');
+    console.log('Entities:', e.rows[0].c);
+    console.log('Relationships:');
+    let relTotal = 0;
+    for (const row of r.rows) {
+      console.log('  ' + row.relationship_type + ': ' + row.c);
+      relTotal += row.c;
+    }
+    console.log('  Total:', relTotal);
+    console.log('Ledger:', ledger);
+    
+    const total = e.rows[0].c + relTotal;
+    const coverage = (ledger / total * 100).toFixed(1);
+    console.log('\nCoverage:', ledger + '/' + total + ' = ' + coverage + '%');
+    
+    // Capture AFTER state
+    console.log('\n[SNAPSHOT] Capturing after state...');
+    try {
+      evidence.afterCounts = await captureStateSnapshot(projectId);
+      console.log(`  ${formatSnapshot(evidence.afterCounts)}`);
+    } catch (err) {
+      console.log('  Warning: Could not capture after snapshot');
+    }
+
+    evidence.status = (evidence.errors?.length ?? 0) > 0 ? 'PARTIAL' : 'SUCCESS';
+
+  } catch (err) {
+    evidence.status = 'FAILED';
+    evidence.errors?.push(String(err));
+    throw err;
+  } finally {
+    writeEvidenceMarkdown(evidence);
+    await pool.end();
   }
-  
-  // TDD (R08, R09, R11, R14)
-  console.log('\nTDD (R08, R09, R11, R14)...');
-  try {
-    const tdd = await extractAndPersistTddRelationships(projectId);
-    console.log('  Persisted:', tdd.persisted);
-  } catch (e: any) {
-    console.log('  Error:', e.message);
-  }
-  
-  // Git (R63, R67, R70)
-  console.log('\nGit (R63, R67, R70)...');
-  try {
-    const git = await extractAndPersistGitRelationships(projectId);
-    console.log('  R63:', git.r63.persisted);
-    console.log('  R67:', git.r67.persisted);
-    console.log('  R70:', git.r70.persisted);
-  } catch (e: any) {
-    console.log('  Error:', e.message);
-  }
-  
-  // Neo4j rebuild
-  console.log('\nNeo4j rebuild...');
-  try {
-    const neo = await replaceAllRelationshipsInNeo4j(projectId);
-    console.log('  Synced:', neo.synced);
-  } catch (e: any) {
-    console.log('  Error:', e.message);
-  }
-  
-  // Summary
-  const e = await pool.query('SELECT COUNT(*)::int AS c FROM entities');
-  const r = await pool.query('SELECT relationship_type, COUNT(*)::int AS c FROM relationships GROUP BY relationship_type ORDER BY relationship_type');
-  const ledger = fs.readFileSync('shadow-ledger/ledger.jsonl', 'utf-8').split('\n').filter(l => l.trim()).length;
-  
-  console.log('\n═══════════════════════════════════════════════════════════════');
-  console.log('FINAL STATE');
-  console.log('═══════════════════════════════════════════════════════════════\n');
-  console.log('Entities:', e.rows[0].c);
-  console.log('Relationships:');
-  let relTotal = 0;
-  for (const row of r.rows) {
-    console.log('  ' + row.relationship_type + ': ' + row.c);
-    relTotal += row.c;
-  }
-  console.log('  Total:', relTotal);
-  console.log('Ledger:', ledger);
-  
-  const total = e.rows[0].c + relTotal;
-  const coverage = (ledger / total * 100).toFixed(1);
-  console.log('\nCoverage:', ledger + '/' + total + ' = ' + coverage + '%');
-  
-  await pool.end();
 }
 
 main().catch(err => {
   console.error('Error:', err);
   process.exit(1);
 });
-
