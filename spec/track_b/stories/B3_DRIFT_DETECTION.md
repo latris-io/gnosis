@@ -150,7 +150,27 @@ interface DriftReport {
 | All relationships | `GRAPH_API_V2_URL/api/v2/relationships` (paginated) |
 | E50 Commit | `GRAPH_API_URL` (v1 traversal, if needed) |
 
-**Note:** Use pagination (`limit`/`offset`). Enumerate all pages for complete snapshot.
+**Note:** Use pagination (`limit`/`offset`). Enumerate all pages until `has_more=false` for complete snapshot.
+
+---
+
+## Running the v2 Server
+
+The v2 enumeration endpoints require a running server:
+
+```bash
+# Set environment variables
+export $(grep -v '^#' .env | xargs)
+export GRAPH_API_V2_PORT=3001
+
+# Start v2 server (background)
+npx tsx src/track_b/http/server.ts &
+
+# Verify it's running
+curl http://localhost:3001/health
+```
+
+The v1 server (`src/http/server.ts`) runs on port 3000 (if needed for traversal).
 
 ---
 

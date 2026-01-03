@@ -83,7 +83,8 @@ This Track B capability (Closure Check) is defined by the Roadmap Track B scope,
 
 ## Implementation Constraints
 
-- Access Track A data via Graph API v1 only
+- Access Track A data via Graph API v1 (traversal) or v2 (enumeration)
+- Use v2 enumeration for whole-graph snapshots (via B.3)
 - Use Track A pipeline via ops layer only
 - Do not modify Track A locked surfaces
 - Place implementation in `src/services/track_b/closure-check/`

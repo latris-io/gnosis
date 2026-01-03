@@ -41,23 +41,44 @@
 
 ---
 
-## 3. Counts by Type
+## 3. Counts by Type (Exact, Paginated)
 
 ### Entity Counts (canonical project)
 
-| Type | Count |
-|------|-------|
-| E01 (Epic) | 65 |
-| E02 (Story) | 397 |
-| E03 (AC) | 1000+ |
-| E11 (SourceFile) | 70 |
-| E12 (Function) | 253 |
+| Type | Count | Method |
+|------|-------|--------|
+| E01 (Epic) | 65 | Single page |
+| E02 (Story) | 397 | Single page |
+| E03 (AC) | **3147** | 4 pages (1000+1000+1000+147) |
+| E06 (TechnicalDesign) | 23 | Single page |
+| E08 (Component) | 4 | Single page |
+| E11 (SourceFile) | 77 | Single page |
+| E12 (Function) | 263 | Single page |
+| E13 (Class) | 18 | Single page |
+| E27 (TestFile) | 34 | Single page |
+| E28 (TestSuite) | 122 | Single page |
+| E29 (TestCase) | 304 | Single page |
+| E49 (ReleaseVersion) | 10 | Single page |
+| E50 (Commit) | 219 | Single page |
+| E52 (SemVer) | 3 | Single page |
 
-### Relationship Counts
+### Relationship Counts (Exact)
 
-Relationships are enumerable via:
+| Metric | Value |
+|--------|-------|
+| **Total Relationships** | **5412** |
+| Pages Required | 6 (1000+1000+1000+1000+1000+412) |
+
+Enumerated with pagination until `has_more=false`:
 ```bash
-curl "http://localhost:3001/api/v2/relationships?project_id=...&limit=1000"
+# Pagination loop
+offset=0; total=0
+while has_more; do
+  resp=$(curl ".../relationships?project_id=...&limit=1000&offset=$offset")
+  total += returned
+  offset += 1000
+done
+# Result: 5412 total
 ```
 
 ---
@@ -94,6 +115,28 @@ ORDER BY instance_id, id
 - `instance_id` is unique per project+type
 - `id` (UUID) provides tie-breaker
 - Pagination is stable across requests
+
+### Verified Ordering (E11 SourceFile)
+
+**Page 1 (offset=0, limit=5):**
+```
+FILE-src/api/v1/entities.ts
+FILE-src/api/v1/markers.ts
+FILE-src/api/v1/relationships.ts
+FILE-src/api/v1/traversal.ts
+FILE-src/api/v2/db.ts
+```
+
+**Page 2 (offset=5, limit=5):**
+```
+FILE-src/api/v2/entities.ts
+FILE-src/api/v2/relationships.ts
+FILE-src/config/env.ts
+FILE-src/db/migrate.ts
+FILE-src/db/neo4j-migrate.ts
+```
+
+Ordering is **alphabetical by instance_id** and **stable across requests**.
 
 ---
 
