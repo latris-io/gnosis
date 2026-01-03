@@ -3,7 +3,18 @@ tdd:
   id: TDD-TRACKB-B6
   type: TechnicalDesign
   version: "1.0.0"
-  status: planned
+  status: in_progress
+  implements:
+    files:
+      # B.6.1 Enumeration Subset (complete)
+      - src/api/v2/db.ts
+      - src/api/v2/entities.ts
+      - src/api/v2/relationships.ts
+      - src/track_b/http/types.ts
+      - src/track_b/http/routes/entities.ts
+      - src/track_b/http/routes/relationships.ts
+      - src/track_b/http/server.ts
+      # B.6.2+ endpoints (pending)
 ---
 
 # Story B.6: Graph API v2
