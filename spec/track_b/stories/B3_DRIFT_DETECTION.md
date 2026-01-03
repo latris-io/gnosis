@@ -25,7 +25,8 @@ Detect changes between graph snapshots to identify regressions, unexpected mutat
 
 - [ ] B.1 Ground Truth Engine complete
 - [ ] B.2 BRD Registry complete
-- [ ] Graph API v1 operational
+- [ ] **B.6.1 Graph API v2 Enumeration complete**
+- [ ] `GRAPH_API_V2_URL` environment variable configured
 
 ---
 
@@ -84,8 +85,12 @@ This Track B capability (Drift Detection) is defined by the Roadmap Track B scop
 
 ## Implementation Constraints
 
-- Access Track A data via Graph API v1 only
+- Access Track A data via **HTTP calls** to `GRAPH_API_URL` (v1) and `GRAPH_API_V2_URL` (v2)
+- Use v2 enumeration with pagination for whole-graph snapshots
+- Do NOT import from Track A locked surfaces
 - Do not modify Track A locked surfaces
+- Ledger writes to `shadow-ledger/<project_id>/ledger.jsonl` with `track: "B"`, `story: "B.3"`
+- Evidence must record: `GRAPH_API_URL`, `GRAPH_API_V2_URL`, `PROJECT_ID`
 - Place implementation in `src/services/track_b/drift-detection/`
 - Do NOT add `@satisfies AC-B.*` markers
 - Do NOT add `@implements STORY-B.*` markers
@@ -141,9 +146,11 @@ interface DriftReport {
 
 | Dependency | Source |
 |------------|--------|
-| All entities | Graph API v1 |
-| All relationships | Graph API v1 |
-| E50 Commit | Graph API v1 |
+| All entities | `GRAPH_API_V2_URL/api/v2/entities` (paginated) |
+| All relationships | `GRAPH_API_V2_URL/api/v2/relationships` (paginated) |
+| E50 Commit | `GRAPH_API_URL` (v1 traversal, if needed) |
+
+**Note:** Use pagination (`limit`/`offset`). Enumerate all pages for complete snapshot.
 
 ---
 

@@ -70,15 +70,18 @@ Track B introduces 4 additional gates on top of the existing Track A gate set:
 
 ## Stories
 
-| Story | Name | Duration | Gate |
-|-------|------|----------|------|
-| B.1 | Ground Truth Engine | ~2 days | G-HEALTH |
-| B.2 | BRD Registry | ~2 days | G-REGISTRY |
-| B.3 | Drift Detection | ~2 days | G-DRIFT |
-| B.4 | Closure Check | ~1 day | G-CLOSURE |
-| B.5 | Shadow Ledger Migration | ~1 day | HGR-2 prereq |
-| B.6 | Graph API v2 | ~1 day | API boundary |
-| B.7 | Semantic Corpus Export | ~0.5 day | Corpus quality |
+| Story | Name | Duration | Gate | Sequence |
+|-------|------|----------|------|----------|
+| B.1 | Ground Truth Engine | ~2 days | G-HEALTH | 1 |
+| B.2 | BRD Registry | ~2 days | G-REGISTRY | 2 |
+| **B.6.1** | **Graph API v2 Enumeration** | **~0.5 day** | **API** | **3** |
+| B.3 | Drift Detection | ~2 days | G-DRIFT | 4 |
+| B.4 | Closure Check | ~1 day | G-CLOSURE | 5 |
+| B.5 | Shadow Ledger Migration | ~1 day | HGR-2 prereq | 6 |
+| B.6.2 | Graph API v2 Remaining | ~0.5 day | API boundary | 7 |
+| B.7 | Semantic Corpus Export | ~0.5 day | Corpus quality | 8 |
+
+**Note:** B.6 split per CID-2026-01-03. B.6.1 enables entity enumeration for B.3/B.4.
 
 ---
 
@@ -95,7 +98,9 @@ Track B **MUST NOT** modify Track A locked surfaces:
 - `scripts/verification/**`
 - `docs/verification/**` (except `docs/verification/track_b/**`)
 
-Track B accesses Track A data **only** through Graph API v1.
+Track B accesses Track A data via **HTTP calls** to Graph API endpoints:
+- **v1** (`GRAPH_API_URL`): traversal, relationships-by-id
+- **v2** (`GRAPH_API_V2_URL`): enumeration (after B.6.1 per CID-2026-01-03)
 
 ---
 

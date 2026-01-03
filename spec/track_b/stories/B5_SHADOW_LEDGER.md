@@ -27,6 +27,14 @@ Migrate the external shadow ledger into the graph, making all traceability data 
 - [ ] Graph API v1 operational
 - [ ] Shadow ledger files intact (`shadow-ledger/*/ledger.jsonl`)
 
+## Ledger Stream Notes (CID-2026-01-03)
+
+- Canonical stream: `shadow-ledger/<project_id>/ledger.jsonl`
+- Track A entries: `operation` field discriminator
+- Track B entries: `action` field + `track: "B"` discriminator
+- B.1/B.2 historical entries merged per CID-2026-01-03
+- B.5 migration reads this unified stream
+
 ---
 
 ## Scope

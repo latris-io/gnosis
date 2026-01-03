@@ -24,8 +24,8 @@ Verify that re-ingestion produces identical results, proving the extraction pipe
 ## Entry Criteria
 
 - [ ] B.3 Drift Detection complete
-- [ ] Graph API v1 operational
-- [ ] Track A pipeline accessible via ops layer
+- [ ] `GRAPH_API_V2_URL` environment variable configured
+- [ ] Track A pipeline accessible via `src/ops/track-a.ts`
 
 ---
 
@@ -125,7 +125,8 @@ If closure fails:
 |------------|--------|
 | Track A pipeline | `src/ops/track-a.ts` |
 | Graph snapshots | B.3 Drift Detection |
-| All entities/relationships | Graph API v1 |
+| All entities | `GRAPH_API_V2_URL/api/v2/entities` (via B.3) |
+| All relationships | `GRAPH_API_V2_URL/api/v2/relationships` (via B.3) |
 
 ---
 

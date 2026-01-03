@@ -102,3 +102,24 @@ HGR-2 **MUST** be rejected if:
 - Track B does NOT use `@implements STORY-B.*` markers
 
 If a Track B TDD lists Related Canonical Requirements (existing BRD IDs), those files MUST have canonical markers (`@implements STORY-*`, `@satisfies AC-*`).
+
+---
+
+## B.6.1 Database Access Exception (CID-2026-01-03)
+
+The only permitted direct database access in Track B is the **CID-approved, hardened, read-only B.6.1 enumeration service**.
+
+This exception is necessary because:
+- Graph API v1 has no entity enumeration endpoint
+- B.3/B.4 require whole-graph snapshots
+- B.6.1 enumeration endpoints must query the database directly
+
+Hardening requirements (verified by code review and `npm run verify:track-b-db-boundary`):
+1. `SET TRANSACTION READ ONLY` on all connections
+2. RLS context set via `SELECT set_project_id($1)`
+3. Explicit column selection (no `SELECT *`)
+4. Explicit `project_id` filter in WHERE clause
+5. Pagination with max 1000 rows per request
+6. Module-level connection pool (not per-request)
+
+**Evidence:** `docs/verification/track_b/B6_1_ENUMERATION_EVIDENCE.md`

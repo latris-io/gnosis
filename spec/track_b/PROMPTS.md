@@ -10,11 +10,15 @@
 Before implementing any Track B story:
 
 1. **Read the story card completely** (`spec/track_b/stories/B*.md`)
-2. **Track A is READ-ONLY** — access only via Graph API v1
-3. **Use `src/api/v1/*` or `src/services/graph/*`** for all graph reads
-4. **DO NOT import from Track A locked surfaces**
-5. **Place Track B code in new directories** (e.g., `src/services/track_b/*`, `src/api/v2/*`)
-6. **Place Track B verification artifacts in `docs/verification/track_b/`**
+2. **Track A is READ-ONLY** — access via HTTP calls to Graph API endpoints
+3. **Use HTTP calls (fetch/axios):**
+   - v1: `GRAPH_API_URL` for traversal/relationships-by-id
+   - v2: `GRAPH_API_V2_URL` for enumeration (after B.6.1)
+4. **DO NOT import from Track A locked surfaces** (no `import from 'src/api/v1/*'`)
+5. **Place Track B code in:** `src/services/track_b/*`, `src/api/v2/*`, `src/track_b/http/*`
+6. **Ledger writes go to:** `shadow-ledger/<project_id>/ledger.jsonl` with `track: "B"` field
+7. **Evidence must record:** both API URLs if both were used
+8. **Place Track B verification artifacts in `docs/verification/track_b/`**
 
 ---
 

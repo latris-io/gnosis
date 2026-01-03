@@ -34,7 +34,7 @@
 
 ### Verification
 
-- [ ] G-API: No direct database access in Track B code
+- [ ] G-API: No direct database access in Track B code, **except** the CID-approved, hardened, read-only access used by B.6.1 enumeration endpoints (per CID-2026-01-03). Verified by `npm run verify:track-b-db-boundary`.
 - [ ] **All Track A gates + all Track B gates pass**
 - [ ] Track B TDDs registered as E06 nodes
 - [ ] Track B TDDs linked to implementation via R14

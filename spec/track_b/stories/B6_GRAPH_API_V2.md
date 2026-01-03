@@ -23,9 +23,18 @@ Extend the Graph API with v2 endpoints that expose Track B capabilities (health,
 
 ## Entry Criteria
 
-- [ ] B.1–B.5 complete (all Track B services ready)
-- [ ] Graph API v1 operational
-- [ ] HTTP server infrastructure available
+This story is split per CID-2026-01-03-TRACKB-RESEQUENCE-V2-ENUM:
+
+### B.6.1 Enumeration Subset (Entry: After B.2, Before B.3)
+
+- [ ] B.1 Ground Truth Engine complete
+- [ ] B.2 BRD Registry complete
+- [ ] `DATABASE_URL` configured
+
+### B.6.2 Remaining Endpoints (Entry: After B.5)
+
+- [ ] B.5 Shadow Ledger Migration complete
+- [ ] B.6.1 Enumeration Subset complete
 
 ---
 
@@ -48,7 +57,58 @@ Extend the Graph API with v2 endpoints that expose Track B capabilities (health,
 
 - Modification of v1 endpoints
 - Changes to Track A services
-- Direct database access
+- Direct database access **EXCEPT** for B.6.1 enumeration (see below)
+
+### B.6.1 Database Access Exception (CID-2026-01-03)
+
+B.6.1 enumeration endpoints are permitted **READ-ONLY** direct database access:
+
+1. **Transaction mode:** `BEGIN; SET TRANSACTION READ ONLY;`
+2. **RLS context:** `SELECT set_project_id($1)` before queries
+3. **Explicit columns:** No `SELECT *`
+4. **Explicit project_id filter:** `WHERE project_id = $1` in all queries
+5. **Pagination required:** `limit` (max 1000) + `offset`
+6. **Module-level pool:** Single `Pool` instance, not per-request
+
+```typescript
+// Example: src/api/v2/db.ts
+export async function withReadOnlyClient<T>(
+  projectId: string,
+  fn: (client: PoolClient) => Promise<T>
+): Promise<T> {
+  const client = await v2Pool.connect();
+  try {
+    await client.query('BEGIN');
+    await client.query('SET TRANSACTION READ ONLY');
+    await client.query('SELECT set_project_id($1)', [projectId]);
+    const result = await fn(client);
+    await client.query('COMMIT');
+    return result;
+  } finally {
+    client.release();
+  }
+}
+
+// Example enumeration with explicit project_id filter
+export async function enumerateEntities(
+  client: PoolClient,
+  projectId: string,
+  entityType: string,
+  limit: number,
+  offset: number
+): Promise<Entity[]> {
+  const result = await client.query(`
+    SELECT id, instance_id, entity_type, name, content_hash,
+           source_file, line_start, line_end, extracted_at
+    FROM entities
+    WHERE entity_type = $1
+      AND project_id = $2  -- Belt+suspenders with RLS
+    ORDER BY instance_id
+    LIMIT $3 OFFSET $4
+  `, [entityType, projectId, Math.min(limit, 1000), offset]);
+  return result.rows;
+}
+```
 
 ---
 
@@ -90,12 +150,28 @@ This Track B capability (Graph API v2) is defined by the Roadmap Track B scope, 
 
 ## Implementation Constraints
 
-- Access Track A data via Graph API v1 only
 - Do not modify v1 endpoints
 - Do not modify Track A locked surfaces
-- Place implementation in `src/api/v2/`
-- Do NOT add `@satisfies AC-B.*` markers
-- Do NOT add `@implements STORY-B.*` markers
+- Do NOT add `@satisfies AC-B.*` or `@implements STORY-B.*` markers
+
+### Placement
+
+- Programmatic APIs: `src/api/v2/`
+- HTTP server/routes: `src/track_b/http/` (Track B-owned; `src/http/**` is locked)
+
+### Data Access
+
+- **B.6.1:** READ-ONLY direct database access (per exception above)
+- **B.6.2+:** Access data via B.1-B.5 service functions or v2 enumeration
+
+### API Boundary Gate Clarification
+
+The gate "Track C will only access via Graph API v2" is satisfied when:
+
+1. All Track B data is accessible via `GRAPH_API_V2_URL/api/v2/*`
+2. Track C uses `GRAPH_API_V2_URL` as its sole boundary surface
+3. The API contract (URL + response schema) is the boundary, not process topology
+4. A separate v2 server satisfies this requirement
 
 ### Legacy Node Filtering (IMPORTANT)
 

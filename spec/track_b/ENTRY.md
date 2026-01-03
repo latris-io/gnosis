@@ -41,9 +41,20 @@
 
 Track B is **READ-ONLY** relative to Track A:
 
-- Access Track A data **only** via Graph API v1
-- Do NOT import from Track A locked surfaces
+- Access Track A data via **HTTP calls** to Graph API endpoints:
+  - **v1** (`GRAPH_API_URL`): traversal, relationships-by-id
+  - **v2** (`GRAPH_API_V2_URL`): enumeration (after B.6.1 per CID-2026-01-03)
+- Do NOT **import** from Track A locked surfaces (no `import from 'src/api/v1/*'`)
 - Do NOT modify Track A schema, entities, relationships, or locked surfaces
+- B.6.1 v2 endpoints may use READ-ONLY direct database access (per CID-2026-01-03)
+
+### Environment Variables
+
+| Variable | Purpose | Example |
+|----------|---------|---------|
+| `GRAPH_API_URL` | v1 endpoints | `http://localhost:3000` |
+| `GRAPH_API_V2_URL` | v2 endpoints | `http://localhost:3001` |
+| `DATABASE_URL` | For B.6.1 read-only access | (existing) |
 
 ---
 

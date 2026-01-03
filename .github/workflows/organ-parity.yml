@@ -75,6 +75,14 @@ jobs:
         run: npm run verify:scripts-boundary
 
       # ------------------------------------------------------------
+      # 4b) Track B database boundary enforcement (G-API)
+      #     Ensures Track B code doesn't directly access DB
+      #     except CID-approved B.6.1 enumeration endpoints
+      # ------------------------------------------------------------
+      - name: Verify Track B database boundary
+        run: npm run verify:track-b-db-boundary
+
+      # ------------------------------------------------------------
       # 5) Prepare graph state (extraction + derivations)
       #    Ensures DB is consistent with repo state before tests
       # ------------------------------------------------------------
