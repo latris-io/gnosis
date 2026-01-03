@@ -44,14 +44,14 @@
 
 ### E11 SourceFile Coverage for scripts/**
 
-**Finding:** scripts/** is **excluded by design** from E11 extraction.
+**Finding:** `scripts/**` are excluded from E11 extraction by design; the filesystem provider includes `src/**/*.ts` (and does not include `scripts/`).
 
 Evidence from `src/extraction/providers/filesystem-provider.ts:145`:
 ```typescript
 const files = await glob('src/**/*.ts', { cwd: rootPath, nodir: true });
 ```
 
-Only `src/**/*.ts` is extracted as E11. This is intentional — scripts are operational tooling, not canonical source artifacts.
+This is intentional — scripts are operational tooling, not canonical source artifacts.
 
 **Graph query result:** 0 E11 entities under `FILE-scripts/**`
 
@@ -162,7 +162,7 @@ Scripts that **must** run to build baseline graph state for CI/closure.
 
 | Script | Purpose | Mutates | Canonical? | Provenance? |
 |--------|---------|---------|------------|-------------|
-| **run-a1-extraction.ts** | Full entity extraction + derivations | PG + Neo4j | ✅ YES (CI blessed) | ⚠️ Partial (logs to ledger, no explicit epoch) |
+| **run-a1-extraction.ts** | Full entity extraction + derivations | PG + Neo4j | ✅ YES (CI blessed) | ✅ Provenance via Track B extraction provenance artifact (no formal epoch object yet) |
 | register-track-b-tdds.ts | Track B TDD E06 + R14 registration | PG + Neo4j | ✅ YES (Track B blessed) | ✅ Evidence artifact |
 | setup-project.ts | Create project record | PG | ✅ YES | ❌ None |
 
@@ -208,6 +208,9 @@ Scripts that perform targeted mutations but are NOT baseline constructors.
 1. ✅ All scripts require `--confirm-repair` flag (except filesystem-only migrations)
 2. ✅ All scripts emit evidence artifacts to `docs/verification/track_b/operator_runs/`
 3. ✅ All scripts use `resolveProjectId()` — no hardcoded PROJECT_IDs
+
+**Closure Baseline Rule:**
+Any Tier 2 evidence artifact must include the git SHA and be stored under `operator_runs/`. Closure baselines must reference the most recent operator evidence if any exists since the last baseline. This ensures closure is honest about operator changes between baselines.
 
 ### Tier 3 — Read-Only Diagnostics
 
