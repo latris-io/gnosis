@@ -92,6 +92,40 @@
 
 ---
 
+## R14 Parity Check (PG ↔ Neo4j)
+
+**TDD:** `TDD-TRACKB-B1`
+
+| Store | R14 Count | Status |
+|-------|-----------|--------|
+| PostgreSQL | 7 | ✅ |
+| Neo4j | 7 | ✅ |
+| **Parity** | — | ✅ MATCH |
+
+**Targets (both stores):**
+- `FILE-src/services/track_b/ground-truth/file-scope.ts`
+- `FILE-src/services/track_b/ground-truth/health.ts`
+- `FILE-src/services/track_b/ground-truth/index.ts`
+- `FILE-src/services/track_b/ground-truth/ledger.ts`
+- `FILE-src/services/track_b/ground-truth/manifest.ts`
+- `FILE-src/services/track_b/ground-truth/merkle.ts`
+- `FILE-src/services/track_b/ground-truth/types.ts`
+
+---
+
+## Pre-Self-Ingestion Verification
+
+| Check | Result |
+|-------|--------|
+| Determinism replay (same root across runs) | ✅ PASS |
+| Change sensitivity (single file flips root) | ✅ PASS |
+| Scope invariance (excluded files don't affect root) | ✅ PASS |
+| Failure semantics (evidence always written) | ✅ PASS |
+| R14 + E11 consistency (edges point to valid E11s) | ✅ PASS |
+| R14 PG ↔ Neo4j parity | ✅ PASS |
+
+---
+
 ## Ledger
 
 Operations logged to: `docs/verification/track_b/ground-truth-ledger.jsonl`
