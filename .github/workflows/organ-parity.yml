@@ -82,7 +82,26 @@ jobs:
         run: npx tsx scripts/run-a1-extraction.ts
 
       # ------------------------------------------------------------
-      # 6) Test suite (prevents silent regressions)
+      # 6) Write extraction provenance (Track B)
+      #    Captures git SHA, environment, and graph state for B.3/B.4
+      # ------------------------------------------------------------
+      - name: Write extraction provenance (Track B)
+        run: npx tsx scripts/verification/write-extraction-provenance.ts
+
+      # ------------------------------------------------------------
+      # 7) Test suite (prevents silent regressions)
       # ------------------------------------------------------------
       - name: Run test suite
         run: npm test
+
+      # ------------------------------------------------------------
+      # 8) Upload Track B verification artifacts
+      #    Preserves evidence for debugging and audit
+      # ------------------------------------------------------------
+      - name: Upload Track B verification artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: track-b-artifacts
+          path: |
+            docs/verification/track_b/**
