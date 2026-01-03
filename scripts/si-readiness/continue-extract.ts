@@ -1,9 +1,23 @@
 // @ts-nocheck
 // LEGACY_SCAN_OK: This script audits/validates legacy ledger or corpus files
-// Continue extraction from where genesis-extract was aborted
+/**
+ * Continue Extraction Script
+ * Tier 2: LEGACY (superseded by scripts/run-a1-extraction.ts)
+ * 
+ * Continues extraction from where genesis-extract was aborted.
+ * 
+ * DEPRECATED: Use scripts/run-a1-extraction.ts instead.
+ * REQUIRES: --confirm-repair flag and PROJECT_ID env var
+ */
 import 'dotenv/config';
 import pg from 'pg';
 import neo4j from 'neo4j-driver';
+import { requireConfirmRepair } from '../_lib/operator-guard.js';
+
+const SCRIPT_NAME = 'scripts/si-readiness/continue-extract.ts';
+
+// === OPERATOR GUARD ===
+requireConfirmRepair(SCRIPT_NAME);
 import * as fs from 'fs';
 
 // Import ops layer
@@ -175,3 +189,4 @@ main().catch(err => {
   console.error('Error:', err);
   process.exit(1);
 });
+

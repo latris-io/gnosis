@@ -1,8 +1,18 @@
 // @ts-nocheck
 // LEGACY_SCAN_OK: This script audits/validates legacy ledger or corpus files
-// Extract relationships only (entities already done)
+/**
+ * Extract Relationships Script
+ * Tier 2: LEGACY (superseded by scripts/run-a1-extraction.ts)
+ * 
+ * DEPRECATED: Use scripts/run-a1-extraction.ts instead.
+ * REQUIRES: --confirm-repair flag and PROJECT_ID env var
+ */
 import 'dotenv/config';
 import pg from 'pg';
+import { requireConfirmRepair } from '../_lib/operator-guard.js';
+
+const SCRIPT_NAME = 'scripts/si-readiness/extract-relationships.ts';
+requireConfirmRepair(SCRIPT_NAME);
 import * as fs from 'fs';
 
 import {
@@ -103,3 +113,4 @@ main().catch(err => {
   console.error('Error:', err);
   process.exit(1);
 });
+

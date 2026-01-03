@@ -1,18 +1,20 @@
 #!/usr/bin/env npx tsx
-// scripts/calibrate-tdds.ts
-// @implements STORY-64.2
-// TDD Calibration Script - Mandatory CI Check
-//
-// Validates (6 checks):
-// 1. E02_STORY_REFS: All addresses.stories[] resolve to E02 entities
-// 2. E03_AC_REFS: All addresses.acceptance_criteria[] resolve to E03 entities
-// 3. E08_SCHEMA_REFS: All addresses.schemas[] resolve to E08 entities (or seeds them)
-// 4. E11_FILE_REFS: All implements.files[] resolve to E11 entities (using DERIVED instance_id)
-// 5. TDD_MARKER_MATCH: implements.files[] ↔ @tdd markers match
-// 6. TDD_STORY_COHERENCE: files in implements[] must have @implements STORY-* for this TDD's stories
-//
-// Exit: 0 if all pass, 1 if any fail
-
+/**
+ * TDD Calibration Script
+ * Tier 2: Maintenance Script (when SEED_E08=true)
+ * 
+ * Validates (6 checks):
+ * 1. E02_STORY_REFS: All addresses.stories[] resolve to E02 entities
+ * 2. E03_AC_REFS: All addresses.acceptance_criteria[] resolve to E03 entities
+ * 3. E08_SCHEMA_REFS: All addresses.schemas[] resolve to E08 entities (or seeds them)
+ * 4. E11_FILE_REFS: All implements.files[] resolve to E11 entities (using DERIVED instance_id)
+ * 5. TDD_MARKER_MATCH: implements.files[] ↔ @tdd markers match
+ * 6. TDD_STORY_COHERENCE: files in implements[] must have @implements STORY-* for this TDD's stories
+ * 
+ * @implements STORY-64.2
+ * 
+ * REQUIRES: --confirm-repair flag if SEED_E08=true, and PROJECT_ID env var
+ */
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
@@ -21,6 +23,15 @@ import { discoverTDDs, parseFrontmatter, ParsedFrontmatter } from '../src/extrac
 import { computeExpectedCounts } from '../src/extraction/providers/tdd-relationship-provider.js';
 import { persistEntities, closeConnections } from '../src/ops/track-a.js';
 import { getProjectLedger } from '../src/ledger/shadow-ledger.js';
+import { 
+  requireConfirmRepair, 
+  resolveProjectId, 
+  createEvidence, 
+  writeEvidenceMarkdown,
+  parseArgs,
+  type EvidenceArtifact 
+} from './_lib/operator-guard.js';
+import { captureStateSnapshot, formatSnapshot } from './_lib/state-snapshot.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
@@ -36,16 +47,20 @@ interface CalibrationConfig {
   strictMarkers: boolean; // Whether @tdd marker mismatches are errors vs warnings
 }
 
+const SCRIPT_NAME = 'scripts/calibrate-tdds.ts';
+
 function getConfig(): CalibrationConfig {
-  const projectId = process.env.PROJECT_ID;
-  if (!projectId) {
-    console.error('ERROR: PROJECT_ID environment variable is required');
-    process.exit(1);
+  const projectId = resolveProjectId();
+  const seedE08 = process.env.SEED_E08 === 'true';
+  
+  // Require --confirm-repair if SEED_E08=true (state-mutating mode)
+  if (seedE08) {
+    requireConfirmRepair(SCRIPT_NAME);
   }
   
   return {
     projectId,
-    seedE08: process.env.SEED_E08 === 'true',
+    seedE08,
     strictMarkers: process.env.STRICT_MARKERS === 'true',
   };
 }
@@ -385,88 +400,129 @@ async function main(): Promise<void> {
   console.log(`Seed E08: ${config.seedE08}`);
   console.log(`Strict Markers: ${config.strictMarkers}\n`);
   
-  // Discover TDDs from story files
-  const storiesDir = path.join(SPEC_DIR, 'track_a', 'stories');
-  const files = await fs.readdir(storiesDir);
-  
-  const summaries: CalibrationSummary[] = [];
-  let totalR08 = 0;
-  let totalR09 = 0;
-  let totalR11 = 0;
-  let totalR14 = 0;
-  
-  for (const file of files) {
-    if (!file.endsWith('.md')) continue;
-    
-    const filePath = path.join(storiesDir, file);
-    const frontmatter = await parseFrontmatter(filePath);
-    
-    if (!frontmatter || !frontmatter.id) {
-      console.log(`  SKIP: ${file} (no TDD frontmatter)`);
-      continue;
-    }
-    
-    console.log(`\n--- ${frontmatter.id} (${file}) ---`);
-    
-    const summary = await calibrateTDD(config, frontmatter);
-    summaries.push(summary);
-    
-    // Print validation results
-    for (const result of summary.validationResults) {
-      const status = result.passed ? '✓' : '✗';
-      console.log(`  ${status} ${result.check}`);
-      
-      for (const error of result.errors) {
-        console.log(`    ERROR: ${error}`);
-      }
-      for (const warning of result.warnings) {
-        console.log(`    WARN: ${warning}`);
-      }
-    }
-    
-    // Print expected counts
-    console.log(`  Expected counts:`);
-    console.log(`    R08 (Story→TDD): ${summary.expectedCounts.r08}`);
-    console.log(`    R09 (AC→TDD): ${summary.expectedCounts.r09}`);
-    console.log(`    R11 (Story→Schema): ${summary.expectedCounts.r11}`);
-    console.log(`    R14 (TDD→File): ${summary.expectedCounts.r14}`);
-    
-    totalR08 += summary.expectedCounts.r08;
-    totalR09 += summary.expectedCounts.r09;
-    totalR11 += summary.expectedCounts.r11;
-    totalR14 += summary.expectedCounts.r14;
+  // Initialize evidence only if in seeding mode (state-mutating)
+  let evidence: EvidenceArtifact | undefined;
+  if (config.seedE08) {
+    evidence = createEvidence(SCRIPT_NAME, config.projectId);
+    console.log('[SNAPSHOT] Capturing before state...');
+    evidence.beforeCounts = await captureStateSnapshot(config.projectId);
+    console.log(`  ${formatSnapshot(evidence.beforeCounts)}\n`);
   }
   
-  // Print summary
-  console.log('\n=== CALIBRATION SUMMARY ===\n');
-  console.log(`TDDs processed: ${summaries.length}`);
-  console.log(`Total expected R08: ${totalR08}`);
-  console.log(`Total expected R09: ${totalR09}`);
-  console.log(`Total expected R11: ${totalR11}`);
-  console.log(`Total expected R14: ${totalR14}`);
-  console.log(`Total TDD Bridge relationships: ${totalR08 + totalR09 + totalR11 + totalR14}`);
-  
-  const allPassed = summaries.every(s => s.allPassed);
-  const hasWarnings = summaries.some(s => s.hasWarnings);
-  
-  console.log('');
-  if (allPassed) {
-    console.log('✓ All checks passed');
-    if (hasWarnings) {
-      console.log('⚠ Warnings present (review recommended)');
+  try {
+    // Discover TDDs from story files
+    const storiesDir = path.join(SPEC_DIR, 'track_a', 'stories');
+    const files = await fs.readdir(storiesDir);
+    
+    const summaries: CalibrationSummary[] = [];
+    let totalR08 = 0;
+    let totalR09 = 0;
+    let totalR11 = 0;
+    let totalR14 = 0;
+    
+    for (const file of files) {
+      if (!file.endsWith('.md')) continue;
+      
+      const filePath = path.join(storiesDir, file);
+      const frontmatter = await parseFrontmatter(filePath);
+      
+      if (!frontmatter || !frontmatter.id) {
+        console.log(`  SKIP: ${file} (no TDD frontmatter)`);
+        continue;
+      }
+      
+      console.log(`\n--- ${frontmatter.id} (${file}) ---`);
+      
+      const summary = await calibrateTDD(config, frontmatter);
+      summaries.push(summary);
+      
+      // Print validation results
+      for (const result of summary.validationResults) {
+        const status = result.passed ? '✓' : '✗';
+        console.log(`  ${status} ${result.check}`);
+        
+        for (const error of result.errors) {
+          console.log(`    ERROR: ${error}`);
+        }
+        for (const warning of result.warnings) {
+          console.log(`    WARN: ${warning}`);
+        }
+      }
+      
+      // Print expected counts
+      console.log(`  Expected counts:`);
+      console.log(`    R08 (Story→TDD): ${summary.expectedCounts.r08}`);
+      console.log(`    R09 (AC→TDD): ${summary.expectedCounts.r09}`);
+      console.log(`    R11 (Story→Schema): ${summary.expectedCounts.r11}`);
+      console.log(`    R14 (TDD→File): ${summary.expectedCounts.r14}`);
+      
+      totalR08 += summary.expectedCounts.r08;
+      totalR09 += summary.expectedCounts.r09;
+      totalR11 += summary.expectedCounts.r11;
+      totalR14 += summary.expectedCounts.r14;
+    }
+    
+    // Print summary
+    console.log('\n=== CALIBRATION SUMMARY ===\n');
+    console.log(`TDDs processed: ${summaries.length}`);
+    console.log(`Total expected R08: ${totalR08}`);
+    console.log(`Total expected R09: ${totalR09}`);
+    console.log(`Total expected R11: ${totalR11}`);
+    console.log(`Total expected R14: ${totalR14}`);
+    console.log(`Total TDD Bridge relationships: ${totalR08 + totalR09 + totalR11 + totalR14}`);
+    
+    if (evidence) {
+      evidence.operations?.push(`Processed ${summaries.length} TDDs`);
+      evidence.operations?.push(`Expected counts: R08=${totalR08}, R09=${totalR09}, R11=${totalR11}, R14=${totalR14}`);
+    }
+    
+    const allPassed = summaries.every(s => s.allPassed);
+    const hasWarnings = summaries.some(s => s.hasWarnings);
+    
+    console.log('');
+    if (allPassed) {
+      console.log('✓ All checks passed');
+      if (hasWarnings) {
+        console.log('⚠ Warnings present (review recommended)');
+      }
+      if (evidence) {
+        evidence.status = 'SUCCESS';
+      }
+    } else {
+      console.log('✗ Some checks failed');
+      if (evidence) {
+        evidence.status = 'FAILED';
+        evidence.errors?.push('Some checks failed');
+      }
+    }
+    
+    // Capture after state if in seeding mode
+    if (evidence) {
+      console.log('\n[SNAPSHOT] Capturing after state...');
+      evidence.afterCounts = await captureStateSnapshot(config.projectId);
+      console.log(`  ${formatSnapshot(evidence.afterCounts)}`);
+    }
+    
+    if (!allPassed) {
+      throw new Error('Calibration checks failed');
+    }
+    
+  } catch (err) {
+    if (evidence) {
+      evidence.status = 'FAILED';
+      evidence.errors?.push(String(err));
+    }
+    throw err;
+  } finally {
+    if (evidence) {
+      writeEvidenceMarkdown(evidence);
     }
     await closeConnections();
-    process.exit(0);
-  } else {
-    console.log('✗ Some checks failed');
-    await closeConnections();
-    process.exit(1);
   }
 }
 
-main().catch(async err => {
+main().catch(err => {
   console.error('FATAL:', err);
-  await closeConnections();
   process.exit(1);
 });
 

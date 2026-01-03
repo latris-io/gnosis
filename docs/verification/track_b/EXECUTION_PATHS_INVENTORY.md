@@ -1,9 +1,10 @@
 # Execution Paths Inventory
 
 **Generated:** 2026-01-03T05:30:00Z  
+**Updated:** 2026-01-03T06:30:00Z (Governance hardening implemented)  
 **Purpose:** Identify all state-mutating execution entrypoints and determine canonicalization/provenance requirements  
 **Scope:** `scripts/**` directory  
-**Status:** Investigation + Reporting Only (no code changes)
+**Status:** Governance Controls Implemented
 
 ---
 
@@ -18,14 +19,24 @@
 5. **10 scripts** have `@g-api-exception` markers (skipped by boundary checker)
 6. **Multiple competing extraction entrypoints** exist (genesis-extract, continue-extract, run-a1-extraction)
 
-### Key Risks
+### Key Risks (MITIGATED)
 
-| Risk | Description | Severity |
-|------|-------------|----------|
-| Multiple extraction paths | 3+ scripts can build graph state with different sequences | HIGH |
-| No provenance for repair scripts | `scripts/repair/**` can mutate state without mandatory artifacts | MEDIUM |
-| si-readiness scripts are legacy | Many have `@ts-nocheck` and bypass current governance | MEDIUM |
-| Hardcoded PROJECT_IDs | Some repair scripts hardcode canonical project ID | LOW |
+| Risk | Description | Severity | Mitigation Status |
+|------|-------------|----------|-------------------|
+| Multiple extraction paths | 3+ scripts can build graph state with different sequences | HIGH | ✅ Legacy scripts deprecated, require `--confirm-repair` |
+| No provenance for repair scripts | `scripts/repair/**` can mutate state without mandatory artifacts | MEDIUM | ✅ All emit evidence artifacts |
+| si-readiness scripts are legacy | Many have `@ts-nocheck` and bypass current governance | MEDIUM | ✅ All require `--confirm-repair`, marked DEPRECATED |
+| Hardcoded PROJECT_IDs | Some repair scripts hardcode canonical project ID | LOW | ✅ All use `resolveProjectId()` from env/flag |
+
+### Governance Controls Implemented
+
+| Control | Implementation | Status |
+|---------|---------------|--------|
+| Operator intent gating | `--confirm-repair` flag required for all Tier 2 scripts | ✅ Implemented |
+| Evidence artifacts | Before/after state snapshots written to `operator_runs/` | ✅ Implemented |
+| Project ID resolution | Env var or `--project-id` flag required | ✅ Implemented |
+| Shared utilities | `scripts/_lib/operator-guard.ts`, `state-snapshot.ts` | ✅ Created |
+| Allowlist documentation | `OPERATOR_SCRIPTS_ALLOWLIST.md` | ✅ Created |
 
 ---
 
@@ -169,26 +180,34 @@ Scripts that **must** run to build baseline graph state for CI/closure.
 
 Scripts that perform targeted mutations but are NOT baseline constructors.
 
-| Script | Purpose | Mutates | Quarantine Status |
-|--------|---------|---------|-------------------|
-| fix-e15-extraction.ts | Remediate E15 module issues | PG + Neo4j | ⚠️ Should require CID |
-| rebuild-a3-pristine.ts | Rebuild A3 marker extraction | PG + ledger | ⚠️ Epoch-based logging |
-| sync-to-neo4j.ts | Sync entities to Neo4j | Neo4j | Manual tool |
-| sync-relationships-to-neo4j.ts | Sync rels to Neo4j | Neo4j | Manual tool |
-| sync-relationships-replace.ts | Replace-sync rels to Neo4j | Neo4j | Manual tool |
-| migrate-ledger-to-project-scope.ts | Migrate ledger structure | Filesystem | One-time migration |
-| repair/backfill-missing-brd-acs.ts | Backfill missing E03/R02 | PG | ⚠️ Hardcoded project_id |
-| repair/sync-neo4j.ts | Repair Neo4j sync | Neo4j | ⚠️ Hardcoded project_id |
-| si-readiness/genesis-extract.ts | Legacy full extraction | PG + Neo4j | LEGACY (superseded by run-a1-extraction) |
-| si-readiness/continue-extract.ts | Continue aborted extraction | PG + Neo4j | LEGACY |
-| calibrate-tdds.ts | TDD validation + E08 seeding | PG | ⚠️ Conditional writes |
-| extract-test-relationships.ts | Extract test rels | PG | Manual tool |
-| test-r36-r37.ts | Test R36/R37 rels | PG | Development tool |
+| Script | Purpose | Mutates | Confirm Flag | Evidence | PROJECT_ID |
+|--------|---------|---------|--------------|----------|------------|
+| fix-e15-extraction.ts | Remediate E15 module issues | PG + Neo4j | ✅ Required | ✅ Written | ✅ Env/flag |
+| rebuild-a3-pristine.ts | Rebuild A3 marker extraction | PG + ledger | ✅ Required | ✅ Written | ✅ Env/flag |
+| sync-to-neo4j.ts | Sync entities to Neo4j | Neo4j | ✅ Required | ✅ Written | ✅ Env/flag |
+| sync-relationships-to-neo4j.ts | Sync rels to Neo4j | Neo4j | ✅ Required | ✅ Written | ✅ Env/flag |
+| sync-relationships-replace.ts | Replace-sync rels to Neo4j | Neo4j | ✅ Required | ✅ Written | ✅ Env/flag |
+| migrate-ledger-to-project-scope.ts | Migrate ledger structure | Filesystem | ❌ Not required | ✅ Written | ✅ Env/flag |
+| repair/backfill-missing-brd-acs.ts | Backfill missing E03/R02 | PG | ✅ Required | ✅ Written | ✅ Env/flag |
+| repair/sync-neo4j.ts | Repair Neo4j sync | Neo4j | ✅ Required | ✅ Written | ✅ Env/flag |
+| calibrate-tdds.ts | TDD validation + E08 seeding | PG | ✅ Required (if SEED_E08=true) | ✅ Written | ✅ Env/flag |
 
-**Quarantine Requirements:**
-1. Scripts in `scripts/repair/` should require explicit operator intent (e.g., `--confirm-repair` flag)
-2. All Tier 2 scripts should emit evidence artifacts before/after mutation
-3. Scripts with hardcoded PROJECT_IDs should accept env var override
+#### Legacy Scripts (DEPRECATED)
+
+| Script | Purpose | Confirm Flag | Status |
+|--------|---------|--------------|--------|
+| si-readiness/genesis-extract.ts | Legacy full extraction | ✅ Required | ⚠️ DEPRECATED |
+| si-readiness/continue-extract.ts | Continue aborted extraction | ✅ Required | ⚠️ DEPRECATED |
+| si-readiness/extract-relationships.ts | Extract relationships | ✅ Required | ⚠️ DEPRECATED |
+| si-readiness/extract-remaining.ts | Extract remaining rels | ✅ Required | ⚠️ DEPRECATED |
+| si-readiness/finish-extract.ts | Finish extraction | ✅ Required | ⚠️ DEPRECATED |
+
+**Note:** Legacy scripts do NOT emit evidence artifacts. Use `scripts/run-a1-extraction.ts` instead.
+
+**Governance Controls Implemented:**
+1. ✅ All scripts require `--confirm-repair` flag (except filesystem-only migrations)
+2. ✅ All scripts emit evidence artifacts to `docs/verification/track_b/operator_runs/`
+3. ✅ All scripts use `resolveProjectId()` — no hardcoded PROJECT_IDs
 
 ### Tier 3 — Read-Only Diagnostics
 
@@ -288,30 +307,31 @@ grep -rl "@g-api-exception" scripts/
 
 ---
 
-## Part F: Minimal Recommended Action List
+## Part F: Recommendations Status
 
-### Priority 1 — Canonicalization (No Code Changes Yet)
+### Priority 1 — Canonicalization
 
-| Recommendation | Rationale | Effort |
-|----------------|-----------|--------|
-| **R1:** Document `run-a1-extraction.ts` as the blessed extraction entrypoint | Prevents competing scripts from being used accidentally | Doc update |
-| **R2:** Add extraction provenance artifact to CI | Capture epoch/SHA/timestamp for every CI extraction | Small script change |
-| **R3:** Deprecate si-readiness/genesis-extract.ts and continue-extract.ts | Superseded by run-a1-extraction.ts | Add deprecation notice |
+| Recommendation | Status | Notes |
+|----------------|--------|-------|
+| **R1:** Document `run-a1-extraction.ts` as the blessed extraction entrypoint | ✅ Done | See `OPERATOR_SCRIPTS_ALLOWLIST.md` |
+| **R2:** Add extraction provenance artifact to CI | ⏳ Pending | Future Track B work |
+| **R3:** Deprecate si-readiness scripts | ✅ Done | All marked DEPRECATED, require `--confirm-repair` |
 
 ### Priority 2 — Repair Script Governance
 
-| Recommendation | Rationale | Effort |
-|----------------|-----------|--------|
-| **R4:** Require `--confirm-repair` flag for repair scripts | Prevents accidental mutation | Small CLI change |
-| **R5:** Emit before/after evidence for all Tier 2 scripts | Audit trail for manual repairs | Medium |
-| **R6:** Remove hardcoded PROJECT_IDs from repair scripts | Use env vars for flexibility | Small |
+| Recommendation | Status | Notes |
+|----------------|--------|-------|
+| **R4:** Require `--confirm-repair` flag for repair scripts | ✅ Done | All Tier 2 scripts updated |
+| **R5:** Emit before/after evidence for all Tier 2 scripts | ✅ Done | Evidence to `operator_runs/` |
+| **R6:** Remove hardcoded PROJECT_IDs from repair scripts | ✅ Done | All use `resolveProjectId()` |
 
 ### Priority 3 — Future Cleanup
 
-| Recommendation | Rationale | Effort |
-|----------------|-----------|--------|
-| **R7:** Move `@ts-nocheck` scripts to strict TypeScript | Governance compliance | Medium |
-| **R8:** Consider archiving si-readiness/ once no longer needed | Reduce confusion | Doc + folder move |
+| Recommendation | Status | Notes |
+|----------------|--------|-------|
+| **R7:** Move `@ts-nocheck` scripts to strict TypeScript | ⏳ Pending | Low priority |
+| **R8:** Consider archiving si-readiness/ once no longer needed | ⏳ Pending | Low priority |
+| **R9:** Create operator allowlist | ✅ Done | `OPERATOR_SCRIPTS_ALLOWLIST.md` |
 
 ---
 
@@ -361,12 +381,17 @@ grep -rl "@g-api-exception" scripts/
 
 ## Conclusion
 
-The execution paths inventory reveals a **well-structured but partially governed** system:
+The execution paths inventory reveals a **well-governed** system with the following controls:
 
-1. **CI is canonicalized** — `run-a1-extraction.ts` is the single blessed entrypoint
-2. **Repair/maintenance scripts lack mandatory evidence** — Risk of untracked mutations
-3. **Legacy si-readiness scripts should be deprecated** — Superseded by canonical entrypoint
-4. **Exception markers are used appropriately** — Clearly document boundary exceptions
+1. ✅ **CI is canonicalized** — `run-a1-extraction.ts` is the single blessed entrypoint
+2. ✅ **Repair scripts require confirmation** — `--confirm-repair` flag prevents accidental mutation
+3. ✅ **Evidence artifacts are mandatory** — All Tier 2 scripts emit before/after snapshots
+4. ✅ **PROJECT_IDs are parameterized** — No hardcoded IDs, all use env var or flag
+5. ✅ **Legacy scripts are deprecated** — si-readiness scripts require confirmation and are marked DEPRECATED
+6. ✅ **Allowlist is documented** — `OPERATOR_SCRIPTS_ALLOWLIST.md` lists approved scripts
 
-**Next Step:** Review this report and decide which recommendations to implement before proceeding with B.3 Drift Detection.
+**Related Documents:**
+- `docs/verification/track_b/OPERATOR_SCRIPTS_ALLOWLIST.md` — Approved Tier 2 scripts
+- `scripts/_lib/operator-guard.ts` — Shared operator guard utilities
+- `scripts/_lib/state-snapshot.ts` — State snapshot utilities
 

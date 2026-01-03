@@ -1,9 +1,16 @@
 // @ts-nocheck
 // LEGACY_SCAN_OK: This script audits/validates legacy ledger or corpus files
-// Extract remaining relationships (R03 and onwards)
+/**
+ * Extract Remaining Script
+ * Tier 2: LEGACY (superseded by scripts/run-a1-extraction.ts)
+ * 
+ * DEPRECATED: Use scripts/run-a1-extraction.ts instead.
+ * REQUIRES: --confirm-repair flag and PROJECT_ID env var
+ */
 import 'dotenv/config';
 import * as fs from 'fs';
 import pg from 'pg';
+import { requireConfirmRepair, resolveProjectId } from '../_lib/operator-guard.js';
 
 import {
   extractAndPersistContainmentRelationships,
@@ -12,10 +19,13 @@ import {
   replaceAllRelationshipsInNeo4j,
 } from '../../src/ops/track-a.js';
 
+const SCRIPT_NAME = 'scripts/si-readiness/extract-remaining.ts';
+requireConfirmRepair(SCRIPT_NAME);
+
 const { Pool } = pg;
 
 async function main() {
-  const projectId = '6df2f456-440d-4958-b475-d9808775ff69';
+  const projectId = resolveProjectId();
   const pool = new Pool({ 
     connectionString: process.env.DATABASE_URL, 
     ssl: process.env.DATABASE_URL?.includes('localhost') ? false : { rejectUnauthorized: false } 
@@ -94,3 +104,4 @@ main().catch(err => {
   console.error('Error:', err);
   process.exit(1);
 });
+

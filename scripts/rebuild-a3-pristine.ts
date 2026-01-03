@@ -1,7 +1,7 @@
 #!/usr/bin/env npx tsx
 /**
- * rebuild-a3-pristine.ts
- * @implements INFRASTRUCTURE
+ * Rebuild A3 Pristine Script
+ * Tier 2: Repair/Maintenance Script
  * 
  * Rebuilds A3 extraction with pristine epoch-based ledger/corpus.
  * 
@@ -14,10 +14,10 @@
  *    - No duplicate CREATEs within the epoch
  *    - Counts match A3 baseline expectations
  * 
- * Usage:
- *   PROJECT_ID=xxx npx tsx scripts/rebuild-a3-pristine.ts
+ * @implements INFRASTRUCTURE
+ * 
+ * REQUIRES: --confirm-repair flag and PROJECT_ID env var
  */
-
 import 'dotenv/config';
 import * as fs from 'fs/promises';
 import * as path from 'path';
@@ -25,21 +25,22 @@ import {
   startEpoch, 
   completeEpoch, 
   failEpoch, 
-  getCurrentEpoch,
   EpochContext,
   computeBrdBlobHash
 } from '../src/ledger/epoch-service.js';
 import { getLedgerPath, LedgerEntry } from '../src/ledger/shadow-ledger.js';
 import { getCorpusPath, SemanticSignal, SEMANTIC_SIGNAL_SCHEMA_ID } from '../src/ledger/semantic-corpus.js';
 import { extractAndPersistMarkerRelationships, extractAndPersistTestRelationships, closeConnections } from '../src/ops/track-a.js';
-import { A3_BASELINE } from '../test/fixtures/a3-baseline-manifest.js';
+import { 
+  requireConfirmRepair, 
+  resolveProjectId, 
+  createEvidence, 
+  writeEvidenceMarkdown,
+  type EvidenceArtifact 
+} from './_lib/operator-guard.js';
+import { captureStateSnapshot, formatSnapshot } from './_lib/state-snapshot.js';
 
-const PROJECT_ID = process.env.PROJECT_ID;
-
-if (!PROJECT_ID) {
-  console.error('ERROR: PROJECT_ID required');
-  process.exit(1);
-}
+const SCRIPT_NAME = 'scripts/rebuild-a3-pristine.ts';
 
 interface ValidationResult {
   passed: boolean;
@@ -47,9 +48,9 @@ interface ValidationResult {
   details?: Record<string, unknown>;
 }
 
-async function validateLedgerPristine(epochId: string, repoSha: string, runnerSha: string, brdHash: string): Promise<ValidationResult[]> {
+async function validateLedgerPristine(projectId: string, epochId: string, repoSha: string, runnerSha: string, brdHash: string): Promise<ValidationResult[]> {
   const results: ValidationResult[] = [];
-  const ledgerPath = getLedgerPath(PROJECT_ID!);
+  const ledgerPath = getLedgerPath(projectId);
   
   let content = '';
   try {
@@ -179,9 +180,9 @@ async function validateLedgerPristine(epochId: string, repoSha: string, runnerSh
   return results;
 }
 
-async function validateCorpusPristine(epochId: string, repoSha: string, brdHash: string): Promise<ValidationResult[]> {
+async function validateCorpusPristine(projectId: string, epochId: string, repoSha: string, brdHash: string): Promise<ValidationResult[]> {
   const results: ValidationResult[] = [];
-  const corpusPath = getCorpusPath(PROJECT_ID!);
+  const corpusPath = getCorpusPath(projectId);
   
   let content = '';
   try {
@@ -285,116 +286,151 @@ async function validateCorpusPristine(epochId: string, repoSha: string, brdHash:
 }
 
 async function main() {
+  // === OPERATOR GUARD ===
+  requireConfirmRepair(SCRIPT_NAME);
+  const projectId = resolveProjectId();
+
+  // Initialize evidence
+  const evidence: EvidenceArtifact = createEvidence(SCRIPT_NAME, projectId);
+
   console.log('═══════════════════════════════════════════════════════════════════════════');
   console.log('  REBUILD A3 PRISTINE');
   console.log('═══════════════════════════════════════════════════════════════════════════');
   console.log('');
-  console.log(`Project ID: ${PROJECT_ID}`);
-  
-  // Step 1: Create epoch
-  console.log('\n[1/5] Creating fresh epoch...');
-  const epoch = await startEpoch(PROJECT_ID!);
-  
-  console.log(`  Epoch ID:   ${epoch.epoch_id}`);
-  console.log(`  Repo SHA:   ${epoch.repo_sha}`);
-  console.log(`  Runner SHA: ${epoch.runner_sha}`);
-  console.log(`  BRD Hash:   ${epoch.brd_hash}`);
-  console.log(`  Status:     ${epoch.status}`);
-  
-  // Step 2: Verify project directories exist
-  console.log('\n[2/5] Verifying project directories...');
-  const ledgerPath = getLedgerPath(PROJECT_ID!);
-  const corpusPath = getCorpusPath(PROJECT_ID!);
-  
-  await fs.mkdir(path.dirname(ledgerPath), { recursive: true });
-  await fs.mkdir(path.dirname(corpusPath), { recursive: true });
-  
-  console.log(`  Ledger:  ${ledgerPath}`);
-  console.log(`  Corpus:  ${corpusPath}`);
-  console.log(`  Epoch entries will be appended with epoch_id: ${epoch.epoch_id}`);
-  
-  // Step 3: Run A3 extraction
-  console.log('\n[3/5] Running A3 marker extraction...');
-  
+  console.log(`Project ID: ${projectId}`);
+
   try {
-    // Extract markers (R18, R19)
-    console.log('  - Extracting markers (R18, R19)...');
-    const markerResult = await extractAndPersistMarkerRelationships(PROJECT_ID!);
-    console.log(`    Extracted ${markerResult.extracted} markers, ${markerResult.orphans} orphans`);
-    console.log(`    R18: ${markerResult.r18_created}, R19: ${markerResult.r19_created}`);
+    // Capture BEFORE state
+    console.log('\n[SNAPSHOT] Capturing before state...');
+    evidence.beforeCounts = await captureStateSnapshot(projectId);
+    console.log(`  ${formatSnapshot(evidence.beforeCounts)}`);
+
+    // Step 1: Create epoch
+    console.log('\n[1/5] Creating fresh epoch...');
+    const epoch = await startEpoch(projectId);
     
-    // Extract test relationships (R36, R37)
-    console.log('  - Extracting test relationships (R36, R37)...');
-    const testResult = await extractAndPersistTestRelationships(PROJECT_ID!);
-    console.log(`    R36: ${testResult.r36_created} created, R37: ${testResult.r37_created} created`);
+    console.log(`  Epoch ID:   ${epoch.epoch_id}`);
+    console.log(`  Repo SHA:   ${epoch.repo_sha}`);
+    console.log(`  Runner SHA: ${epoch.runner_sha}`);
+    console.log(`  BRD Hash:   ${epoch.brd_hash}`);
+    console.log(`  Status:     ${epoch.status}`);
+    evidence.operations?.push(`Created epoch ${epoch.epoch_id}`);
+    
+    // Step 2: Verify project directories exist
+    console.log('\n[2/5] Verifying project directories...');
+    const ledgerPath = getLedgerPath(projectId);
+    const corpusPath = getCorpusPath(projectId);
+    
+    await fs.mkdir(path.dirname(ledgerPath), { recursive: true });
+    await fs.mkdir(path.dirname(corpusPath), { recursive: true });
+    
+    console.log(`  Ledger:  ${ledgerPath}`);
+    console.log(`  Corpus:  ${corpusPath}`);
+    console.log(`  Epoch entries will be appended with epoch_id: ${epoch.epoch_id}`);
+    
+    // Step 3: Run A3 extraction
+    console.log('\n[3/5] Running A3 marker extraction...');
+    
+    try {
+      // Extract markers (R18, R19)
+      console.log('  - Extracting markers (R18, R19)...');
+      const markerResult = await extractAndPersistMarkerRelationships(projectId);
+      console.log(`    Extracted ${markerResult.extracted} markers, ${markerResult.orphans} orphans`);
+      console.log(`    R18: ${markerResult.r18_created}, R19: ${markerResult.r19_created}`);
+      evidence.operations?.push(`Extracted ${markerResult.extracted} markers (R18: ${markerResult.r18_created}, R19: ${markerResult.r19_created})`);
+      
+      // Extract test relationships (R36, R37)
+      console.log('  - Extracting test relationships (R36, R37)...');
+      const testResult = await extractAndPersistTestRelationships(projectId);
+      console.log(`    R36: ${testResult.r36_created} created, R37: ${testResult.r37_created} created`);
+      evidence.operations?.push(`Extracted test relationships (R36: ${testResult.r36_created}, R37: ${testResult.r37_created})`);
+      
+    } catch (err) {
+      console.error('  ❌ Extraction failed:', err);
+      await failEpoch(String(err));
+      throw err;
+    }
+    
+    // Step 4: Validate pristine conditions
+    console.log('\n[4/5] Validating pristine conditions...');
+    
+    const ledgerResults = await validateLedgerPristine(
+      projectId,
+      epoch.epoch_id, 
+      epoch.repo_sha, 
+      epoch.runner_sha, 
+      epoch.brd_hash
+    );
+    
+    const corpusResults = await validateCorpusPristine(
+      projectId,
+      epoch.epoch_id,
+      epoch.repo_sha,
+      epoch.brd_hash
+    );
+    
+    console.log('\n  LEDGER VALIDATION:');
+    let allPassed = true;
+    for (const result of ledgerResults) {
+      const icon = result.passed ? '✓' : '✗';
+      console.log(`    ${icon} ${result.message}`);
+      if (!result.passed) allPassed = false;
+    }
+    
+    console.log('\n  CORPUS VALIDATION:');
+    for (const result of corpusResults) {
+      const icon = result.passed ? '✓' : '✗';
+      console.log(`    ${icon} ${result.message}`);
+      if (!result.passed) allPassed = false;
+    }
+    
+    // Step 5: Complete epoch (counts computed from ledger/corpus)
+    console.log('\n[5/5] Completing epoch...');
+    if (allPassed) {
+      const epochMeta = await completeEpoch();
+      console.log(`  Epoch counts: ${epochMeta.decisions_logged} decisions, ${epochMeta.relationships_created} rels created`);
+      evidence.operations?.push(`Completed epoch with ${epochMeta.decisions_logged} decisions, ${epochMeta.relationships_created} rels`);
+    } else {
+      await failEpoch('Pristine conditions not met');
+      evidence.operations?.push('Failed epoch: pristine conditions not met');
+    }
+    
+    // Capture AFTER state
+    console.log('\n[SNAPSHOT] Capturing after state...');
+    evidence.afterCounts = await captureStateSnapshot(projectId);
+    console.log(`  ${formatSnapshot(evidence.afterCounts)}`);
+
+    // Summary
+    console.log('\n═══════════════════════════════════════════════════════════════════════════');
+    if (allPassed) {
+      console.log('  ✓ REBUILD COMPLETE - ALL PRISTINE CONDITIONS MET');
+      evidence.status = 'SUCCESS';
+    } else {
+      console.log('  ✗ REBUILD FAILED - PRISTINE CONDITIONS NOT MET');
+      evidence.status = 'FAILED';
+      evidence.errors?.push('Pristine conditions not met');
+    }
+    console.log('═══════════════════════════════════════════════════════════════════════════');
+    console.log('');
+    console.log('Epoch file:', `epochs/${epoch.epoch_id}.json`);
+    console.log('');
+    
+    if (!allPassed) {
+      throw new Error('Pristine conditions not met');
+    }
     
   } catch (err) {
-    console.error('  ❌ Extraction failed:', err);
-    await failEpoch(String(err));
-    process.exit(1);
-  }
-  
-  // Step 4: Validate pristine conditions
-  console.log('\n[4/5] Validating pristine conditions...');
-  
-  const ledgerResults = await validateLedgerPristine(
-    epoch.epoch_id, 
-    epoch.repo_sha, 
-    epoch.runner_sha, 
-    epoch.brd_hash
-  );
-  
-  const corpusResults = await validateCorpusPristine(
-    epoch.epoch_id,
-    epoch.repo_sha,
-    epoch.brd_hash
-  );
-  
-  console.log('\n  LEDGER VALIDATION:');
-  let allPassed = true;
-  for (const result of ledgerResults) {
-    const icon = result.passed ? '✓' : '✗';
-    console.log(`    ${icon} ${result.message}`);
-    if (!result.passed) allPassed = false;
-  }
-  
-  console.log('\n  CORPUS VALIDATION:');
-  for (const result of corpusResults) {
-    const icon = result.passed ? '✓' : '✗';
-    console.log(`    ${icon} ${result.message}`);
-    if (!result.passed) allPassed = false;
-  }
-  
-  // Step 5: Complete epoch (counts computed from ledger/corpus)
-  console.log('\n[5/5] Completing epoch...');
-  if (allPassed) {
-    const epochMeta = await completeEpoch();
-    console.log(`  Epoch counts: ${epochMeta.decisions_logged} decisions, ${epochMeta.relationships_created} rels created`);
-  } else {
-    await failEpoch('Pristine conditions not met');
-  }
-  
-  // Summary
-  console.log('\n═══════════════════════════════════════════════════════════════════════════');
-  if (allPassed) {
-    console.log('  ✓ REBUILD COMPLETE - ALL PRISTINE CONDITIONS MET');
-  } else {
-    console.log('  ✗ REBUILD FAILED - PRISTINE CONDITIONS NOT MET');
+    evidence.status = 'FAILED';
+    evidence.errors?.push(String(err));
+    console.error('Error:', err);
+    throw err;
+  } finally {
+    writeEvidenceMarkdown(evidence);
     await closeConnections();
-    process.exit(1);
   }
-  console.log('═══════════════════════════════════════════════════════════════════════════');
-  console.log('');
-  console.log('Epoch file:', `epochs/${epoch.epoch_id}.json`);
-  console.log('');
-  
-  // Close database connections to allow process to exit
-  await closeConnections();
 }
 
 main().catch(async err => {
   console.error('Fatal error:', err);
-  await closeConnections();
   process.exit(1);
 });
-

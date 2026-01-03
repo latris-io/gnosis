@@ -1,8 +1,13 @@
+#!/usr/bin/env npx tsx
 // @ts-nocheck
-// Script to perform replace-by-project relationship sync and verify parity
-// Usage: PROJECT_ID=<uuid> npx tsx scripts/sync-relationships-replace.ts
-// Or:    PROJECT_SLUG=<slug> npx tsx scripts/sync-relationships-replace.ts
-
+/**
+ * Relationship Replace Sync
+ * Tier 2: Maintenance Script
+ * 
+ * Performs replace-by-project relationship sync and verifies parity.
+ * 
+ * REQUIRES: --confirm-repair flag and PROJECT_ID env var
+ */
 import 'dotenv/config';
 import {
   initProject,
@@ -10,18 +15,39 @@ import {
   verifyNeo4jParity,
   closeConnections,
 } from '../src/ops/track-a.js';
+import { 
+  requireConfirmRepair, 
+  resolveProjectId, 
+  createEvidence, 
+  writeEvidenceMarkdown,
+  type EvidenceArtifact 
+} from './_lib/operator-guard.js';
+import { captureStateSnapshot, formatSnapshot } from './_lib/state-snapshot.js';
+
+const SCRIPT_NAME = 'scripts/sync-relationships-replace.ts';
 
 async function main() {
+  // === OPERATOR GUARD ===
+  requireConfirmRepair(SCRIPT_NAME);
+  const envProjectId = resolveProjectId();
+
+  // Initialize evidence
+  const evidence: EvidenceArtifact = createEvidence(SCRIPT_NAME, envProjectId);
+
   try {
     // Get project ID from environment
     const { id: projectId } = await initProject({
-      projectId: process.env.PROJECT_ID,
-      projectSlug: process.env.PROJECT_SLUG || 'gnosis-default',
+      projectId: envProjectId,
     });
     console.log(`Project ID: ${projectId}\n`);
 
+    // Capture BEFORE state
+    console.log('[SNAPSHOT] Capturing before state...');
+    evidence.beforeCounts = await captureStateSnapshot(projectId);
+    console.log(`  ${formatSnapshot(evidence.beforeCounts)}`);
+
     // Step 1: Show current state
-    console.log('=== BEFORE SYNC ===\n');
+    console.log('\n=== BEFORE SYNC ===\n');
     const beforeParity = await verifyNeo4jParity(projectId);
     console.log('Postgres:');
     console.log(`  Total: ${beforeParity.postgres.total}`);
@@ -44,9 +70,16 @@ async function main() {
     // Step 2: Run replace sync
     console.log('\n=== RUNNING REPLACE SYNC ===\n');
     const syncResult = await replaceAllRelationshipsInNeo4j(projectId);
-    console.log(`Deleted from Neo4j: ${(syncResult as any).deleted ?? 'N/A'}`);
+    const deleted = (syncResult as any).deleted ?? 'N/A';
+    const skipped = (syncResult as any).skipped ?? 'N/A';
+    console.log(`Deleted from Neo4j: ${deleted}`);
     console.log(`Synced from Postgres: ${syncResult.synced}`);
-    console.log(`Skipped (missing endpoints): ${(syncResult as any).skipped ?? 'N/A'}`);
+    console.log(`Skipped (missing endpoints): ${skipped}`);
+    evidence.operations?.push(`Deleted ${deleted} relationships from Neo4j`);
+    evidence.operations?.push(`Synced ${syncResult.synced} relationships to Neo4j`);
+    if (typeof skipped === 'number' && skipped > 0) {
+      evidence.operations?.push(`Skipped ${skipped} relationships (missing endpoints)`);
+    }
 
     // Step 3: Verify parity after sync
     console.log('\n=== AFTER SYNC ===\n');
@@ -71,18 +104,30 @@ async function main() {
 
     // Step 4: Summary
     console.log('\n=== PARITY CHECK SUMMARY ===\n');
-    console.log(`R63 in Neo4j: ${afterParity.neo4j.byType['R63'] || 0} (expected: 29)`);
-    console.log(`R16 in Neo4j: ${afterParity.neo4j.byType['R16'] || 0} (expected: 145)`);
     console.log(`Total PG: ${afterParity.postgres.total}`);
     console.log(`Total Neo4j: ${afterParity.neo4j.total}`);
     console.log(`Parity: ${afterParity.consistent ? 'PASS' : 'FAIL'}`);
 
+    // Capture AFTER state
+    console.log('\n[SNAPSHOT] Capturing after state...');
+    evidence.afterCounts = await captureStateSnapshot(projectId);
+    console.log(`  ${formatSnapshot(evidence.afterCounts)}`);
+
+    evidence.status = 'SUCCESS';
+
+  } catch (err) {
+    evidence.status = 'FAILED';
+    evidence.errors?.push(String(err));
+    console.error('Error:', err);
+    throw err;
   } finally {
+    writeEvidenceMarkdown(evidence);
     await closeConnections();
   }
 }
 
 main().catch(err => {
-  console.error('Error:', err);
+  console.error('Fatal error:', err);
   process.exit(1);
 });
+

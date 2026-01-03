@@ -1,22 +1,34 @@
 #!/usr/bin/env npx tsx
 // LEGACY_SCAN_OK: This script audits/validates legacy ledger or corpus files
-// @implements STORY-64.6
-// @satisfies AC-64.6.1
-//
-// Migration script: Move flat ledger to per-project structure
-//
-// Before: shadow-ledger/ledger.jsonl (mixed project_ids)
-// After:  shadow-ledger/{project_id}/ledger.jsonl (per-project isolation)
-//
-// Also migrates semantic corpus to per-project structure.
-//
-// SAFE: Non-destructive - creates new structure, archives original
-
+/**
+ * Ledger & Corpus Migration Script
+ * Tier 2: Migration Script (filesystem-only)
+ * 
+ * Migration script: Move flat ledger to per-project structure.
+ * 
+ * Before: shadow-ledger/ledger.jsonl (mixed project_ids)
+ * After:  shadow-ledger/{project_id}/ledger.jsonl (per-project isolation)
+ * 
+ * Also migrates semantic corpus to per-project structure.
+ * 
+ * SAFE: Non-destructive - creates new structure, archives original.
+ * 
+ * @implements STORY-64.6
+ * @satisfies AC-64.6.1
+ * 
+ * REQUIRES: PROJECT_ID env var (but no --confirm-repair since filesystem-only)
+ */
 import 'dotenv/config';
 import * as fs from 'fs/promises';
 import * as path from 'path';
+import { 
+  resolveProjectId, 
+  createEvidence, 
+  writeEvidenceMarkdown,
+  type EvidenceArtifact 
+} from './_lib/operator-guard.js';
 
-const CANONICAL_PROJECT_ID = '6df2f456-440d-4958-b475-d9808775ff69';
+const SCRIPT_NAME = 'scripts/migrate-ledger-to-project-scope.ts';
 
 interface LedgerEntry {
   project_id?: string;
@@ -37,7 +49,7 @@ async function fileExists(filePath: string): Promise<boolean> {
   }
 }
 
-async function migrateLedger(): Promise<void> {
+async function migrateLedger(projectId: string, evidence: EvidenceArtifact): Promise<void> {
   console.log('╔════════════════════════════════════════════════════════════════╗');
   console.log('║        LEDGER MIGRATION TO PER-PROJECT STRUCTURE              ║');
   console.log('╚════════════════════════════════════════════════════════════════╝\n');
@@ -48,6 +60,7 @@ async function migrateLedger(): Promise<void> {
   if (!await fileExists(legacyPath)) {
     console.log('No legacy ledger found at', legacyPath);
     console.log('Nothing to migrate.\n');
+    evidence.operations?.push('Ledger: No legacy ledger to migrate');
     return;
   }
   
@@ -65,21 +78,21 @@ async function migrateLedger(): Promise<void> {
   let unknownCount = 0;
   
   for (const entry of entries) {
-    const projectId = entry.project_id || 'unknown';
-    if (projectId === 'unknown') {
+    const entryProjectId = entry.project_id || 'unknown';
+    if (entryProjectId === 'unknown') {
       unknownCount++;
     }
     
-    if (!entriesByProject.has(projectId)) {
-      entriesByProject.set(projectId, []);
+    if (!entriesByProject.has(entryProjectId)) {
+      entriesByProject.set(entryProjectId, []);
     }
-    entriesByProject.get(projectId)!.push(entry);
+    entriesByProject.get(entryProjectId)!.push(entry);
   }
   
   console.log('Entries by project_id:');
-  for (const [projectId, projectEntries] of entriesByProject) {
-    const isCanonical = projectId === CANONICAL_PROJECT_ID;
-    console.log(`  ${projectId.substring(0, 8)}... : ${projectEntries.length} ${isCanonical ? '(canonical)' : ''}`);
+  for (const [entryProjectId, projectEntries] of entriesByProject) {
+    const isTarget = entryProjectId === projectId;
+    console.log(`  ${entryProjectId.substring(0, 8)}... : ${projectEntries.length} ${isTarget ? '(target)' : ''}`);
   }
   console.log();
   
@@ -93,19 +106,21 @@ async function migrateLedger(): Promise<void> {
   // Archive the original
   await fs.copyFile(legacyPath, archivePath);
   console.log(`✓ Archived original to ${archivePath}\n`);
+  evidence.operations?.push(`Ledger: Archived to ${archivePath}`);
   
-  // Write per-project ledgers (canonical project only)
-  const canonicalEntries = entriesByProject.get(CANONICAL_PROJECT_ID) || [];
-  if (canonicalEntries.length > 0) {
-    const projectDir = `shadow-ledger/${CANONICAL_PROJECT_ID}`;
+  // Write per-project ledgers (target project only)
+  const targetEntries = entriesByProject.get(projectId) || [];
+  if (targetEntries.length > 0) {
+    const projectDir = `shadow-ledger/${projectId}`;
     await fs.mkdir(projectDir, { recursive: true });
     
     const projectLedgerPath = `${projectDir}/ledger.jsonl`;
-    const projectContent = canonicalEntries.map(e => JSON.stringify(e)).join('\n') + '\n';
+    const projectContent = targetEntries.map(e => JSON.stringify(e)).join('\n') + '\n';
     await fs.writeFile(projectLedgerPath, projectContent);
     
     console.log(`✓ Created ${projectLedgerPath}`);
-    console.log(`  Entries: ${canonicalEntries.length} (canonical project only)`);
+    console.log(`  Entries: ${targetEntries.length} (target project only)`);
+    evidence.operations?.push(`Ledger: Migrated ${targetEntries.length} entries to ${projectLedgerPath}`);
   }
   
   // Clear legacy file (keep empty for backward compat)
@@ -113,18 +128,18 @@ async function migrateLedger(): Promise<void> {
   console.log(`✓ Cleared legacy ledger (archived backup exists)\n`);
   
   // Summary
-  const droppedCount = entries.length - canonicalEntries.length;
+  const droppedCount = entries.length - targetEntries.length;
   console.log('┌─────────────────────────────────────────────────────────────────┐');
   console.log('│ MIGRATION SUMMARY                                              │');
   console.log('└─────────────────────────────────────────────────────────────────┘');
   console.log(`  Total entries:     ${entries.length}`);
-  console.log(`  Migrated:          ${canonicalEntries.length} (canonical project)`);
-  console.log(`  Dropped:           ${droppedCount} (non-canonical/test pollution)`);
+  console.log(`  Migrated:          ${targetEntries.length} (target project)`);
+  console.log(`  Dropped:           ${droppedCount} (non-target/test pollution)`);
   console.log(`  Archive:           ${archivePath}`);
   console.log();
 }
 
-async function migrateCorpus(): Promise<void> {
+async function migrateCorpus(projectId: string, evidence: EvidenceArtifact): Promise<void> {
   console.log('╔════════════════════════════════════════════════════════════════╗');
   console.log('║        CORPUS MIGRATION TO PER-PROJECT STRUCTURE              ║');
   console.log('╚════════════════════════════════════════════════════════════════╝\n');
@@ -135,6 +150,7 @@ async function migrateCorpus(): Promise<void> {
   if (!await fileExists(legacyPath)) {
     console.log('No legacy corpus found at', legacyPath);
     console.log('Nothing to migrate.\n');
+    evidence.operations?.push('Corpus: No legacy corpus to migrate');
     return;
   }
   
@@ -153,16 +169,17 @@ async function migrateCorpus(): Promise<void> {
   // Archive the original
   await fs.copyFile(legacyPath, archivePath);
   console.log(`✓ Archived original to ${archivePath}\n`);
+  evidence.operations?.push(`Corpus: Archived to ${archivePath}`);
   
-  // For corpus, we migrate ALL signals to canonical project
+  // For corpus, we migrate ALL signals to target project
   // (corpus historically didn't have project_id)
-  const projectDir = `semantic-corpus/${CANONICAL_PROJECT_ID}`;
+  const projectDir = `semantic-corpus/${projectId}`;
   await fs.mkdir(projectDir, { recursive: true });
   
   // Add project_id to each signal for future Track C scoping
   const migratedSignals = signals.map(s => ({
     ...s,
-    project_id: s.project_id || CANONICAL_PROJECT_ID,
+    project_id: s.project_id || projectId,
   }));
   
   const projectCorpusPath = `${projectDir}/signals.jsonl`;
@@ -171,6 +188,7 @@ async function migrateCorpus(): Promise<void> {
   
   console.log(`✓ Created ${projectCorpusPath}`);
   console.log(`  Signals: ${migratedSignals.length}`);
+  evidence.operations?.push(`Corpus: Migrated ${migratedSignals.length} signals to ${projectCorpusPath}`);
   
   // Clear legacy file
   await fs.writeFile(legacyPath, '');
@@ -186,27 +204,43 @@ async function migrateCorpus(): Promise<void> {
 }
 
 async function main(): Promise<void> {
+  // Resolve project ID (but no --confirm-repair needed for filesystem-only)
+  const projectId = resolveProjectId();
+  
+  // Initialize evidence
+  const evidence: EvidenceArtifact = createEvidence(SCRIPT_NAME, projectId);
+  
   console.log('════════════════════════════════════════════════════════════════════');
   console.log('     LEDGER & CORPUS MIGRATION: PER-PROJECT ISOLATION');
   console.log('════════════════════════════════════════════════════════════════════\n');
-  console.log(`Canonical Project ID: ${CANONICAL_PROJECT_ID}\n`);
+  console.log(`Target Project ID: ${projectId}\n`);
   
-  await migrateLedger();
-  await migrateCorpus();
-  
-  console.log('════════════════════════════════════════════════════════════════════');
-  console.log('                      MIGRATION COMPLETE');
-  console.log('════════════════════════════════════════════════════════════════════\n');
-  console.log('New structure:');
-  console.log('  shadow-ledger/{project_id}/ledger.jsonl');
-  console.log('  semantic-corpus/{project_id}/signals.jsonl\n');
-  console.log('Archived backups:');
-  console.log('  shadow-ledger/archive/pre-migration-ledger.jsonl');
-  console.log('  semantic-corpus/archive/pre-migration-signals.jsonl\n');
+  try {
+    await migrateLedger(projectId, evidence);
+    await migrateCorpus(projectId, evidence);
+    
+    console.log('════════════════════════════════════════════════════════════════════');
+    console.log('                      MIGRATION COMPLETE');
+    console.log('════════════════════════════════════════════════════════════════════\n');
+    console.log('New structure:');
+    console.log('  shadow-ledger/{project_id}/ledger.jsonl');
+    console.log('  semantic-corpus/{project_id}/signals.jsonl\n');
+    console.log('Archived backups:');
+    console.log('  shadow-ledger/archive/pre-migration-ledger.jsonl');
+    console.log('  semantic-corpus/archive/pre-migration-signals.jsonl\n');
+    
+    evidence.status = 'SUCCESS';
+    
+  } catch (err) {
+    evidence.status = 'FAILED';
+    evidence.errors?.push(String(err));
+    throw err;
+  } finally {
+    writeEvidenceMarkdown(evidence);
+  }
 }
 
 main().catch(err => {
   console.error('Migration failed:', err);
   process.exit(1);
 });
-
