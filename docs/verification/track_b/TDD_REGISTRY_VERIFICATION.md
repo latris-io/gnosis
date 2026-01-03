@@ -1,6 +1,6 @@
 # Track B TDD Registry Verification
 
-**Generated:** 2026-01-03T02:50:47.678Z  
+**Generated:** 2026-01-03T18:37:18.521Z  
 **Project ID:** 6df2f456-440d-4958-b475-d9808775ff69
 
 ---
@@ -13,7 +13,7 @@
 | E06 TechnicalDesign nodes updated | 0 |
 | E06 TechnicalDesign nodes no-op | 7 |
 | E06 total modified (created+updated) | 0 |
-| R14 IMPLEMENTED_BY edges created | 15 |
+| R14 IMPLEMENTED_BY edges created | 22 |
 | R14 edges pending (file not present) | 0 |
 | Errors | 0 |
 
@@ -62,6 +62,13 @@ _None updated_
 | `TDD-TRACKB-B2` | `FILE-src/services/track_b/brd-registry/gate.ts` |
 | `TDD-TRACKB-B2` | `FILE-src/services/track_b/brd-registry/ledger.ts` |
 | `TDD-TRACKB-B2` | `FILE-src/services/track_b/brd-registry/index.ts` |
+| `TDD-TRACKB-B6` | `FILE-src/api/v2/db.ts` |
+| `TDD-TRACKB-B6` | `FILE-src/api/v2/entities.ts` |
+| `TDD-TRACKB-B6` | `FILE-src/api/v2/relationships.ts` |
+| `TDD-TRACKB-B6` | `FILE-src/track_b/http/types.ts` |
+| `TDD-TRACKB-B6` | `FILE-src/track_b/http/routes/entities.ts` |
+| `TDD-TRACKB-B6` | `FILE-src/track_b/http/routes/relationships.ts` |
+| `TDD-TRACKB-B6` | `FILE-src/track_b/http/server.ts` |
 
 ---
 
