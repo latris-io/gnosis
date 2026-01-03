@@ -6,7 +6,9 @@ export {
   EXPECTED_BRD_VERSION,
   BRD_PATH,
   REGISTRY_PATH,
-  LEDGER_PATH,
+  LEDGER_DIR,
+  LEDGER_FILE,
+  getLedgerPath,
   EVIDENCE_PATH,
   SCHEMA_VERSION,
 } from './config.js';
