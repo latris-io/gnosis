@@ -3,7 +3,18 @@ tdd:
   id: TDD-TRACKB-B3
   type: TechnicalDesign
   version: "1.0.0"
-  status: planned
+  status: complete
+  implements:
+    files:
+      - src/services/track_b/drift-detection/types.ts
+      - src/services/track_b/drift-detection/http-client.ts
+      - src/services/track_b/drift-detection/merkle.ts
+      - src/services/track_b/drift-detection/snapshot.ts
+      - src/services/track_b/drift-detection/diff.ts
+      - src/services/track_b/drift-detection/gate.ts
+      - src/services/track_b/drift-detection/ledger.ts
+      - src/services/track_b/drift-detection/signals.ts
+      - src/services/track_b/drift-detection/index.ts
 ---
 
 # Story B.3: Drift Detection

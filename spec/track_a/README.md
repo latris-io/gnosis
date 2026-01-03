@@ -19,3 +19,4 @@ Before implementing Track A stories:
 | HUMAN_GATE_HGR-1.md | Human gate approval requirements |
 | stories/*.md | Individual story specifications |
 
+

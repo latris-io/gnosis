@@ -233,3 +233,4 @@ None (pre-A3 gate).
 - [x] Evidence anchors validated
 
 **A3 (Marker Extraction) may proceed.**
+

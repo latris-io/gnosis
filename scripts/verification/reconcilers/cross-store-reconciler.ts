@@ -376,3 +376,4 @@ if (isMainModule) {
       await neo4jReader.closeDriver();
     });
 }
+

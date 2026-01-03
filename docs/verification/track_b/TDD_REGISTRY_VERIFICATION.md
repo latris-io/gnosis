@@ -1,6 +1,6 @@
 # Track B TDD Registry Verification
 
-**Generated:** 2026-01-03T18:37:18.521Z  
+**Generated:** 2026-01-03T19:55:02.779Z  
 **Project ID:** 6df2f456-440d-4958-b475-d9808775ff69
 
 ---
@@ -10,10 +10,10 @@
 | Metric | Count |
 |--------|-------|
 | E06 TechnicalDesign nodes created | 0 |
-| E06 TechnicalDesign nodes updated | 0 |
-| E06 TechnicalDesign nodes no-op | 7 |
-| E06 total modified (created+updated) | 0 |
-| R14 IMPLEMENTED_BY edges created | 22 |
+| E06 TechnicalDesign nodes updated | 1 |
+| E06 TechnicalDesign nodes no-op | 6 |
+| E06 total modified (created+updated) | 1 |
+| R14 IMPLEMENTED_BY edges created | 31 |
 | R14 edges pending (file not present) | 0 |
 | Errors | 0 |
 
@@ -27,7 +27,7 @@ _None created_
 
 ## E06 TechnicalDesign Nodes Updated
 
-_None updated_
+- `TDD-TRACKB-B3`
 
 ---
 
@@ -35,7 +35,6 @@ _None updated_
 
 - `TDD-TRACKB-B1`
 - `TDD-TRACKB-B2`
-- `TDD-TRACKB-B3`
 - `TDD-TRACKB-B4`
 - `TDD-TRACKB-B5`
 - `TDD-TRACKB-B6`
@@ -62,6 +61,15 @@ _None updated_
 | `TDD-TRACKB-B2` | `FILE-src/services/track_b/brd-registry/gate.ts` |
 | `TDD-TRACKB-B2` | `FILE-src/services/track_b/brd-registry/ledger.ts` |
 | `TDD-TRACKB-B2` | `FILE-src/services/track_b/brd-registry/index.ts` |
+| `TDD-TRACKB-B3` | `FILE-src/services/track_b/drift-detection/types.ts` |
+| `TDD-TRACKB-B3` | `FILE-src/services/track_b/drift-detection/http-client.ts` |
+| `TDD-TRACKB-B3` | `FILE-src/services/track_b/drift-detection/merkle.ts` |
+| `TDD-TRACKB-B3` | `FILE-src/services/track_b/drift-detection/snapshot.ts` |
+| `TDD-TRACKB-B3` | `FILE-src/services/track_b/drift-detection/diff.ts` |
+| `TDD-TRACKB-B3` | `FILE-src/services/track_b/drift-detection/gate.ts` |
+| `TDD-TRACKB-B3` | `FILE-src/services/track_b/drift-detection/ledger.ts` |
+| `TDD-TRACKB-B3` | `FILE-src/services/track_b/drift-detection/signals.ts` |
+| `TDD-TRACKB-B3` | `FILE-src/services/track_b/drift-detection/index.ts` |
 | `TDD-TRACKB-B6` | `FILE-src/api/v2/db.ts` |
 | `TDD-TRACKB-B6` | `FILE-src/api/v2/entities.ts` |
 | `TDD-TRACKB-B6` | `FILE-src/api/v2/relationships.ts` |

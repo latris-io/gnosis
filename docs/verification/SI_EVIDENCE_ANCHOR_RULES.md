@@ -156,3 +156,4 @@ grep -c '"type":"CORRECT"' semantic-corpus/signals.jsonl
 - **Applies to:** Track A through A2
 - **Author:** Cursor (SI Readiness Audit)
 - **Status:** ACTIVE
+

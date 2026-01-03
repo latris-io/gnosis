@@ -60,3 +60,4 @@ export function getIdPatternDescription(typeCode: EntityTypeCode): string {
   return descriptions[typeCode];
 }
 
+
