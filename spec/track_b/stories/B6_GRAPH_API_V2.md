@@ -33,10 +33,14 @@ Extend the Graph API with v2 endpoints that expose Track B capabilities (health,
 
 ### In Scope
 
-- **Entity listing endpoint** (enables graph coverage validation deferred from B.1)
-- Health score endpoint
+- **Entity listing endpoint** (enables graph coverage validation deferred from B.1 and B.2)
+  - `GET /api/v2/entities?entity_type=E01` — required for B.2 BRD→graph parity
+  - `GET /api/v2/entities?entity_type=E02` — required for B.2 BRD→graph parity
+  - `GET /api/v2/entities?entity_type=E03` — required for B.2 BRD→graph parity
+  - `GET /api/v2/entities?entity_type=E11` — required for B.1 graph coverage
+- Health score endpoint (includes graph coverage via entity listing)
 - Drift report endpoint
-- Registry query endpoint
+- Registry query endpoint (completes B.2 BRD→graph comparison)
 - Closure status endpoint
 - Ledger query endpoint
 
@@ -63,7 +67,7 @@ This Track B capability (Graph API v2) is defined by the Roadmap Track B scope, 
 | B.6.1 | Entity listing endpoint (for graph coverage) | API |
 | B.6.2 | Health score endpoint | API |
 | B.6.3 | Drift report endpoint | API |
-| B.6.4 | Registry query endpoint | API |
+| B.6.4 | Registry query endpoint (completes B.2.3 BRD→graph comparison) | API |
 | B.6.5 | Closure status endpoint | API |
 | B.6.6 | Ledger query endpoint | API |
 | B.6.7 | Track C cannot import Track A/B internals | Boundary |

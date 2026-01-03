@@ -3,7 +3,17 @@ tdd:
   id: TDD-TRACKB-B2
   type: TechnicalDesign
   version: "1.0.0"
-  status: planned
+  status: implemented
+  implements:
+    files:
+      - src/services/track_b/brd-registry/config.ts
+      - src/services/track_b/brd-registry/types.ts
+      - src/services/track_b/brd-registry/parser.ts
+      - src/services/track_b/brd-registry/hasher.ts
+      - src/services/track_b/brd-registry/registry.ts
+      - src/services/track_b/brd-registry/gate.ts
+      - src/services/track_b/brd-registry/ledger.ts
+      - src/services/track_b/brd-registry/index.ts
 ---
 
 # Story B.2: BRD Registry
@@ -45,6 +55,13 @@ Parse the authoritative BRD document and maintain a registry that can be compare
 - Changes to existing BRD entity schemas
 - Direct database access
 
+### Deferred to B.6 (Graph API v2)
+
+- Full BRD → graph enumeration comparison (requires entity listing endpoint)
+- Graph API v1 does not expose entity enumeration, so B.2.3 comparison is deferred
+
+**Note:** B.2 implements "local registry integrity" — that the BRD was parsed correctly and the registry artifact is consistent. Full "BRD-to-graph parity" will be provable in B.6 when `GET /api/v2/entities?entity_type=...` becomes available.
+
 ---
 
 ## Related Canonical Requirements (Optional; BRD-only)
@@ -57,13 +74,13 @@ This Track B capability (BRD Registry) is defined by the Roadmap Track B scope, 
 
 ## Execution Obligations (Roadmap-defined)
 
-| ID | Description | Pillar |
-|----|-------------|--------|
-| B.2.1 | Parse markdown BRD → Extract epics/stories/ACs | — |
-| B.2.2 | Store BRD version with content hash | — |
-| B.2.3 | Compare BRD stories to graph stories via API | API |
-| B.2.4 | G-REGISTRY gate: fail on mismatch | Gate |
-| B.2.5 | Log BRD parsing to shadow ledger | Shadow |
+| ID | Description | Pillar | Status |
+|----|-------------|--------|--------|
+| B.2.1 | Parse markdown BRD → Extract epics/stories/ACs | — | Done |
+| B.2.2 | Store BRD version with content hash | — | Done |
+| B.2.3 | Compare BRD stories to graph stories via API | API | Deferred to B.6 |
+| B.2.4 | G-REGISTRY gate: fail on mismatch | Gate | Done (local integrity) |
+| B.2.5 | Log BRD parsing to shadow ledger | Shadow | Done |
 
 **Important:** Execution Obligations (B.x.y) are planning checkpoints only; verification authority resides exclusively in gate outcomes and HGR approvals.
 
@@ -120,12 +137,13 @@ interface RegistryComparison {
 
 ## Dependencies
 
-| Dependency | Source |
-|------------|--------|
-| E01 Epic | Graph API v1 |
-| E02 Story | Graph API v1 |
-| E03 AcceptanceCriterion | Graph API v1 |
-| BRD parser | Track A (reuse via ops layer) |
+| Dependency | Source | Status |
+|------------|--------|--------|
+| E01 Epic enumeration | Graph API v2 | Deferred to B.6 |
+| E02 Story enumeration | Graph API v2 | Deferred to B.6 |
+| E03 AC enumeration | Graph API v2 | Deferred to B.6 |
+| BRD parser | Track B-owned (intentional decoupling) | Implemented |
+| File system | Node.js fs | Available |
 
 ---
 

@@ -1,6 +1,6 @@
 # Track B TDD Registry Verification
 
-**Generated:** 2026-01-02T23:59:51.107Z  
+**Generated:** 2026-01-03T02:50:47.678Z  
 **Project ID:** 6df2f456-440d-4958-b475-d9808775ff69
 
 ---
@@ -10,10 +10,10 @@
 | Metric | Count |
 |--------|-------|
 | E06 TechnicalDesign nodes created | 0 |
-| E06 TechnicalDesign nodes updated | 1 |
-| E06 TechnicalDesign nodes no-op | 6 |
-| E06 total modified (created+updated) | 1 |
-| R14 IMPLEMENTED_BY edges created | 7 |
+| E06 TechnicalDesign nodes updated | 0 |
+| E06 TechnicalDesign nodes no-op | 7 |
+| E06 total modified (created+updated) | 0 |
+| R14 IMPLEMENTED_BY edges created | 15 |
 | R14 edges pending (file not present) | 0 |
 | Errors | 0 |
 
@@ -27,12 +27,13 @@ _None created_
 
 ## E06 TechnicalDesign Nodes Updated
 
-- `TDD-TRACKB-B1`
+_None updated_
 
 ---
 
 ## E06 TechnicalDesign Nodes No-Op
 
+- `TDD-TRACKB-B1`
 - `TDD-TRACKB-B2`
 - `TDD-TRACKB-B3`
 - `TDD-TRACKB-B4`
@@ -53,6 +54,14 @@ _None created_
 | `TDD-TRACKB-B1` | `FILE-src/services/track_b/ground-truth/health.ts` |
 | `TDD-TRACKB-B1` | `FILE-src/services/track_b/ground-truth/ledger.ts` |
 | `TDD-TRACKB-B1` | `FILE-src/services/track_b/ground-truth/index.ts` |
+| `TDD-TRACKB-B2` | `FILE-src/services/track_b/brd-registry/config.ts` |
+| `TDD-TRACKB-B2` | `FILE-src/services/track_b/brd-registry/types.ts` |
+| `TDD-TRACKB-B2` | `FILE-src/services/track_b/brd-registry/parser.ts` |
+| `TDD-TRACKB-B2` | `FILE-src/services/track_b/brd-registry/hasher.ts` |
+| `TDD-TRACKB-B2` | `FILE-src/services/track_b/brd-registry/registry.ts` |
+| `TDD-TRACKB-B2` | `FILE-src/services/track_b/brd-registry/gate.ts` |
+| `TDD-TRACKB-B2` | `FILE-src/services/track_b/brd-registry/ledger.ts` |
+| `TDD-TRACKB-B2` | `FILE-src/services/track_b/brd-registry/index.ts` |
 
 ---
 

@@ -22,7 +22,7 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import * as yaml from 'yaml';
-import { persistEntities, persistRelationshipsAndSync } from '../src/ops/track-a.js';
+import { persistEntities, persistRelationshipsAndSync, closeConnections } from '../src/ops/track-a.js';
 
 // Derive types from ops layer function signatures (no extraction imports - boundary compliant)
 type ExtractedEntity = Parameters<typeof persistEntities>[1][number];
@@ -560,15 +560,20 @@ async function main() {
     for (const error of result.errors) {
       console.error(`  - ${error}`);
     }
+    await closeConnections();
     process.exit(1);
   }
   
   console.log('');
   console.log('✓ Track B TDD Registry complete');
+  
+  // Close connections to prevent script from hanging
+  await closeConnections();
 }
 
-main().catch(error => {
+main().catch(async error => {
   console.error('FATAL:', error);
+  await closeConnections();
   process.exit(1);
 });
 
