@@ -355,7 +355,8 @@ describe('CONTAINMENT RELATIONSHIPS (R04-R07)', () => {
   });
 
   // Neo4j counts match Postgres
-  it('Neo4j counts match Postgres counts', async () => {
+  // Increased timeout: sync + replace can be slow in CI due to network latency
+  it('Neo4j counts match Postgres counts', { timeout: 90_000 }, async () => {
     if (!PROJECT_ID) {
       throw new Error('PROJECT_ID required');
     }
