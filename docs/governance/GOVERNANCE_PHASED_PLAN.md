@@ -408,11 +408,12 @@ After B.4 Closure Check PASS (G-CLOSURE proven), the following surfaces are **lo
 |---------|------|---------|
 | Closure services | `src/services/track_b/closure-check/**` | Closure orchestration |
 | Closure CLI | `scripts/closure.ts` | Tier-2 operator entrypoint |
+| Evidence template | `docs/verification/track_b/templates/B4_OPERATOR_EVIDENCE_TEMPLATE.md` | Required fields/structure |
 
-**Evidence Template Expectations:**
-- The operator evidence template (`docs/verification/track_b/templates/B4_OPERATOR_EVIDENCE_TEMPLATE.md`) defines required fields and structure
-- Output evidence files (`B4_CLOSURE_CHECK_EVIDENCE.md`, `B4_OPERATOR_EVIDENCE_*.md`) are generated artifacts that legitimately change on each run
-- Template structure changes require spec-level review, not CI lock enforcement
+**Evidence Output vs Template:**
+- Output evidence files (`B4_CLOSURE_CHECK_EVIDENCE.md`, `B4_OPERATOR_EVIDENCE_*.md`) are generated artifacts that legitimately change on each run — NOT locked
+- The template is locked (CID required) because it defines the schema for all future runs
+- Template schema is also verified by `test/sanity/b4-template-schema.test.ts`
 
 **Enforcement:**
 - Changes to locked B.4 surfaces require CID authorization

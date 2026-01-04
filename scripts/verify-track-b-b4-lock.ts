@@ -24,6 +24,8 @@ const LOCKED_PATTERNS = [
   /^src\/services\/track_b\/closure-check\//,
   // Closure CLI
   /^scripts\/closure\.ts$/,
+  // Operator evidence template (defines required fields/structure)
+  /^docs\/verification\/track_b\/templates\/B4_OPERATOR_EVIDENCE_TEMPLATE\.md$/,
 ];
 
 // CID pattern in commit messages / PR
