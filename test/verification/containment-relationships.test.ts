@@ -58,7 +58,7 @@ describe('CONTAINMENT RELATIONSHIPS (R04-R07)', () => {
   }, 300000); // 5 minute timeout for extraction
 
   // Prerequisite check: E15 semantics validated
-  it('Prerequisite: E15 semantics validated against E11 corpus', async () => {
+  it('Prerequisite: E15 semantics validated against E11 corpus', { timeout: 90_000 }, async () => {
     if (!PROJECT_ID) {
       throw new Error('PROJECT_ID required');
     }
@@ -161,7 +161,8 @@ describe('CONTAINMENT RELATIONSHIPS (R04-R07)', () => {
   });
 
   // R04 endpoint validation
-  it('R04 endpoints are E15 -> E11 (not E11 -> E11)', async () => {
+  // Increased timeout: query can be slow in CI due to network latency
+  it('R04 endpoints are E15 -> E11 (not E11 -> E11)', { timeout: 90_000 }, async () => {
     if (!PROJECT_ID) {
       throw new Error('PROJECT_ID required');
     }
