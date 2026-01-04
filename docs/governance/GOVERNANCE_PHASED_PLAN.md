@@ -409,6 +409,11 @@ After B.4 Closure Check PASS (G-CLOSURE proven), the following surfaces are **lo
 | Closure services | `src/services/track_b/closure-check/**` | Closure orchestration |
 | Closure CLI | `scripts/closure.ts` | Tier-2 operator entrypoint |
 
+**Evidence Template Expectations:**
+- The operator evidence template (`docs/verification/track_b/templates/B4_OPERATOR_EVIDENCE_TEMPLATE.md`) defines required fields and structure
+- Output evidence files (`B4_CLOSURE_CHECK_EVIDENCE.md`, `B4_OPERATOR_EVIDENCE_*.md`) are generated artifacts that legitimately change on each run
+- Template structure changes require spec-level review, not CI lock enforcement
+
 **Enforcement:**
 - Changes to locked B.4 surfaces require CID authorization
 - CID must be in `docs/cid/` and referenced in commit message
